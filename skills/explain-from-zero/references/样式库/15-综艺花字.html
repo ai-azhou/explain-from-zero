@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>综艺花字 · 样张</title>
+<!--
+风格：综艺花字 VARIETY CAPTIONS
+一句话：大字本身就是画面——渐变填色、白内描边、深外描边、错位硬影子四层叠出来再歪一点，弹簧一样弹出来，专门把一句话的情绪放大。
+擅长表现：把一个反差或一句结论「爆」出来——前后差多少、到底是不是、一层和四层的区别；让人一眼记住、愿意转发。气质偏闹，安静克制的题慎用。
+招牌细节：
+  材质：两色相间的放射速度线 + 一层白色半调网点；转场是斜条纹；贴纸都带「深色线 + 白边」两圈。
+  光：没有写实光，靠「高光」：花字上半截压一层白→透明的光泽，物件上一弯白高光。
+  主体：中性物件做成撕纸边的抠图贴纸（这里是闹钟），白色锯齿边 + 深色细线 + 投影。
+  字：花字 = 同一个 <text> 用 <use> 叠五次：硬影子 / 深外描边 / 白内描边 / 渐变填色 / 光泽；整体 rotate + skewX。
+  动效：弹簧（过冲 → 回落 → 微抖）、错峰弹出、印章从大砸下来、仪表盘指针甩过头再回来、闹钟每 2 格左右晃。
+  角落小字：节目角标胶囊（带天线）+ 集数小标、竖排小声吐槽、警示胶带横条。
+色彩结构（换题保留）：一对放射色（--rayA/--rayB，高饱和、高对比，铺满整张底）；一个第二底色（--cool，斜条纹底、转场、对比镜用）；
+    一个统一的深描边色（--line，所有字、贴纸的外圈都用它）+ 纯白内描边；花字填色是渐变，从底色的对比色里取，保证压得住；
+    小贴纸、胶囊用 --pop / --hi；--alert 只给印章、警示条、「爆表」那一下。全部平涂高饱和，不受光，靠白色光泽和白高光提亮。
+    底亮是因为这种画面要「闹」；题目要安静就别选这种风格，而不是把它调暗。
+本例配色（从本例主体「一只响个不停的青色闹钟」和它的现场「明亮的早晨综艺棚」推出来，换题就换）：
+    --rayA #ff4f9a 粉 · --rayB #ffd23f 黄 · --cool #36cfe6 闹钟青 · --line #2a1846 深紫描边 · --alert #e8243c 红 · 花字填色 粉→橙→黄。
+换题示例（?pal=alt）：假设主角是「一罐葡萄汽水」、现场是「夏夜便利店的冷柜」→ 放射底取罐身的葡萄紫深浅两档，第二底色取冷柜里的薄荷绿；
+    花字填色取紫的对比色：青柠→绿（薄荷条纹底上改用丁香→葡萄紫）；描边用茄紫；爆炸星改成淡丁香白，好让绿字跳出来；警示只留一点橘色。
+    --rayA #6a2fd6 · --rayB #8f5cf2 · --cool #3fe0a0 · --line #2a0f3d · --pop #b6f03c · --alert #ff6b2c · 花字填色 #f2ff7a→#2fd38a（全表见下方 PALS.alt）。
+字：显示字用系统黑体 900（-apple-system,"PingFang SC","Microsoft YaHei"…），粗细靠描边补；英文数字用 "Arial Black",Impact 退到 sans-serif。
+动效：弹簧 spring(t, 频率, 阻尼) 闭式解，过冲约 30%；每镜开头 0.35 秒斜条纹扫过；持续的小动作（晃、转、闪）都乘一个衰减或周期；
+    减弱动态时画最后一帧、不转不晃。
+做粗了 → 做精：
+  一层描边 → 四层：硬影子、深外描边、白内描边、渐变填色，外加光泽（T2）。
+  字端端正正 → 整体歪 6–8° 再 skewX，弹出时还有一下过冲（T2、T3）。
+  线性放大淡入 → 弹簧：冲过头、弹回、再抖两下停住（T3）。
+  纯色底 → 放射速度线 + 网点 + 爆炸星，字压在爆炸星上（T1、T4）。
+  照片直接方框裁 → 撕纸锯齿白边 + 深色细线 + 投影的抠图贴纸（T5）。
+手机竖屏：9:16 卡片直接铺满屏幕；
+    桌面上卡片居中，背后是同一画面的放大模糊版当环境光。
+    注意：竖卡居中只是这份样张的示范（它在演示 9:16 竖屏）。成品在桌面上要让舞台占满：横屏重新排画面，别把竖卡锁在一条窄栏里。
+技法目录：
+  T1 放射速度线 + 网点 + 斜条纹底
+  T2 四层花字（<use> 叠层）
+  T3 弹簧弹出 + 微抖
+  T4 爆炸星
+  T5 撕纸边抠图贴纸 + 主体（闹钟，换成你的物件）
+  T6 描边贴纸：问号、汗滴、四角星
+  T7 警示胶带横条
+  T8 节目角标 + 竖排吐槽
+  T9 圆形印章（feTurbulence 缺墨）
+  T10 仪表盘贴纸 / 弹簧曲线贴纸（会动的读数）
+  T11 斜条纹转场 + 环境光模糊
+-->
+<script>
+/* ━━ 配色：全片颜色只在这里（CSS 变量 + JS 对象 P，SVG 渐变也从这里取）。默认是本例；网址加 ?pal=alt 换成换题示例 ━━ */
+// 角色：rayA/rayB 放射底 / cool 第二底色（cool2 浅条）/ line 所有描边 / pop 小胶囊和圆点（onPop 胶囊上的字）
+//      hi 角标和小星（hi2 更浅）/ warn 警示条纹 / alert 印章和爆表 / ok 仪表低档 / starEdge/starCore/starGlow 爆炸星
+//      fill 花字填色（放射底上）、fillC（条纹底上）、fillWeak（对比镜反例：故意贴近底色）、fill2/fill3/fill4 其余花字 / body/bell/face 闹钟三处渐变 / page 页面底 / vign 暗角（RGB）
+/* ━━ 示范配色：必须换 ━━
+   下面两组颜色只属于这份样张自己的主体，不是这种风格的颜色。搬技法进你的成品时，
+   这组颜色、报头、角标文字、示例文案一律换成从你的主角、现场的光、题目的情绪推出来的；
+   颜色只改这一处，技法代码按角色名取色。按文件头「色彩结构」那一段保留结构。 */
+const PALS = {
+  base: { rayA:'#ff4f9a', rayB:'#ffd23f', cool:'#36cfe6', cool2:'#a6f0fa', line:'#2a1846', pop:'#ff4f9a', onPop:'#ffffff',
+    hi:'#ffd23f', hi2:'#fff1a6', warn:'#ffd23f', alert:'#e8243c', ok:'#3ccf6e', starEdge:'#ff4f9a', starCore:'#ffd23f', starGlow:'#fff1a6',
+    fill:['#ff2b78', '#ff6a4d', '#ffc81f'], fillC:['#ff2b78', '#ff6a4d', '#ffc81f'], fillWeak:['#ff2b78', '#ff6a4d', '#ffc81f'], fill2:['#ffe45c', '#ff9d2e'], fill3:['#d36bff', '#ff5fa2'], fill4:['#b8f6ff', '#25b5dc'],
+    body:['#7ae6f5', '#1590bd'], bell:['#fff1a6', '#ffc21f', '#d98a00'], face:['#ffffff', '#dfe6f2'], page:'#2b1630', vign:[20, 6, 24] },
+  alt: { rayA:'#6a2fd6', rayB:'#8f5cf2', cool:'#3fe0a0', cool2:'#b9f6dd', line:'#2a0f3d', pop:'#b6f03c', onPop:'#2a0f3d',
+    hi:'#d9c6ff', hi2:'#f3edff', warn:'#c8f04a', alert:'#ff6b2c', ok:'#3fe0a0', starEdge:'#c9a6ff', starCore:'#f1eaff', starGlow:'#ffffff',
+    fill:['#f2ff7a', '#9cf04a', '#2fd38a'], fillC:['#e7d6ff', '#a476ff', '#6a2fd6'], fillWeak:['#c2a3ff', '#9b6bf5', '#7d45e6'], fill2:['#f6ff9e', '#7ee05a'], fill3:['#e3c2ff', '#8b3df0'], fill4:['#e6fff4', '#3fe0a0'],
+    body:['#c4a2ff', '#6a2fd6'], bell:['#f7ffc4', '#c8f04a', '#7aae1e'], face:['#ffffff', '#ece4f7'], page:'#160b24', vign:[14, 4, 26] },
+};
+const PAL = PALS[new URLSearchParams(location.search).get('pal')] || PALS.base;
+const rgba = (c, a) => { if (Array.isArray(c)) return `rgba(${c[0]},${c[1]},${c[2]},${a})`; const n = parseInt(c.slice(1), 16); return `rgba(${n >> 16},${n >> 8 & 255},${n & 255},${a})`; };
+(r => { const v = { line: PAL.line, page: PAL.page,
+  line0: rgba(PAL.line, 0), line55: rgba(PAL.line, .55), line90: rgba(PAL.line, .9), vign: rgba(PAL.vign, .55) }; for (const k in v) r.setProperty('--' + k, v[k]); })(document.documentElement.style);
+</script>
+<style>
+  :root { --white:#fff;
+    --sans:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif; --mono:"SF Mono",Menlo,Consolas,monospace; }
+  * { box-sizing:border-box; margin:0; }
+  html,body { height:100%; background:var(--page); color:var(--white); font-family:var(--sans); }
+  body { overflow:hidden; }
+  #stage { position:fixed; inset:0; }
+  /* ━━ T11 环境光：同一画面放大、模糊、压暗铺满桌面。用 SVG <use href> 引用同一个画面，不要复制整段带 id 的画面（复制品带着同样的 id，之后取元素会取到背后那份） ━━ */
+  #amb { position:absolute; left:-5%; top:-5%; width:27.5%; height:27.5%; transform:scale(4); transform-origin:0 0; filter:blur(9px) saturate(1.35) brightness(.48); }   /* 先缩小 4 倍再模糊再放大：同样的糊，便宜 16 倍 */
+  #amb svg, #card svg { width:100%; height:100%; display:block; }
+  #card { position:absolute; top:50%; left:50%; height:min(92vh,880px); aspect-ratio:9/16; transform:translate(-50%,-50%) rotate(.6deg); border-radius:26px; overflow:hidden;
+    box-shadow:0 0 0 6px #fff, 0 0 0 11px var(--line), 14px 18px 0 11px var(--line55), 0 40px 80px rgba(0,0,0,.5); }
+  #stage::after { content:""; position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse at 50% 50%, transparent 40%, var(--vign)); }
+
+  @media (orientation:portrait) {
+    #amb, #stage::after { display:none; }
+    #card { inset:0; top:0; left:0; height:100%; width:100%; aspect-ratio:auto; transform:none; border-radius:0; box-shadow:none; }
+  }
+</style>
+</head>
+<body>
+<main id="stage"><div id="amb" aria-hidden="true"></div><div id="card"></div></main>
+<script>
+/* ━━ 样张自己的播放代码：只为把这份样张播起来，不是成品该用的结构，不要照抄。成品页面上要有哪些东西见 形式.md「页面上要有的东西」，长什么样、怎么排按你的风格自己做 ━━ */
+function makePlayer(SHOTS, hooks = {}) {
+  const S = { i: 0, t: 0, playing: true, reduce: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    w: innerWidth, h: innerHeight, portrait: innerHeight > innerWidth };
+  function enter(i) {
+    S.i = (i + SHOTS.length) % SHOTS.length; S.t = 0;
+    const s = SHOTS[S.i];
+    s.enter && s.enter(S);
+    hooks.onShot && hooks.onShot(S.i, s, S);
+    if (S.reduce) s.draw(s.dur, 1, S);
+  }
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    if (S.playing) {
+      S.t += dt;
+      if (S.t >= SHOTS[S.i].dur) enter(S.i + 1);
+    }
+    const s = SHOTS[S.i];
+    if (!S.reduce) s.draw(Math.min(S.t, s.dur), Math.min(1, S.t / s.dur), S);
+    requestAnimationFrame(frame);
+  }
+  document.addEventListener('visibilitychange', () => { S.playing = !document.hidden; last = performance.now(); });
+  addEventListener('resize', () => {
+    S.w = innerWidth; S.h = innerHeight; S.portrait = S.h > S.w;
+    hooks.onResize && hooks.onResize(S);
+    if (S.reduce) SHOTS[S.i].draw(SHOTS[S.i].dur, 1, S);
+  });
+  hooks.onResize && hooks.onResize(S);
+  enter(0);
+  requestAnimationFrame(frame);
+  return S;
+}
+
+/* ━━ 缓动：动作要有预备、过冲、回落 ━━ */
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const seg = (p, a, b) => clamp((p - a) / (b - a));
+const ease = {
+  out: x => 1 - Math.pow(1 - x, 3),
+  inOut: x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2,
+  back: x => 1 + 2.7 * Math.pow(x - 1, 3) + 1.7 * Math.pow(x - 1, 2),
+  spring: x => 1 - Math.exp(-6 * x) * Math.cos(12 * x),
+  step: (x, n) => Math.floor(x * n) / n,
+};
+const lerp = (a, b, x) => a + (b - a) * x;
+
+/* ━━ T3 弹簧：闭式解。f 频率（次/秒），z 阻尼比；z≈.3 时过冲约 35%，然后回落、抖两下停住 ━━ */
+function spring(t, f = 2.4, z = .32) {
+  if (t <= 0) return 0; const w = 2 * Math.PI * f, wd = w * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + z * w / wd * Math.sin(wd * t));
+}
+const shake = (t, a = 3, f = 7, k = 4) => t <= 0 ? 0 : a * Math.exp(-k * t) * Math.sin(2 * Math.PI * f * t);   // 落定后的微抖（角度）
+
+/* ━━ 公共 ━━ */
+const NS = 'http://www.w3.org/2000/svg', F = '-apple-system,&quot;PingFang SC&quot;,&quot;Hiragino Sans GB&quot;,&quot;Microsoft YaHei&quot;,&quot;Noto Sans CJK SC&quot;,sans-serif';
+const LAT = '&quot;Arial Black&quot;,Impact,&quot;Helvetica Neue&quot;,sans-serif';
+const P = PAL;                                   // 颜色只从顶部 PALS 来
+function rng(s) { s |= 0; return () => { s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const pts = a => a.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+const $ = id => document.getElementById(id);
+const tf = (id, x, y, s = 1, r = 0, sx = 0) =>  // 弹簧过冲算出来的缩放先 Math.max(0, …) 再用
+   { const e = typeof id === 'string' ? $(id) : id; if (e) e.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${r.toFixed(2)}) skewX(${sx}) scale(${Math.max(0, s).toFixed(3)})`); };
+const show = (id, v) => { const e = $(id); if (e) e.style.display = v ? '' : 'none'; };
+const op = (id, v) => { const e = $(id); if (e) e.setAttribute('opacity', clamp(v).toFixed(3)); };
+
+/* ━━ T1 放射速度线 + 网点 + 斜条纹底 ━━ */
+function burst(id, cx, cy, n = 40, c1 = P.rayA, c2 = P.rayB) {
+  let s = `<g id="${id}"><rect x="-2000" y="-2000" width="4000" height="4000" fill="${c2}"/>`;
+  for (let i = 0; i < n; i += 2) { const a0 = i / n * Math.PI * 2, a1 = (i + 1) / n * Math.PI * 2, R = 2200;
+    s += `<polygon points="0,0 ${(Math.cos(a0) * R).toFixed(0)},${(Math.sin(a0) * R).toFixed(0)} ${(Math.cos(a1) * R).toFixed(0)},${(Math.sin(a1) * R).toFixed(0)}" fill="${c1}"/>`; }
+  const r = rng(n); for (let i = 0; i < 26; i++) { const a = r() * 6.283, r0 = 260 + r() * 300;   // 白色细速度线
+    s += `<line x1="${(Math.cos(a) * r0).toFixed(0)}" y1="${(Math.sin(a) * r0).toFixed(0)}" x2="${(Math.cos(a) * 1400).toFixed(0)}" y2="${(Math.sin(a) * 1400).toFixed(0)}" stroke="#fff" stroke-width="${(2 + r() * 5).toFixed(1)}" opacity=".75"/>`; }
+  return s + `</g>`;
+}
+const DEFS = `<defs>
+  <linearGradient id="gFill" x1="0" y1="0" x2="0" y2="1"><stop offset=".08" stop-color="${P.fill[0]}"/><stop offset=".5" stop-color="${P.fill[1]}"/><stop offset=".95" stop-color="${P.fill[2]}"/></linearGradient>
+  <linearGradient id="gFill2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.fill2[0]}"/><stop offset="1" stop-color="${P.fill2[1]}"/></linearGradient>
+  <linearGradient id="gFill3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.fill3[0]}"/><stop offset="1" stop-color="${P.fill3[1]}"/></linearGradient>
+  <linearGradient id="gGloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".75"/><stop offset=".42" stop-color="#fff" stop-opacity=".1"/><stop offset=".43" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <linearGradient id="gFillC" x1="0" y1="0" x2="0" y2="1"><stop offset=".08" stop-color="${P.fillC[0]}"/><stop offset=".5" stop-color="${P.fillC[1]}"/><stop offset=".95" stop-color="${P.fillC[2]}"/></linearGradient>
+  <linearGradient id="gFillW" x1="0" y1="0" x2="0" y2="1"><stop offset=".08" stop-color="${P.fillWeak[0]}"/><stop offset=".5" stop-color="${P.fillWeak[1]}"/><stop offset=".95" stop-color="${P.fillWeak[2]}"/></linearGradient>
+  <linearGradient id="gFill4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.fill4[0]}"/><stop offset="1" stop-color="${P.fill4[1]}"/></linearGradient>
+  <linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.body[0]}"/><stop offset="1" stop-color="${P.body[1]}"/></linearGradient>
+  <linearGradient id="gBell" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${P.bell[0]}"/><stop offset=".5" stop-color="${P.bell[1]}"/><stop offset="1" stop-color="${P.bell[2]}"/></linearGradient>
+  <radialGradient id="gFace" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="${P.face[0]}"/><stop offset="1" stop-color="${P.face[1]}"/></radialGradient>
+  <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><circle cx="6" cy="6" r="3.2" fill="#fff"/></pattern>
+  <radialGradient id="gDotMask" cx=".5" cy=".45" r=".6"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".55" stop-color="#fff" stop-opacity=".1"/><stop offset="1" stop-color="#fff" stop-opacity=".8"/></radialGradient>
+  <mask id="mDots"><rect x="0" y="0" width="900" height="1600" fill="url(#gDotMask)"/></mask>
+  <pattern id="stripes" width="64" height="64" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)"><rect width="64" height="64" fill="${P.cool}"/><rect width="30" height="64" fill="${P.cool2}"/></pattern>
+  <pattern id="hazard" width="56" height="56" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="56" height="56" fill="${P.warn}"/><rect width="26" height="56" fill="${P.line}"/></pattern>
+  <filter id="fSh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="8" dy="12" stdDeviation="6" flood-color="${P.line}" flood-opacity=".45"/></filter>
+  <filter id="fInk" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -6 4.3"/><feComposite in="SourceGraphic" operator="in"/></filter>
+  <path id="arcTxt" d="M-102,0 a102,102 0 1,1 204,0 a102,102 0 1,1 -204,0"/>
+</defs>`;
+
+/* ━━ T2 四层花字：同一段 <text> 用 <use> 叠五次（硬影子（叠 4 份成实心厚度）/ 深外描边 / 白内描边 / 渐变填色 / 光泽） ━━ */
+// size 字号；o.fill 渐变 id；o.ow 外描边宽；o.iw 内描边宽；o.sh 影子偏移；o.lat 拉丁字体。返回 SVG 字符串，外层 <g id> 用来做弹簧变换。
+function flower(id, text, size, o = {}) {
+  const ow = o.ow ?? size * .27, iw = o.iw ?? size * .15, sh = o.sh ?? size * .065, fam = o.lat ? LAT : F;
+  return `<g id="${id}"><text id="${id}T" x="0" y="0" text-anchor="middle" dominant-baseline="central" font-size="${size}" font-weight="900" letter-spacing="${o.ls ?? -size * .02}" style="font-family:${fam}">${text}</text>
+    <g id="${id}L0">${[.25, .5, .75, 1].map(k => `<use href="#${id}T" x="${sh * k}" y="${sh * 1.2 * k}" fill="${P.line}" stroke="${P.line}" stroke-width="${ow}" stroke-linejoin="round"/>`).join('')}</g>
+    <use id="${id}L1" href="#${id}T" fill="${P.line}" stroke="${P.line}" stroke-width="${ow}" stroke-linejoin="round"/>
+    <use id="${id}L2" href="#${id}T" fill="#fff" stroke="#fff" stroke-width="${iw}" stroke-linejoin="round"/>
+    <use id="${id}L3" href="#${id}T" fill="url(#${o.fill || 'gFill'})"/>
+    <use id="${id}L4" href="#${id}T" fill="url(#gGloss)"/></g>`;
+}
+
+/* ━━ T4 爆炸星：不规则尖角多边形，亮芯 + 彩边 + 白圈 + 深线 ━━ */
+function star(id, R, n = 18, seed = 3) {
+  const r = rng(seed), a = [], b = []; for (let i = 0; i < n * 2; i++) { const ang = i / (n * 2) * 6.283, rr = i % 2 ? R * (.58 + r() * .08) : R * (.86 + r() * .3); a.push([Math.cos(ang) * rr, Math.sin(ang) * rr * .8]); }
+  return `<g id="${id}"><polygon points="${pts(a)}" fill="${P.line}" stroke="${P.line}" stroke-width="30" stroke-linejoin="round" transform="translate(10 14)"/>
+    <polygon points="${pts(a)}" fill="#fff" stroke="${P.line}" stroke-width="30" stroke-linejoin="round"/><polygon points="${pts(a)}" fill="${P.starEdge}" stroke="#fff" stroke-width="16" stroke-linejoin="round"/>
+    <polygon points="${pts(a.map(p => [p[0] * .82, p[1] * .82]))}" fill="${P.starCore}"/><polygon points="${pts(a.map(p => [p[0] * .5, p[1] * .5]))}" fill="${P.starGlow}" opacity=".8"/></g>`;
+}
+
+/* ━━ T5 撕纸边抠图贴纸 + 主体：闹钟（换成你的物件：先画物件，再套 tornFrame） ━━ */
+function tornFrame(rx, ry, seed, inner = '') {
+  const r = rng(seed), a = []; for (let i = 0; i < 84; i++) { const ang = i / 84 * 6.283, k = 1 + (i % 2 ? .055 + r() * .05 : -.01 - r() * .03) + (r() < .08 ? .1 : 0); a.push([Math.cos(ang) * rx * k, Math.sin(ang) * ry * k]); }
+  return `<g filter="url(#fSh)"><polygon points="${pts(a)}" fill="#fff" stroke="${P.line}" stroke-width="5" stroke-linejoin="round"/></g>${inner}
+    <ellipse rx="${rx * .9}" ry="${ry * .9}" fill="none" stroke="${P.line}" stroke-width="3" stroke-dasharray="2 10" opacity=".35"/>`;
+}
+function clock(id) {
+  const ticks = Array.from({ length: 12 }, (_, i) => { const a = i / 12 * 6.283, r0 = i % 3 ? 112 : 100; return `<line x1="${(Math.cos(a) * r0).toFixed(1)}" y1="${(Math.sin(a) * r0).toFixed(1)}" x2="${(Math.cos(a) * 126).toFixed(1)}" y2="${(Math.sin(a) * 126).toFixed(1)}" stroke="${P.line}" stroke-width="${i % 3 ? 6 : 11}" stroke-linecap="round"/>`; }).join('');
+  const bell = s => `<g transform="rotate(${s * 32}) translate(0 -196)"><path d="M-74,6 A74,74 0 0 1 74,6 Z" fill="url(#gBell)" stroke="${P.line}" stroke-width="9" stroke-linejoin="round"/>
+    <path d="M-46,-24 A54,54 0 0 1 -6,-50" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" opacity=".85"/><circle cy="-74" r="11" fill="${P.line}"/></g>`;
+  return `<g id="${id}">
+    <line x1="-100" y1="140" x2="-148" y2="214" stroke="${P.line}" stroke-width="24" stroke-linecap="round"/><line x1="100" y1="140" x2="148" y2="214" stroke="${P.line}" stroke-width="24" stroke-linecap="round"/>
+    ${bell(-1)}${bell(1)}<path d="M-18,-176 L0,-240 L18,-176" fill="none" stroke="${P.line}" stroke-width="12" stroke-linejoin="round"/><circle cy="-246" r="16" fill="${P.pop}" stroke="${P.line}" stroke-width="7"/>
+    <circle r="178" fill="url(#gBody)" stroke="${P.line}" stroke-width="11"/>
+    <path d="M-150,-60 A162,162 0 0 1 -60,-150" fill="none" stroke="#fff" stroke-width="16" stroke-linecap="round" opacity=".8"/>
+    <circle r="140" fill="url(#gFace)" stroke="${P.line}" stroke-width="8"/>${ticks}
+    <g id="${id}H"><line y2="-64" stroke="${P.line}" stroke-width="16" stroke-linecap="round"/></g>
+    <g id="${id}M"><line y2="-104" stroke="${P.line}" stroke-width="10" stroke-linecap="round"/></g>
+    <g id="${id}S"><line y1="22" y2="-114" stroke="${P.alert}" stroke-width="5" stroke-linecap="round"/></g>
+    <circle r="15" fill="${P.pop}" stroke="${P.line}" stroke-width="6"/>
+    <path d="M60,-112 A128,128 0 0 1 112,-60" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".9"/>
+    <g id="${id}V" stroke="${P.line}" stroke-width="9" stroke-linecap="round" fill="none"><path d="M-232,-200 q-22,26 0,52"/><path d="M-262,-216 q-30,40 0,84"/><path d="M232,-200 q22,26 0,52"/><path d="M262,-216 q30,40 0,84"/></g></g>`;
+}
+
+/* ━━ T6 描边贴纸：问号、汗滴、四角星（深线 + 白边 + 彩芯） ━━ */
+const sticker = (id, d, fill) => `<g id="${id}"><path d="${d}" fill="${P.line}" stroke="${P.line}" stroke-width="22" stroke-linejoin="round"/><path d="${d}" fill="${fill}" stroke="#fff" stroke-width="9" stroke-linejoin="round"/></g>`;
+const DROP = 'M0,-46 C16,-16 34,4 34,24 A34,34 0 1 1 -34,24 C-34,4 -16,-16 0,-46Z';
+const SPARK = 'M0,-40 C6,-8 8,-6 40,0 C8,6 6,8 0,40 C-6,8 -8,6 -40,0 C-8,-6 -6,-8 0,-40Z';
+
+/* ━━ T7 警示胶带横条 ━━ */
+const hazard = (id, w, label) => `<g id="${id}"><rect x="${-w / 2}" y="-44" width="${w}" height="88" fill="url(#hazard)" stroke="${P.line}" stroke-width="7"/>
+  <rect x="-170" y="-34" width="340" height="68" rx="14" fill="${P.alert}" stroke="${P.line}" stroke-width="6"/>
+  <text x="0" y="3" text-anchor="middle" dominant-baseline="central" font-size="40" font-weight="900" fill="#fff" stroke="${P.line}" stroke-width="3" paint-order="stroke" style="font-family:${F}">${label}</text></g>`;
+
+/* ━━ T8 节目角标（胶囊 + 天线 + 集数）+ 竖排吐槽 ━━ */
+const badge = (id, name, ep) => `<g id="${id}"><g stroke="${P.line}" stroke-width="7" stroke-linecap="round"><line x1="60" y1="8" x2="38" y2="-34"/><line x1="96" y1="8" x2="120" y2="-34"/></g>
+  <circle cx="36" cy="-38" r="10" fill="${P.pop}" stroke="${P.line}" stroke-width="5"/><circle cx="122" cy="-38" r="10" fill="${P.cool}" stroke="${P.line}" stroke-width="5"/>
+  <rect x="-6" y="-6" width="282" height="88" rx="44" fill="#fff"/><rect x="0" y="0" width="270" height="76" rx="38" fill="${P.hi}" stroke="${P.line}" stroke-width="6"/>
+  <text x="135" y="40" text-anchor="middle" dominant-baseline="central" font-size="36" font-weight="900" fill="${P.line}" style="font-family:${F}">${name}</text>
+  <g transform="translate(296 30) rotate(8)"><rect x="-4" y="-4" width="116" height="52" rx="14" fill="#fff"/><rect width="108" height="44" rx="11" fill="${P.pop}" stroke="${P.line}" stroke-width="5"/>
+  <text x="54" y="23" text-anchor="middle" dominant-baseline="central" font-size="26" font-weight="900" fill="${P.onPop}" style="font-family:${LAT}">${ep}</text></g></g>`;
+const vtext = (id, s, size = 36) => `<g id="${id}">${[...s].map((c, i) => `<text x="0" y="${i * size * 1.08}" text-anchor="middle" dominant-baseline="central" font-size="${size}" font-weight="900" fill="#fff" stroke="${P.line}" stroke-width="9" stroke-linejoin="round" paint-order="stroke" style="font-family:${F}">${c}</text>`).join('')}</g>`;
+
+/* ━━ T9 圆形印章：双圈 + 环形字 + 中间两行字；feTurbulence 抠掉一些墨，像真盖上去的 ━━ */
+const seal = (id, l1, l2, ring) => `<g id="${id}"><g filter="url(#fInk)" fill="none" stroke="${P.alert}"><circle r="122" stroke-width="10"/><circle r="84" stroke-width="4"/>
+  <text font-size="24" font-weight="900" fill="${P.alert}" stroke="none" letter-spacing="2" style="font-family:${LAT}"><textPath href="#arcTxt" startOffset="0">${ring}</textPath></text>
+  <text y="-22" text-anchor="middle" dominant-baseline="central" font-size="50" font-weight="900" fill="${P.alert}" stroke="none" style="font-family:${F}">${l1}</text>
+  <text y="34" text-anchor="middle" dominant-baseline="central" font-size="50" font-weight="900" fill="${P.alert}" stroke="none" style="font-family:${F}">${l2}</text></g></g>`;
+
+/* ━━ T10 仪表盘贴纸 / 弹簧曲线贴纸：会动的读数 ━━ */
+const gauge = (id, title, lo, hi) => `<g id="${id}"><rect x="-136" y="-106" width="272" height="206" rx="26" fill="#fff" stroke="${P.line}" stroke-width="7" filter="url(#fSh)"/>
+  <path d="M-92,40 A92,92 0 0 1 -46,-40" fill="none" stroke="${P.ok}" stroke-width="24"/><path d="M-46,-40 A92,92 0 0 1 46,-40" fill="none" stroke="${P.warn}" stroke-width="24"/><path d="M46,-40 A92,92 0 0 1 92,40" fill="none" stroke="${P.alert}" stroke-width="24"/>
+  ${Array.from({ length: 9 }, (_, i) => { const a = Math.PI * (1.17 + i / 8 * .66); return `<line x1="${(Math.cos(a) * 66).toFixed(1)}" y1="${(40 + Math.sin(a) * 66 + 40 * 0).toFixed(1)}" x2="${(Math.cos(a) * 78).toFixed(1)}" y2="${(40 + Math.sin(a) * 78).toFixed(1)}" stroke="${P.line}" stroke-width="4"/>`; }).join('')}
+  <g id="${id}N"><line x1="0" y1="0" x2="0" y2="-84" stroke="${P.line}" stroke-width="9" stroke-linecap="round"/></g><circle cy="40" r="13" fill="${P.pop}" stroke="${P.line}" stroke-width="5"/>
+  <text x="-96" y="78" text-anchor="middle" font-size="24" font-weight="900" fill="${P.line}" style="font-family:${F}">${lo}</text><text x="96" y="78" text-anchor="middle" font-size="24" font-weight="900" fill="${P.alert}" style="font-family:${F}">${hi}</text>
+  <g transform="translate(0 -112) rotate(-4)"><rect x="-84" y="-28" width="168" height="54" rx="27" fill="${P.pop}" stroke="${P.line}" stroke-width="6"/><text y="0" text-anchor="middle" dominant-baseline="central" font-size="28" font-weight="900" fill="${P.onPop}" style="font-family:${F}">${title}</text></g></g>`;
+function springCard(id) {
+  let d = ''; for (let i = 0; i <= 60; i++) { const t = i / 60 * 1.3, v = spring(t); d += (i ? 'L' : 'M') + (-110 + i / 60 * 220).toFixed(1) + ',' + (50 - v * 80).toFixed(1); }
+  return `<g id="${id}"><rect x="-140" y="-100" width="280" height="200" rx="24" fill="#fff" stroke="${P.line}" stroke-width="7" filter="url(#fSh)"/>
+    <line x1="-110" y1="-30" x2="110" y2="-30" stroke="${P.cool}" stroke-width="3" stroke-dasharray="8 7"/><path d="${d}" fill="none" stroke="${P.line}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle id="${id}D" r="13" fill="${P.pop}" stroke="${P.line}" stroke-width="5"/>
+    <text id="${id}R" x="0" y="84" text-anchor="middle" font-size="32" font-weight="900" fill="${P.line}" style="font-family:${F}">此刻 ×1.00</text>
+    <g transform="translate(0 -104) rotate(3)"><rect x="-82" y="-26" width="164" height="50" rx="25" fill="${P.cool}" stroke="${P.line}" stroke-width="6"/><text y="0" text-anchor="middle" dominant-baseline="central" font-size="26" font-weight="900" fill="${P.line}" style="font-family:${F}">弹簧曲线</text></g></g>`;
+}
+const tag = (id, w) => `<g id="${id}"><rect x="${-w / 2 - 6}" y="-44" width="${w + 12}" height="88" rx="20" fill="#fff"/><rect x="${-w / 2}" y="-38" width="${w}" height="76" rx="16" fill="${P.line}"/>
+  <text id="${id}T" x="0" y="2" text-anchor="middle" dominant-baseline="central" font-size="36" font-weight="900" fill="#fff" style="font-family:${F}"></text></g>`;
+
+/* ━━ 场景：一个 900×1600 的竖版世界，四镜各一组 ━━ */
+// 1 放射线上，撕纸边闹钟在响（左右晃 + 震动线），下面爆炸星托着花字「叮铃铃!!」，右上「音量」仪表指针甩到爆表，左上节目角标。
+// 2 斜条纹上只有两个大字「放大」：填色 → 白内描边 → 深外描边 → 硬影子 → 歪 8°，每加一层弹一下；标签和引线指着这一层，层数读数跳。
+// 3 同一张放射底：上面「看不清」只描了一层细边；中间警示胶带「⚠ 注意看 ⚠」滑进来；下面「看得清!」四层花字弹出；辨识度指针从低甩到高。
+// 4 斜条纹上一张歪着的相框贴纸（闹钟），花字「记住了!」带过冲弹进来、抖两下停住；「花字认证」印章砸下来；弹簧曲线贴纸上的点沿曲线走。
+const WORLD = `${DEFS}<g id="world">
+  <g id="bgB" transform="translate(450 700)">${burst('rays', 0, 0)}</g>
+  <g id="bgS"><rect id="stripeR" x="-200" y="-200" width="1300" height="2000" fill="url(#stripes)"/></g>
+  <rect width="900" height="1600" fill="url(#dots)" mask="url(#mDots)" opacity=".55"/>
+  <g id="s1">
+    <g id="c1">${tornFrame(270, 250, 7)}<g transform="translate(0 30) scale(.98)">${clock('ck1')}</g></g>
+    <g id="st1" transform="translate(450 990)">${star('sb1', 330)}</g>
+    ${flower('f1', '叮铃铃!', 186)}
+    ${gauge('g1', '音量', '小声', '爆表')}
+    ${sticker('d1', DROP, P.cool)}${sticker('k1', SPARK, P.hi)}${sticker('k2', SPARK, '#fff')}
+    ${vtext('v1', '︵小声︶该起了', 36)}
+    ${flower('f1b', '醒醒!', 120, { fill: 'gFill4' })}
+  </g>
+  <g id="s2">
+    ${flower('f2', '放大', 300, { fill: 'gFillC' })}
+    <g id="lead2"><line id="ln2" stroke="${P.line}" stroke-width="7" stroke-linecap="round"/><circle id="an2" r="16" fill="${P.hi}" stroke="${P.line}" stroke-width="6"/></g>
+    ${tag('tg2', 420)}
+    <g id="ct2"><rect x="-110" y="-84" width="220" height="168" rx="28" fill="#fff" stroke="${P.line}" stroke-width="7" filter="url(#fSh)"/>
+      <text x="0" y="-46" text-anchor="middle" dominant-baseline="central" font-size="28" font-weight="900" fill="${P.line}" style="font-family:${F}">叠了几层</text>
+      <g id="ctN" transform="translate(0 22)"></g></g>
+    ${vtext('v2', '︵小声︶少一层都不行', 34)}
+  </g>
+  <g id="s3">
+    ${flower('f3a', '看不清', 170, { ow: 6, iw: 0, sh: 0, fill: 'gFillW' })}
+    ${hazard('hz3', 1400, '⚠ 注意看 ⚠')}
+    ${flower('f3b', '看得清!', 176)}
+    <g id="lb3a"><rect x="-100" y="-30" width="200" height="60" rx="28" fill="${P.line}" stroke="#fff" stroke-width="5"/><text y="1" text-anchor="middle" dominant-baseline="central" font-size="32" font-weight="900" fill="#fff" style="font-family:${F}">一层细边</text></g>
+    <g id="lb3b"><rect x="-126" y="-30" width="252" height="60" rx="30" fill="${P.pop}" stroke="${P.line}" stroke-width="5"/><text y="1" text-anchor="middle" dominant-baseline="central" font-size="32" font-weight="900" fill="${P.onPop}" style="font-family:${F}">四层 + 歪 8°</text></g>
+    ${gauge('g3', '辨识度', '糊', '清楚')}
+  </g>
+  <g id="s4">
+    <g id="pc4"><rect x="-292" y="-292" width="584" height="584" rx="26" fill="#fff" stroke="${P.line}" stroke-width="8" filter="url(#fSh)"/>
+      <clipPath id="cp4"><rect x="-262" y="-262" width="524" height="524" rx="14"/></clipPath>
+      <g clip-path="url(#cp4)"><g transform="translate(0 40)">${burst('rays4', 0, 0, 32, P.rayA, P.rayB)}</g>
+        <g transform="translate(0 30) scale(.82)">${tornFrame(270, 250, 9)}<g transform="translate(0 30)">${clock('ck4')}</g></g></g></g>
+    ${flower('f4', '记住了!', 168, { fill: 'gFill3' })}
+    ${seal('se4', '花字', '认证', '★ VARIETY · CAPTION · CERTIFIED ★')}
+    ${springCard('sc4')}
+    ${sticker('k41', SPARK, P.hi)}${sticker('k42', SPARK, '#fff')}${sticker('k43', SPARK, P.pop)}
+  </g>
+  ${badge('bd', '花字研究所', 'EP.03')}
+  <g id="wipe"><polygon points="-300,-200 260,-200 -40,1800 -600,1800" fill="${P.rayA}" stroke="${P.line}" stroke-width="10"/><polygon points="260,-200 520,-200 220,1800 -40,1800" fill="${P.hi}" stroke="${P.line}" stroke-width="10"/><polygon points="520,-200 760,-200 460,1800 220,1800" fill="${P.cool}" stroke="${P.line}" stroke-width="10"/></g>
+</g>`;
+$('card').innerHTML = `<svg id="scene" viewBox="0 0 900 1600" preserveAspectRatio="xMidYMid slice" role="img" aria-label="花字样张画面">${WORLD}</svg>`;
+$('amb').innerHTML = `<svg viewBox="0 0 900 1600" preserveAspectRatio="xMidYMid slice"><use href="#world"/></svg>`;   // T11：只引用，不复制 DOM（不要复制整段带 id 的画面）
+
+/* ━━ 镜头 ━━ */
+let PORT = false, WIPE = false;
+const flowerLayers = (id, n) => { for (let k = 0; k < 5; k++) show(id + 'L' + k, k === 0 ? n >= 4 : k === 1 ? n >= 3 : k === 2 ? n >= 2 : k === 3 ? n >= 1 : n >= 5); };
+function bgMode(m, t) {
+  show('bgB', m === 'b'); show('bgS', m === 's');
+  $('rays').setAttribute('transform', `rotate(${(t * 4).toFixed(2)})`);
+  $('stripeR').setAttribute('x', (-200 + (t * 60) % 78).toFixed(1));
+}
+function shot1(t, p) {
+  bgMode('b', t);
+  const ring = Math.floor(t * 12) % 2 ? 1 : -1;                                   // 闹钟每 2 格左右晃一次
+  tf('c1', 450, 470, 1, ring * 4.5); tf('ck1S', 0, 0, 1, Math.floor(t) * 6 + 90); tf('ck1H', 0, 0, 1, 212); tf('ck1M', 0, 0, 1, 330);
+  op('ck1V', Math.floor(t * 6) % 2 ? 1 : .35);
+  tf('st1', 450, 1000, 1 + .035 * Math.sin(t * 9), Math.sin(t * 2) * 2);
+  const s = 1 + .22 * (1 - spring(t + .02, 2.2, .3));                              // 第一帧就在，只是从大一点弹回来
+  tf('f1', 450, 990, s, -7 + shake(t, 2.5), -6);
+  tf('g1', 668, 250, 1, 6); tf('g1N', 0, 40, 1, lerp(-70, 64, spring(t - .15, 1.6, .22)) + Math.sin(t * 13) * 3);
+  tf('d1', 186, 300, .9 + .06 * Math.sin(t * 6), -12); tf('k1', 160, 1180, .7 + .35 * Math.abs(Math.sin(t * 3)), 0); tf('k2', 760, 1190, .5 + .3 * Math.abs(Math.sin(t * 3 + 1.4)), 0);
+  tf('v1', 800, 600, 1);
+  tf('f1b', 450, 1350, .2 + .8 * spring(t - .9, 2.4, .3), 5 + shake(t - 1.3, 3), -6);
+}
+const LAYER = ['① 渐变填色', '② 白色内描边', '③ 深色外描边', '④ 错位硬影子', '⑤ 整体歪 8°'];
+let lastN = -1;
+function shot2(t, p) {
+  bgMode('s', t);
+  const n = Math.min(5, 1 + Math.floor(t / .95)), tn = t - (n - 1) * .95;
+  flowerLayers('f2', n);
+  const bump = 1 + .14 * (1 - spring(tn, 2.6, .3)) * (n > 1 ? 1 : 0), tilt = n >= 5 ? lerp(0, -8, spring(tn, 2.2, .35)) : 0;
+  tf('f2', 450, 690, bump, tilt + (n >= 5 ? shake(tn, 2) : 0), n >= 5 ? -6 : 0);
+  // 引线：标签 → 线 → 锚点（锚点落在这一层能看见的位置）
+  const anc = [[560, 650], [705, 610], [742, 740], [690, 840], [190, 570]][n - 1], tx = 450, ty = 1070;
+  $('ln2').setAttribute('x1', tx); $('ln2').setAttribute('y1', ty - 44); $('ln2').setAttribute('x2', anc[0]); $('ln2').setAttribute('y2', anc[1]);
+  tf('an2', anc[0], anc[1], 1 + .4 * (1 - spring(tn, 3, .3)));
+  if (n !== lastN) { $('tg2T').textContent = LAYER[n - 1]; $('ctN').innerHTML = flower('cn', n + ' 层', 92, { lat: false, fill: 'gFill2' }); lastN = n; }
+  tf('tg2', tx, ty, 1 + .12 * (1 - spring(tn, 3, .35)), -2);
+  tf('ct2', 668, 290, 1, 4); tf('cn', 0, 0, .4 + .6 * spring(tn + .05, 2.6, .3), -6);
+  tf('v2', 112, 840, 1);
+}
+function shot3(t, p) {
+  bgMode('b', t);
+  tf('f3a', 450, 500, 1, 0); tf('lb3a', 450, 640, 1, -3);
+  const b = spring(t - .5, 2.2, .3); tf('f3b', 450, 1010, .2 + .8 * b, -7 + shake(t - .9, 2.5), -6); op('f3b', clamp((t - .5) * 8));
+  tf('lb3b', 450, 1160, spring(t - .8, 2.6, .35), 3);
+  const h = spring(t - 1.3, 2, .4); tf('hz3', lerp(-1100, 450, h), 810, 1, -4);
+  tf('g3', 668, 255, 1, -5); tf('g3N', 0, 40, 1, lerp(-62, 58, spring(t - .55, 1.4, .25)));
+}
+function shot4(t, p) {
+  bgMode('s', t);
+  tf('pc4', 450, 470, 1, -4 + shake(t, 1.5, 3, 2));
+  tf('ck4S', 0, 0, 1, Math.floor(t * 2) * 30); tf('ck4H', 0, 0, 1, 212); tf('ck4M', 0, 0, 1, 330); op('ck4V', 0);
+  const s = spring(t - .3, 2.1, .28); tf('f4', 450, 980, .1 + .9 * s, -6 + shake(t - .75, 3), -6); op('f4', clamp((t - .3) * 10));
+  const sl = spring(t - 1.5, 3.2, .45); tf('se4', 640, 760, .9 + 1.1 * (1 - sl), -14); op('se4', t > 1.5 ? .92 : 0);
+  const u = clamp((t - .3) / 1.3), v = spring(u * 1.3); tf('sc4', 650, 1200, 1, 3); tf('sc4D', -110 + u * 220, 50 - v * 80);
+  $('sc4R').textContent = '此刻 ×' + (.1 + .9 * s).toFixed(2);
+  [['k41', 150, 230], ['k42', 790, 820], ['k43', 160, 1170]].forEach(([id, x, y], i) => tf(id, x, y, .5 + .4 * Math.abs(Math.sin(t * 3 + i * 1.3)), t * 40));
+}
+const SHOTS = [
+  // EP.03 · 第 1 段 · 一句话做成花字：压在爆炸星上。
+  { dur: 4.8, draw: shot1 },
+  // EP.03 · 第 2 段 · 描边一层层加：填色、白边、深边、硬影。
+  { dur: 5.25, draw: shot2 },
+  // EP.03 · 第 3 段 · 一层描边会糊：底一花，字就没了。
+  { dur: 4.75, draw: shot3 },
+  // EP.03 · 第 4 段 · 弹出要过冲：冲过头，弹回，再抖两下。
+  { dur: 5, draw: shot4 },
+];
+
+/* ━━ T11 斜条纹转场：每镜开头 0.35 秒三色斜条从左扫到右 ━━ */
+function draw(i, t, p) {
+  ['s1', 's2', 's3', 's4'].forEach((id, k) => show(id, k === i));
+  SHOTS[i].draw(t, p);
+  tf('bd', PORT ? 96 : 50, 92, 1, -2);
+  const q = WIPE ? t / .35 : 1; show('wipe', q < 1); if (q < 1) tf('wipe', lerp(-900, 1500, ease.inOut(q)), 0);
+}
+
+let first = true;
+makePlayer(SHOTS.map((s, i) => ({ ...s, draw: (t, p) => draw(i, t, p) })), {
+  onShot(i, s, S) {
+    WIPE = !first && !S.reduce; first = false; lastN = -1;
+  },
+  onResize(S) { PORT = S.portrait; },
+});
+</script>
+</body>
+</html>

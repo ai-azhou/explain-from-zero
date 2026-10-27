@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>线条动画 · 样张</title>
+<!--
+风格：线条动画 LINE ART
+一句话：整幅画只有一根细线，笔尖带着光从头走到尾，镜头跟着笔走；留白占大半，最后只在一处填满颜色、亮一下。
+擅长表现：一步接一步的过程——线走到哪，东西就长到哪，前一步不画完下一步出不来；从一个小东西连成一整片；最后一处点亮，把目光收到答案上。
+招牌细节：
+  材质  平滑的径向渐变底（光源那边略亮），极淡的程序颗粒 + 四周暗角；空中飘几粒很淡的尘。
+  光    线头一颗笔尖：亮芯 + 光晕 + 沿路径渐隐的拖尾 + 几粒往下掉的火星；刚画过的一段比旧线亮。
+  光    结尾那个圆从闭合点向外填满（左上亮、右下暗、亮边），同时光晕闪一下、一圈细环散开、四周底色被照亮。
+  主体  线是三层：暗边 1.9px + 本色 + 0.55px 高光，像一根金属丝或一道墨，不是一条描边。
+  主体  一笔里藏微细节：书签丝带的燕尾、热气的回环、灯杆上的小绕圈、灯泡里镂空的灯丝。
+  字    宽字距衬线大写字标（字距从很开收拢到位）+ 极小宋体副标，两侧各一根发丝线。
+  动效  笔速按弯度变：转角和回环慢、直线快；起笔、收笔都缓；镜头取笔尖过去几个位置的加权平均，滞后半拍。
+  角落小字  左上图版号「PL. IV」、右上线宽「1.5 PX」、读数「笔长」「转折」「离纸 0 次」。
+色彩结构（换题保留）：两种颜色加一档墨色。① 底：一块平滑的径向渐变场，光源那边亮、四角落进暗角，只有明度变化，几乎不带第二个色相。
+  ② 线色：线、笔尖、填色、字标全用同一个色相，分暗边 / 本色 / 高光三档，是受光的金属或墨，不是平涂。
+  ③ 墨色：小字，取和底相反的明度，带一点线色的偏色。底和线的明度差要拉满；饱和度中低，只有最后填色那一下用这个色相最亮、最饱和的一档，配光晕。
+  底亮底暗由现场的光定：夜里、灯下 → 暗底亮线，线自己发光；白天、自然光 → 亮底深线，线像墨，笔尖和光晕变成一圈淡淡的色晕。
+本例配色（从本例主体「夜里书桌上的一盏台灯」和它的现场「没开大灯的深夜房间」推出来，换题就换）：
+  底 --field-0 #13284a → --field-2 #0b1730 → --field-4 #03060e（夜色深藏青）；线 --line #d9b979，暗边 --line-lo #8f6a36，
+  高光 --line-hi #fff1cc（灯光的暖金）；填色 --disc-0 #fff4d2 → --disc-4 #8a6431；墨 --ink #efe6d2。
+换题示例（?pal=alt）：假设主角是「一枝刚冒芽的豌豆苗」、现场是「清晨朝东的窗台，白墙被斜光照暖」→ 白天自然光，所以亮底深线：
+  底取被晨光照暖的白墙（中心暖白、四角落进米灰阴影），线取茎叶的深绿、像钢笔墨线，最后点亮那一处用芽尖的黄绿，光晕是一圈淡绿晕 →
+  底 --field-0 #fdf8ec → --field-4 #d2c5ab；线 --line #2f6b4f，暗边 --line-lo #1f4d39，高光 --line-hi #a8dcb0；
+  填色 --disc-0 #f6ffd6 → --disc-4 #4d8a3a；墨 --ink #1d2a22。
+字：字标用 SVG <text>：Didot / Bodoni 72 / Georgia / Times New Roman 退路，大写 + 0.5em 以上字距；
+  中文标题用宋体组（"Songti SC","STSong","Noto Serif CJK SC",SimSun）；解释用黑体组；读数用 Didot 数字 + tabular-nums。
+动效：笔速按曲率积分出时间表（T4），一镜里用 0.75 线性 + 0.25 缓入缓出；镜头滞后跟随（T6）；填色 0.5 秒 ease.out，
+  光晕闪用 back 过冲；字标逐字错峰 60ms、字距收拢；转场是硬切（线条片不要交叉淡化）。60fps。
+做粗了 → 做精：
+  描边匀速画完 → 按曲率变速，转角慢下来，起笔收笔缓。
+  线头什么都没有 → 亮芯 + 光晕 + 拖尾 + 火星，刚画过的一段更亮。
+  线 3px 一种颜色 → 1.5px 左右，三层（暗边、本色、高光）+ 一层很淡的柔光。
+  好几根线同时画、画面塞满 → 只有一根线，留白过半，主体只占画面中间一条。
+  结尾整体淡入 → 只在一处填色，从闭合点扩开，光晕闪一下再收。
+手机竖屏：换一套竖排的布局参数（灯杆在右、弧线把灯泡吊到上方正中，书和杯子落在底部），镜头自动按画面区取景；
+  字标和副标按竖屏单独定字号（副标 ≥ 12px）。
+技法目录：
+  T0 配色：全片颜色只在文件头一个对象里，?pal=alt 切换
+  T1 底：径向渐变 + 程序颗粒 + 暗角 + 尘
+  T2 线：三层描边 + 柔光，线宽随镜头缩放反算，屏幕上始终约 1.5px
+  T3 一笔画路径：圆角折线和曲线拼成一条路径，按段记长度
+  T4 缓急：按曲率积分出时间表，转角慢、直线快
+  T5 笔尖：亮芯、光晕、方向拖影、渐隐拖尾、火星
+  T6 跟笔镜头：笔尖过去几个位置的加权平均，滞后跟随；拉远揭示
+  T7 填色点亮：裁切圆扩张、镂空、光晕闪、细环散开、环境光
+  T8 字标：宽字距衬线大写 + 极小宋体副标，逐字收拢
+  T9 引线标注 + 跳动读数
+-->
+<script>
+/* ━━ T0 配色：全片的颜色只在这里（写成 CSS 变量给样式和 SVG 用，JS 直接读 PAL）。默认本例配色；网址带 ?pal=alt 换成换题示例配色 ━━ */
+/* ━━ 示范配色：必须换 ━━
+   下面两组颜色只属于这份样张自己的主体，不是这种风格的颜色。搬技法进你的成品时，
+   这组颜色、报头、角标文字、示例文案一律换成从你的主角、现场的光、题目的情绪推出来的；
+   颜色只改这一处，技法代码按角色名取色。按文件头「色彩结构」那一段保留结构。 */
+const PALETTES = {
+  base: {   // 本例：夜里书桌上的一盏台灯 → 夜色深藏青底 + 灯光暖金线
+    field: ['#13284a', '#0f2040', '#0b1730', '#060c1a', '#03060e'],     // 径向底：中心 → 四角
+    vignette: 'rgba(1,3,8,.62)',
+    grain: { rgb: [255, 242, 217], blend: 'screen', opacity: .09 },
+    dust: [255, 222, 160], dustAlpha: 1,
+    line: '#d9b979', lineHi: '#fff1cc', lineLo: '#8f6a36', lineEdge: '#7d5c2e', lineGlow: '#e2bd76', hiOpacity: .55,
+    lineBody: ['#a98754', '#dcbd80', '#f1d9a4', '#c49d60'],            // 线身沿水平方向一点冷暖变化
+    trail: '#fff4d6', spark: '#ffe9b8', glint: ['#fff8e4', '#fffaf0'],
+    nib: ['#ffffff', '#fff3cf', '#ffd690', '#ffc56a'], nibCore: '#ffffff', streak: ['#ffe4a8', '#fff6dc'],
+    disc: ['#fff4d2', '#f1d596', '#d6b06c', '#a97f42', '#8a6431'], rim: '#fff0c6', spec: '#fffaf0', ring: '#ffe3a6',
+    halo: ['#ffe8b0', '#f0c271', '#d79b4c'], room: ['#ffd38c', '#e3a95d'],
+    mark: ['#f6e2b4', '#d9b979', '#b28c52'],
+    callout: { ring: '#efd6a0', dot: '#fff4d6', line: '#d9b979', t1: '#f3e3bd', t2: '#d9b979' },
+    glow: [255, 214, 140],
+    ink: '#efe6d2',                                                  // 字
+  },
+  alt: {    // 换题示例：清晨窗台上一枝刚冒芽的豌豆苗 → 晨光暖白墙底 + 茎叶深绿墨线，点亮处用芽尖黄绿
+    field: ['#fdf8ec', '#f9f2e3', '#f2e9d7', '#e6dbc6', '#d2c5ab'],
+    vignette: 'rgba(120,98,66,.3)',
+    grain: { rgb: [150, 138, 112], blend: 'multiply', opacity: .32 },
+    dust: [120, 140, 70], dustAlpha: .45,
+    line: '#2f6b4f', lineHi: '#a8dcb0', lineLo: '#1f4d39', lineEdge: '#123826', lineGlow: '#b6dc84', hiOpacity: .3,
+    lineBody: ['#24573f', '#2f6b4f', '#3a7a58', '#2a6147'],
+    trail: '#6fb043', spark: '#8fc84e', glint: ['#cfee92', '#4f9a35'],
+    nib: ['#ffffff', '#f2ffc4', '#c9ea7a', '#9ccf55'], nibCore: '#ffffff', streak: ['#c9ea7a', '#eaffb0'],
+    disc: ['#f6ffd6', '#dcf29a', '#a9d566', '#6ea547', '#4d8a3a'], rim: '#f4ffd8', spec: '#ffffff', ring: '#7fb850',
+    halo: ['#eaffb0', '#c9ea7a', '#9ccf55'], room: ['#e4f6a6', '#c9ea7a'],
+    mark: ['#4a8a64', '#2f6b4f', '#1f4d39'],
+    callout: { ring: '#2f6b4f', dot: '#9ccf55', line: '#3a7a58', t1: '#1f4d39', t2: '#3a7a58' },
+    glow: [156, 207, 85],
+    ink: '#1d2a22',
+  },
+};
+const PAL = PALETTES[new URLSearchParams(location.search).get('pal') === 'alt' ? 'alt' : 'base'];
+(function applyPalette(P) {                                           // 写成 CSS 变量
+  const r = document.documentElement.style, set = (k, v) => r.setProperty(k, String(v));
+  const rgb = h => Array.isArray(h) ? h.join(',') : [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)).join(',');
+  const list = (name, arr) => arr.forEach((c, i) => set(`--${name}-${i}`, c));
+  list('field', P.field); list('body', P.lineBody); list('nib', P.nib); list('disc', P.disc); list('halo', P.halo);
+  list('room', P.room); list('mark', P.mark); list('glint', P.glint); list('streak', P.streak);
+  for (const [k, v] of Object.entries(P.callout)) set('--co-' + k, v);
+  set('--vig', P.vignette); set('--grain-blend', P.grain.blend); set('--grain-op', P.grain.opacity);
+  set('--line', P.line); set('--line-hi', P.lineHi); set('--line-lo', P.lineLo); set('--line-edge', P.lineEdge);
+  set('--line-glow', P.lineGlow); set('--line-hi-op', P.hiOpacity); set('--line-rgb', rgb(P.line));
+  set('--trail', P.trail); set('--spark', P.spark); set('--nib-core', P.nibCore);
+  set('--rim', P.rim); set('--spec', P.spec); set('--ring', P.ring);
+  set('--glow-rgb', rgb(P.glow));
+  set('--ink', P.ink); set('--ink-rgb', rgb(P.ink));
+})(PAL);
+</script>
+<style>
+  :root {
+    --serif-l: Didot, "Bodoni 72", "Bodoni MT", Georgia, "Times New Roman", serif;
+    --song: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", SimSun, serif;
+    --sans: -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  }
+  * { box-sizing:border-box; margin:0; }
+  html,body { height:100%; background:var(--field-4); color:var(--ink); font-family:var(--sans); }
+  body { overflow:hidden; -webkit-font-smoothing:antialiased; }
+
+  /* ━━ T1 底：径向渐变 + 程序颗粒 + 暗角 ━━ */
+  #bg { position:fixed; inset:0;
+    background: radial-gradient(ellipse 72% 78% at 50% 38%, var(--field-0) 0%, var(--field-1) 26%, var(--field-2) 52%, var(--field-3) 78%, var(--field-4) 100%); }
+  #grain { position:fixed; inset:0; pointer-events:none; opacity:var(--grain-op); mix-blend-mode:var(--grain-blend); background-size:220px 220px; }
+  #vig { position:fixed; inset:0; pointer-events:none;
+    background: radial-gradient(ellipse 85% 85% at 50% 42%, transparent 58%, var(--vig) 100%); }
+  #dust { position:fixed; inset:0; width:100%; height:100%; pointer-events:none; }
+
+  #stage { position:fixed; inset:0; }
+  #art { position:absolute; inset:0; width:100%; height:100%; display:block; overflow:visible; }
+
+  /* 角落小字：图版号、材料、刻度 */
+  .corner { position:fixed; top:calc(18px + env(safe-area-inset-top)); font:12px/1.5 var(--serif-l); letter-spacing:.32em;
+    color:rgba(var(--line-rgb),.62); text-transform:uppercase; pointer-events:none; }
+  .corner b { font-weight:400; color:var(--line); }
+  .corner.l { left:4vw; } .corner.r { right:4vw; text-align:right; }
+  .corner i { display:block; font:12px/1.6 var(--song); font-style:normal; letter-spacing:.5em; color:rgba(var(--line-rgb),.48); }
+
+  /* T9 读数：Didot 等宽数字，下面一根发丝线 */
+  #readout { position:fixed; left:0; top:0; width:200px; opacity:0; pointer-events:none; z-index:2; }
+  #readout small { display:block; font:12px/1 var(--serif-l); letter-spacing:.34em; color:rgba(var(--line-rgb),.7); }
+  #readout b { display:inline-block; margin-top:8px; font:400 54px/1 var(--serif-l); letter-spacing:.04em; font-variant-numeric:tabular-nums lining-nums;
+    background:linear-gradient(var(--mark-0),var(--mark-1) 60%,var(--mark-2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  #readout em { font:normal 13px/1 var(--serif-l); letter-spacing:.2em; color:rgba(var(--line-rgb),.7); margin-left:10px; }
+  #readout i { display:block; margin-top:10px; padding-top:10px; border-top:1px solid rgba(var(--line-rgb),.4);
+    font:normal 16px/1 var(--song); letter-spacing:.12em; color:rgba(var(--ink-rgb),.85); }
+
+  @media (orientation:portrait) {
+    .corner { font-size:12px; letter-spacing:.24em; } .corner.l { left:18px; } .corner.r { right:18px; }
+  }
+</style>
+</head>
+<body>
+<div id="bg"></div><div id="grain"></div>
+<canvas id="dust"></canvas>
+<main id="stage">
+<svg id="art" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <!-- 颜色全部取 CSS 变量（T0），这里只管形状和透明度 -->
+    <linearGradient id="gLine" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1600" y2="0">
+      <stop offset="0" style="stop-color:var(--body-0)"/><stop offset=".42" style="stop-color:var(--body-1)"/>
+      <stop offset=".62" style="stop-color:var(--body-2)"/><stop offset="1" style="stop-color:var(--body-3)"/>
+    </linearGradient>
+    <radialGradient id="gDisc" cx=".34" cy=".28" r=".85">
+      <stop offset="0" style="stop-color:var(--disc-0)"/><stop offset=".22" style="stop-color:var(--disc-1)"/>
+      <stop offset=".55" style="stop-color:var(--disc-2)"/><stop offset=".85" style="stop-color:var(--disc-3)"/><stop offset="1" style="stop-color:var(--disc-4)"/>
+    </radialGradient>
+    <radialGradient id="gHalo">
+      <stop offset="0" style="stop-color:var(--halo-0)" stop-opacity=".95"/><stop offset=".38" style="stop-color:var(--halo-1)" stop-opacity=".42"/>
+      <stop offset=".7" style="stop-color:var(--halo-2)" stop-opacity=".1"/><stop offset="1" style="stop-color:var(--halo-2)" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gRoom">
+      <stop offset="0" style="stop-color:var(--room-0)" stop-opacity=".22"/><stop offset=".45" style="stop-color:var(--room-1)" stop-opacity=".07"/>
+      <stop offset="1" style="stop-color:var(--room-1)" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gNib">
+      <stop offset="0" style="stop-color:var(--nib-0)"/><stop offset=".16" style="stop-color:var(--nib-1)"/>
+      <stop offset=".42" style="stop-color:var(--nib-2)" stop-opacity=".5"/><stop offset="1" style="stop-color:var(--nib-3)" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gStreak" x1="0" x2="1">
+      <stop offset="0" style="stop-color:var(--streak-0)" stop-opacity="0"/><stop offset="1" style="stop-color:var(--streak-1)" stop-opacity=".9"/>
+    </linearGradient>
+    <linearGradient id="gMark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" style="stop-color:var(--mark-0)"/><stop offset=".55" style="stop-color:var(--mark-1)"/><stop offset="1" style="stop-color:var(--mark-2)"/>
+    </linearGradient>
+    <filter id="fGlow" x="-10%" y="-30%" width="120%" height="160%"><feGaussianBlur stdDeviation="2.6"/></filter>
+    <filter id="fHalo" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="14"/></filter>
+    <!-- 线头从无到有：起笔处 170 个单位内渐显（遮罩用黑白，是结构不是配色） -->
+    <linearGradient id="gStart" gradientUnits="userSpaceOnUse" x1="0" x2="170" y1="0" y2="0"><stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#fff"/></linearGradient>
+    <mask id="mStart" maskUnits="userSpaceOnUse" x="-4000" y="-4000" width="9000" height="9000"><rect id="startRect" x="-4000" y="-4000" width="9000" height="9000" fill="url(#gStart)"/></mask>
+    <clipPath id="cFill"><circle id="fillClip" r="0"/></clipPath>
+    <mask id="mFil" maskUnits="userSpaceOnUse" x="-4000" y="-4000" width="9000" height="9000">
+      <rect x="-4000" y="-4000" width="9000" height="9000" fill="#fff"/>
+      <path id="filament" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
+    </mask>
+  </defs>
+  <circle id="room" r="560" fill="url(#gRoom)" opacity="0"/>
+  <g id="cam">
+    <g mask="url(#mStart)">
+    <path id="lineGlow" fill="none" style="stroke:var(--line-glow)" stroke-linecap="round" stroke-linejoin="round" opacity=".32" filter="url(#fGlow)"/>
+    <path id="lineEdge" fill="none" style="stroke:var(--line-edge)" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/>
+    <path id="lineBody" fill="none" stroke="url(#gLine)" stroke-linecap="round" stroke-linejoin="round"/>
+    <path id="lineHi" fill="none" style="stroke:var(--line-hi);opacity:var(--line-hi-op)" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <g id="trail" fill="none" style="stroke:var(--trail)" stroke-linecap="round" stroke-linejoin="round">
+      <path opacity=".10"/><path opacity=".14"/><path opacity=".2"/><path opacity=".3"/><path opacity=".5"/>
+    </g>
+    <g id="globe" opacity="0">
+      <circle id="halo" fill="url(#gHalo)" filter="url(#fHalo)"/>
+      <circle id="ring" fill="none" style="stroke:var(--ring)"/>
+      <g mask="url(#mFil)"><circle id="disc" fill="url(#gDisc)" clip-path="url(#cFill)"/></g>
+      <circle id="discRim" fill="none" style="stroke:var(--rim)" opacity="0"/>
+      <path id="spec" fill="none" style="stroke:var(--spec)" stroke-linecap="round" opacity="0"/>
+    </g>
+    <g id="glint" opacity="0"><path fill="none" style="stroke:var(--glint-0)" stroke-linecap="round" filter="url(#fGlow)"/><path fill="none" style="stroke:var(--glint-1)" stroke-linecap="round"/></g>
+    <g id="mark" opacity="0">
+      <text id="markText" text-anchor="middle" fill="url(#gMark)" style="font-family:Didot,'Bodoni 72','Bodoni MT',Georgia,'Times New Roman',serif;font-weight:400"></text>
+      <g id="markSub"><line style="stroke:var(--line)" opacity=".55"/><line style="stroke:var(--line)" opacity=".55"/>
+        <text text-anchor="middle" style="fill:var(--line);font-family:'Songti SC','STSong','Noto Serif CJK SC',SimSun,serif" opacity=".85">一 笔 不 断</text></g>
+    </g>
+    <g id="sparks" style="fill:var(--spark)"></g>
+  </g>
+  <g id="nib" opacity="0">
+    <circle r="34" fill="url(#gNib)" opacity=".42"/>
+    <rect id="streak" x="-30" y="-1.6" width="30" height="3.2" rx="1.6" fill="url(#gStreak)"/>
+    <circle r="9" fill="url(#gNib)"/>
+    <circle r="2.1" style="fill:var(--nib-core)"/>
+  </g>
+  <!-- 屏幕坐标层：引线标注、读数 -->
+  <g id="ov" style="font-family:Didot,'Bodoni 72',Georgia,'Times New Roman',serif">
+    <g id="callout" opacity="0">
+      <circle id="coRing" r="13" fill="none" style="stroke:var(--co-ring)" stroke-width="1" opacity=".9"/>
+      <circle id="coDot" r="2.4" style="fill:var(--co-dot)"/>
+      <path id="coLine" fill="none" style="stroke:var(--co-line)" stroke-width="1"/>
+      <text id="coT1" style="fill:var(--co-t1)" font-size="13" letter-spacing="4.5">NIB · 笔尖</text>
+      <text id="coT2" style="fill:var(--co-t2);font-family:'Songti SC','STSong','Noto Serif CJK SC',SimSun,serif" font-size="16" opacity=".85" letter-spacing="2">白芯 · 光晕 · 拖尾</text>
+    </g>
+  </g>
+</svg>
+</main>
+<div id="vig"></div>
+<div class="corner l"><b>PL. IV</b> &nbsp;LINE<i>线条动画</i></div>
+<div class="corner r">1.5 PX<i id="cornerR">一 笔 · 不 离 纸</i></div>
+<div id="readout" aria-hidden="true"><small>STROKE · 笔长</small><b>0</b><em>PX</em><i></i></div>
+<script>
+/* ━━ 样张自己的播放代码：只为把这份样张播起来，不是成品该用的结构，不要照抄。成品页面上要有哪些东西见 形式.md「页面上要有的东西」，长什么样、怎么排按你的风格自己做 ━━ */
+function makePlayer(SHOTS, hooks = {}) {
+  const S = { i: 0, t: 0, playing: true, reduce: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    w: innerWidth, h: innerHeight, portrait: innerHeight > innerWidth };
+  function enter(i) {
+    S.i = (i + SHOTS.length) % SHOTS.length; S.t = 0;
+    const s = SHOTS[S.i];
+    s.enter && s.enter(S);
+    hooks.onShot && hooks.onShot(S.i, s, S);
+    if (S.reduce) s.draw(s.dur, 1, S);
+  }
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    if (S.playing) {
+      S.t += dt;
+      if (S.t >= SHOTS[S.i].dur) enter(S.i + 1);
+    }
+    const s = SHOTS[S.i];
+    if (!S.reduce) s.draw(Math.min(S.t, s.dur), Math.min(1, S.t / s.dur), S);
+    requestAnimationFrame(frame);
+  }
+  document.addEventListener('visibilitychange', () => { S.playing = !document.hidden; last = performance.now(); });
+  addEventListener('resize', () => {
+    S.w = innerWidth; S.h = innerHeight; S.portrait = S.h > S.w;
+    hooks.onResize && hooks.onResize(S);
+    if (S.reduce) SHOTS[S.i].draw(SHOTS[S.i].dur, 1, S);
+  });
+  hooks.onResize && hooks.onResize(S);
+  enter(0);
+  requestAnimationFrame(frame);
+  return S;
+}
+
+/* ━━ 缓动：动作要有预备、过冲、回落 ━━ */
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const seg = (p, a, b) => clamp((p - a) / (b - a));
+const ease = {
+  out: x => 1 - Math.pow(1 - x, 3),
+  inOut: x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2,
+  back: x => 1 + 2.7 * Math.pow(x - 1, 3) + 1.7 * Math.pow(x - 1, 2),
+  spring: x => 1 - Math.exp(-6 * x) * Math.cos(12 * x),
+  step: (x, n) => Math.floor(x * n) / n,
+};
+const lerp = (a, b, k) => a + (b - a) * k;
+const $ = s => document.querySelector(s);
+
+/* 全片时钟：只在播放时走；减弱动态时不走（持续动画跟着停） */
+const CLK = { t: 0, last: performance.now() };
+function tick(S) {
+  const n = performance.now(), dt = Math.min(.1, (n - CLK.last) / 1000); CLK.last = n;
+  if (S.playing && !S.reduce) CLK.t += dt;
+  return CLK.t;
+}
+
+/* ━━ T1 夜色底：程序颗粒（一次生成，平铺）+ 金尘（慢飘、偶尔一闪） ━━ */
+function makeGrain(el, rgb, size = 220, amount = 38) {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const g = c.getContext('2d'), img = g.createImageData(size, size);
+  for (let i = 0; i < img.data.length; i += 4) {
+    const v = Math.random() * 255;
+    img.data[i] = v * rgb[0] / 255; img.data[i + 1] = v * rgb[1] / 255; img.data[i + 2] = v * rgb[2] / 255; img.data[i + 3] = Math.random() * amount;
+  }
+  g.putImageData(img, 0, 0);
+  el.style.backgroundImage = `url(${c.toDataURL()})`;
+}
+function makeDust(canvas, rgb, alpha = 1, n = 60) {
+  const g = canvas.getContext('2d');
+  const motes = Array.from({ length: n }, (_, i) => ({ x: Math.random(), y: Math.random(), r: .5 + Math.random() * 1.3,
+    vx: (Math.random() - .5) * .006, vy: -.004 - Math.random() * .008, ph: Math.random() * 6.28, sp: .4 + Math.random() * 1.4 }));
+  return function draw(t, light = 0, lx = .5, ly = .4) {
+    const dpr = Math.min(2, devicePixelRatio || 1), W = innerWidth, H = innerHeight;
+    if (canvas.width !== Math.round(W * dpr)) { canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); }
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+    for (const m of motes) {
+      const x = ((m.x + m.vx * t) % 1 + 1) % 1 * W, y = ((m.y + m.vy * t) % 1 + 1) % 1 * H;
+      const near = Math.max(0, 1 - Math.hypot(x / W - lx, (y / H - ly) * .7) * 2.2);   // 靠近灯的尘更亮
+      const a = (.12 + .25 * Math.pow(.5 + .5 * Math.sin(t * m.sp + m.ph), 3)) * (1 + light * near * 3) * alpha;
+      g.fillStyle = `rgba(${rgb.join(',')},${Math.min(.9, a)})`;
+      g.beginPath(); g.arc(x, y, m.r, 0, 6.283); g.fill();
+    }
+  };
+}
+
+/* ━━ T3 一笔画路径：圆角折线 + 曲线，拼成一条不断的路径 ━━ */
+function roundPoly(pts, r) {            // 从 pts[0] 出发（当前点），每个拐角磨成半径 r 的圆角
+  let d = '';
+  for (let i = 1; i < pts.length; i++) {
+    const [x, y] = pts[i];
+    if (i < pts.length - 1) {
+      const [px, py] = pts[i - 1], [nx, ny] = pts[i + 1];
+      const l1 = Math.hypot(x - px, y - py), l2 = Math.hypot(nx - x, ny - y);
+      const r1 = Math.min(r, l1 / 2), r2 = Math.min(r, l2 / 2);
+      d += `L${(x - (x - px) / l1 * r1).toFixed(1)},${(y - (y - py) / l1 * r1).toFixed(1)} Q${x.toFixed(1)},${y.toFixed(1)} ${(x + (nx - x) / l2 * r2).toFixed(1)},${(y + (ny - y) / l2 * r2).toFixed(1)} `;
+    } else d += `L${x.toFixed(1)},${y.toFixed(1)} `;
+  }
+  return d;
+}
+/* 布局参数：横屏一套、竖屏一套（竖屏重排，不是缩小） */
+const LAYOUT = {
+  land: { x0: 10, g: 600, bx: 180, bs: 1.2, cx: 556, cs: 1.2, lx: 1214, sx: 1300, sTop: 380, jy: 500,
+    gx: 800, gy: 290, gr: 100, ctl: [[1300, 170], [800, 80]], view: [90, 108, 1410, 768],
+    mark: { y: 694, size: 40, track: 22, subY: 734, sub: 17 } },
+  port: { x0: -110, g: 1000, bx: 46, bs: 1.0, cx: 336, cs: 1.18, lx: 560, sx: 664, sTop: 580, jy: 820,
+    gx: 382, gy: 470, gr: 100, ctl: [[664, 392], [382, 262]], view: [8, 300, 706, 1176],
+    mark: { y: 1098, size: 50, track: 18, subY: 1146, sub: 26 } },
+};
+function buildScene(L) {
+  const G = L.g, P = (x, y) => [x, y];
+  const B = (x, y) => [L.bx + x * L.bs, G - y * L.bs];
+  const C = (x, y) => `${(L.cx + x * L.cs).toFixed(1)},${(G - y * L.cs).toFixed(1)}`;
+  const marks = {};
+  let d = `M${L.x0},${G} `;
+  // 书：三本错落，左边是圆书脊，右边书页比封面缩进一点，顶上一条书签丝带的燕尾
+  const b = (x, y) => `${(L.bx + x * L.bs).toFixed(1)},${(G - y * L.bs).toFixed(1)}`;
+  d += `L${b(8, 0)} C${b(-6, 0)} ${b(-6, 38)} ${b(8, 38)} L${b(24, 38)} C${b(12, 38)} ${b(12, 70)} ${b(24, 70)} `;
+  d += `L${b(4, 70)} C${b(-9, 70)} ${b(-9, 100)} ${b(4, 100)} `;
+  d += roundPoly([B(4, 100), B(171, 100), B(171, 52), B(175.5, 59), B(180, 52), B(180, 100), B(226, 100), B(226, 97), B(222.5, 97), B(222.5, 73),
+    B(226, 73), B(226, 70), B(238, 70), B(238, 67), B(234.5, 67), B(234.5, 41), B(238, 41), B(238, 38), B(252, 38), B(252, 35), B(248.5, 35),
+    B(248.5, 3), B(252, 3), B(252, 0), [L.cx, G]], 1.6 * L.bs);
+  marks.books = d;
+  // 杯：碟、杯壁、热气回环、把手
+  d += `C${C(4, 0)} ${C(6, 8)} ${C(14, 8)} L${C(30, 8)} C${C(24, 34)} ${C(20, 72)} ${C(22, 100)} L${C(56, 100)} `;
+  d += `C${C(44, 124)} ${C(78, 140)} ${C(62, 164)} C${C(48, 186)} ${C(74, 200)} ${C(64, 220)} `;
+  d += `C${C(82, 200)} ${C(64, 182)} ${C(78, 160)} C${C(92, 136)} ${C(60, 122)} ${C(70, 100)} `;
+  d += `L${C(112, 100)} C${C(111, 94)} ${C(110, 88)} ${C(109, 82)} C${C(152, 86)} ${C(154, 32)} ${C(104, 36)} `;
+  d += `C${C(102, 22)} ${C(100, 12)} ${C(98, 8)} L${C(142, 8)} C${C(150, 8)} ${C(152, 2)} ${C(160, 0)} `;
+  marks.cup = d;
+  // 灯：底座、灯杆（中段一个小绕圈）、弧形吊臂、吊绳、灯泡
+  d += `L${L.lx - 14},${G} C${L.lx + 2},${G} ${L.lx},${G - 22} ${L.lx + 22},${G - 22} `;
+  d += roundPoly([[L.lx + 22, G - 22], [L.sx, G - 22], [L.sx, L.jy]], 6);
+  d += `A9,9 0 1,0 ${L.sx - 18},${L.jy} A9,9 0 1,0 ${L.sx},${L.jy} `;
+  d += `L${L.sx},${L.sTop} C${L.ctl[0][0]},${L.ctl[0][1]} ${L.ctl[1][0]},${L.ctl[1][1]} ${L.gx},${L.gy - L.gr - 24} L${L.gx},${L.gy - L.gr} `;
+  marks.lamp = d;
+  d += `A${L.gr},${L.gr} 0 1,1 ${L.gx},${L.gy + L.gr} A${L.gr},${L.gr} 0 1,1 ${L.gx},${L.gy - L.gr}`;
+  return { d, marks };
+}
+/* 灯丝镂空：两根细立柱 + 一段螺旋（长摆线：每圈前进量小于周长，就会打出小圈） */
+function filamentPath(x, y, r) {
+  const w = r * .21, top = y - r * .02, bot = y + r * .74, rho = r * .055, n = 4.5;
+  let d = `M${(x - w * .8).toFixed(1)},${bot.toFixed(1)} L${(x - w).toFixed(1)},${(top + rho).toFixed(1)}`;
+  for (let i = 1; i <= 90; i++) {
+    const u = i / 90, th = Math.PI * 2 * n * u;
+    const px = x - w + 2 * w * u - rho * Math.sin(th), py = top + rho * Math.cos(th) + Math.sin(u * Math.PI) * r * .05;
+    d += ` L${px.toFixed(1)},${py.toFixed(1)}`;
+  }
+  return d + ` L${(x + w * .8).toFixed(1)},${bot.toFixed(1)}`;
+}
+
+/* ━━ T4 缓急：按曲率积分出时间表（转角慢、直线快） ━━ */
+function makeTimeline(pathEl, step = 3, K = 46) {
+  const L = pathEl.getTotalLength(), n = Math.ceil(L / step) + 1;
+  const pts = [], ang = [], w = [];
+  for (let i = 0; i < n; i++) { const p = pathEl.getPointAtLength(Math.min(L, i * step)); pts.push([p.x, p.y]); }
+  for (let i = 0; i < n - 1; i++) ang.push(Math.atan2(pts[i + 1][1] - pts[i][1], pts[i + 1][0] - pts[i][0]));
+  ang.push(ang[ang.length - 1]);
+  const turn = ang.map((a, i) => { if (!i) return 0; let d = a - ang[i - 1]; d = Math.atan2(Math.sin(d), Math.cos(d)); return Math.abs(d) / step; });
+  for (let i = 0; i < n; i++) {                 // 前后各 9 个点平滑，慢下来是渐变的
+    let s = 0, c = 0; for (let j = -9; j <= 9; j++) { const k = i + j; if (k >= 0 && k < n) { s += turn[k] * (1 - Math.abs(j) / 10); c += 1 - Math.abs(j) / 10; } }
+    w.push(1 + K * Math.min(.12, s / c));
+  }
+  const T = [0]; for (let i = 1; i < n; i++) T.push(T[i - 1] + w[i] * step);
+  const corners = []; for (let i = 1; i < n; i++) if (turn[i] * step > .5) corners.push(i * step);
+  return {
+    L, pts, ang, corners,
+    timeAt: s => T[Math.min(n - 1, Math.max(0, Math.round(s / step)))],
+    sAt(tau) {                                  // 二分：时间 → 弧长
+      let lo = 0, hi = n - 1; if (tau <= 0) return 0; if (tau >= T[hi]) return L;
+      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (T[m] < tau) lo = m; else hi = m; }
+      return (lo + (tau - T[lo]) / (T[hi] - T[lo])) * step;
+    },
+    at(s) { const i = Math.max(0, Math.min(n - 1, s / step)), a = Math.floor(i), b = Math.min(n - 1, a + 1), f = i - a;
+      return { x: lerp(pts[a][0], pts[b][0], f), y: lerp(pts[a][1], pts[b][1], f), a: ang[a] }; },
+  };
+}
+/* 一段笔画：在 [sa, sb] 之间按时间表走，u 是这一段的 0–1；起笔收笔缓 */
+function penS(TL, sa, sb, u) {
+  const e = .75 * u + .25 * ease.inOut(u);
+  return TL.sAt(lerp(TL.timeAt(sa), TL.timeAt(sb), clamp(e)));
+}
+
+/* ━━ T2 金丝线：三层描边，线宽按镜头缩放反算 ━━ */
+const lines = ['#lineGlow', '#lineEdge', '#lineBody', '#lineHi'].map($);
+const LW = [5, 1.9, 1.35, .55];               // 屏幕像素
+function setLine(drawn, total, z) {
+  lines.forEach((el, k) => {
+    el.setAttribute('stroke-width', (LW[k] / z).toFixed(3));
+    el.setAttribute('stroke-dasharray', `${Math.max(.001, drawn)} ${total + 50}`);
+  });
+}
+
+/* ━━ T5 笔尖：白芯 + 光晕 + 方向拖影 + 渐隐拖尾 + 火星 ━━ */
+const trail = [...document.querySelectorAll('#trail path')];
+const TRL = [340, 220, 130, 70, 30];          // 五段叠出由暗到亮的拖尾
+function setTrail(s, z, on) {
+  trail.forEach((el, k) => {
+    const a = Math.max(0, s - TRL[k]);
+    el.setAttribute('stroke-dasharray', on ? `0 ${a} ${s - a} 99999` : '0 99999');
+    el.setAttribute('stroke-width', ((1.4 + k * .35) / z).toFixed(3));
+  });
+}
+const nibEl = $('#nib'), streak = $('#streak');
+function setNib(pt, alpha, cam, scale = 1) {
+  const p = cam.toScreen(pt.x, pt.y);
+  nibEl.setAttribute('transform', `translate(${p[0].toFixed(1)},${p[1].toFixed(1)}) scale(${scale})`);
+  streak.setAttribute('transform', `rotate(${(pt.a * 180 / Math.PI).toFixed(1)})`);
+  nibEl.setAttribute('opacity', alpha.toFixed(3));
+}
+const sparkG = $('#sparks');
+for (let i = 0; i < 12; i++) sparkG.insertAdjacentHTML('beforeend', '<circle r="1"/>');
+function setSparks(TL, sAtTime, t, z, on) {   // 每 0.07s 从笔尖掉一粒火星，0.8s 熄灭
+  const dt = .07;
+  [...sparkG.children].forEach((c, k) => {
+    const age = (t % dt) + k * dt, tb = t - age;
+    if (!on || tb < 0 || age > .8) { c.setAttribute('opacity', 0); return; }
+    const p = TL.at(sAtTime(tb)), seed = Math.floor(tb / dt) * 12.9898;
+    const rx = Math.sin(seed) * 43758.5453 % 1, ry = Math.sin(seed * 1.7) * 23421.631 % 1;
+    c.setAttribute('cx', (p.x + rx * 26 * age / z).toFixed(1));
+    c.setAttribute('cy', (p.y + (ry * 10 + 34 * age * age * 2) / z).toFixed(1));
+    c.setAttribute('r', ((1.3 - age) / z).toFixed(2));
+    c.setAttribute('opacity', (.9 * (1 - age / .8)).toFixed(2));
+  });
+}
+
+/* ━━ T6 跟笔镜头：世界坐标 → 屏幕；跟随 = 笔尖过去几个位置的加权平均 ━━ */
+const cam = { x: 0, y: 0, z: 1, ax: 0, ay: 0,
+  toScreen(x, y) { return [this.ax + (x - this.x) * this.z, this.ay + (y - this.y) * this.z]; } };
+function followCam(TL, sOfU, u, lag = .011, n = 9) {
+  let x = 0, y = 0, wsum = 0;
+  for (let k = 0; k < n; k++) { const w = Math.pow(.72, k), p = TL.at(sOfU(Math.max(0, u - k * lag))); x += p.x * w; y += p.y * w; wsum += w; }
+  return { x: x / wsum, y: y / wsum };
+}
+function applyCam() {
+  $('#cam').setAttribute('transform', `translate(${cam.ax.toFixed(1)},${cam.ay.toFixed(1)}) scale(${cam.z.toFixed(4)}) translate(${(-cam.x).toFixed(1)},${(-cam.y).toFixed(1)})`);
+}
+
+/* ━━ T7 填金点亮：裁切圆从闭合点扩开 + 灯丝镂空 + 光晕闪 + 细环散开 + 环境光 ━━ */
+function setGlobe(L, fill, flash, ring, z) {
+  const g = $('#globe');
+  g.setAttribute('opacity', fill > 0 || flash > 0 ? 1 : 0);
+  const fc = $('#fillClip');
+  fc.setAttribute('cx', L.gx); fc.setAttribute('cy', L.gy - L.gr); fc.setAttribute('r', (L.gr * 2.05 * ease.out(fill)).toFixed(1));
+  for (const id of ['#disc', '#discRim', '#halo', '#ring']) { const c = $(id); c.setAttribute('cx', L.gx); c.setAttribute('cy', L.gy); }
+  $('#disc').setAttribute('r', L.gr);
+  $('#discRim').setAttribute('r', L.gr - .5 / z); $('#discRim').setAttribute('stroke-width', (1.4 / z).toFixed(2));
+  $('#discRim').setAttribute('opacity', (fill * .9).toFixed(2));
+  $('#halo').setAttribute('r', (L.gr * (1.5 + .55 * flash)).toFixed(1));
+  $('#halo').setAttribute('opacity', (Math.min(1, fill * .45 + flash * .75)).toFixed(3));
+  $('#ring').setAttribute('r', (L.gr * (1 + 1.1 * ring)).toFixed(1));
+  $('#ring').setAttribute('stroke-width', (1.2 / z).toFixed(2));
+  $('#ring').setAttribute('opacity', (ring > 0 && ring < 1 ? .7 * (1 - ring) : 0).toFixed(2));
+  const sr = L.gr * .8, a0 = 3.55, a1 = 4.25, sp = $('#spec');          // 玻璃上一道弧形反光
+  sp.setAttribute('d', `M${L.gx + sr * Math.cos(a0)},${L.gy + sr * Math.sin(a0)} A${sr},${sr} 0 0,1 ${L.gx + sr * Math.cos(a1)},${L.gy + sr * Math.sin(a1)}`);
+  sp.setAttribute('stroke-width', (2.2 / z).toFixed(2)); sp.setAttribute('opacity', (fill * .55).toFixed(2));
+  $('#filament').setAttribute('d', filamentPath(L.gx, L.gy, L.gr));
+  $('#filament').setAttribute('stroke-width', (L.gr * .036).toFixed(1));
+  const p = cam.toScreen(L.gx, L.gy), room = $('#room');
+  room.setAttribute('cx', p[0].toFixed(1)); room.setAttribute('cy', p[1].toFixed(1));
+  room.setAttribute('r', (Math.max(innerWidth, innerHeight) * .62).toFixed(0));
+  room.setAttribute('opacity', (fill * .8 + flash * .7).toFixed(3));
+}
+
+/* ━━ T8 字标：宽字距衬线大写 + 极小宋体副标，逐字收拢 ━━ */
+const WORD = 'UNBROKEN';
+$('#markText').innerHTML = [...WORD].map(c => `<tspan>${c}</tspan>`).join('');
+function setMark(L, a, cx) {
+  const m = L.mark, g = $('#mark'), t = $('#markText');
+  g.setAttribute('opacity', a > 0 ? 1 : 0);
+  t.setAttribute('x', cx); t.setAttribute('y', m.y); t.setAttribute('font-size', m.size);
+  t.style.letterSpacing = (m.track + 26 * (1 - ease.out(seg(a, 0, .8)))).toFixed(1) + 'px';
+  [...t.children].forEach((sp, k) => sp.setAttribute('fill-opacity', ease.out(seg(a, k * .06, k * .06 + .35)).toFixed(3)));
+  const sub = $('#markSub'), st = sub.querySelector('text'), [l1, l2] = sub.querySelectorAll('line');
+  st.setAttribute('x', cx); st.setAttribute('y', m.subY); st.setAttribute('font-size', m.sub);
+  const sa = ease.out(seg(a, .45, 1)), half = m.sub * 3.6, len = m.sub * 3.2 * sa;
+  l1.setAttribute('x1', cx - half - len); l1.setAttribute('x2', cx - half); l2.setAttribute('x1', cx + half); l2.setAttribute('x2', cx + half + len);
+  for (const l of [l1, l2]) { l.setAttribute('y1', m.subY - m.sub * .35); l.setAttribute('y2', m.subY - m.sub * .35); l.setAttribute('stroke-width', 1 / cam.z); }
+  st.setAttribute('opacity', (.85 * sa).toFixed(3));
+}
+
+/* ━━ T9 引线标注 + 跳动读数（屏幕坐标层，字号不随镜头缩放） ━━ */
+function setCallout(anchor, a, fixed) {
+  const g = $('#callout'); g.setAttribute('opacity', a.toFixed(3));
+  if (a <= 0) return;
+  const [x, y] = anchor, k = ease.out(seg(a, 0, 1)), lw = 160;
+  let side = x + 230 > innerWidth ? -1 : 1, ex = x + side * 46, ey = y - 70;
+  if (fixed) { side = fixed.x < x ? -1 : 1; ex = x; ey = fixed.y; }   // 竖屏：标签停在固定位置，引线去找笔尖
+  const fx = fixed ? lerp(x, fixed.x, k) : side > 0 ? Math.min(innerWidth - 12, ex + lw * k) : Math.max(12, ex - lw * k);
+  $('#coRing').setAttribute('cx', x); $('#coRing').setAttribute('cy', y); $('#coRing').setAttribute('r', (13 + 8 * (1 - k)).toFixed(1));
+  $('#coDot').setAttribute('cx', x); $('#coDot').setAttribute('cy', y);
+  $('#coLine').setAttribute('d', `M${x},${y - 13} L${lerp(x, ex, k)},${lerp(y - 13, ey, k)} L${fx},${ey}`);
+  const tx = fixed ? fixed.x : side > 0 ? ex + 4 : fx + 4;
+  for (const [id, dy] of [['#coT1', -10], ['#coT2', 22]]) { const t = $(id); t.setAttribute('x', tx); t.setAttribute('y', ey + dy); t.setAttribute('opacity', seg(a, .4, 1).toFixed(2)); }
+}
+function setReadout(x, y, a, num, sub) {
+  const r = $('#readout'); r.style.opacity = a.toFixed(3); if (a <= 0) return;
+  r.style.transform = `translate(${x.toFixed(0)}px,${y.toFixed(0)}px)`;
+  r.querySelector('b').textContent = String(Math.round(num)).padStart(4, '0').replace(/(\d)(?=(\d{3})+$)/g, '$1 ');
+  r.querySelector('i').textContent = sub;
+}
+
+/* ━━ 场景装配：按横竖屏重建路径、量长度、出时间表 ━━ */
+let L, TL, M = {};
+const probe = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+$('#art defs').appendChild(probe);
+function lenOf(d) { probe.setAttribute('d', d); return probe.getTotalLength(); }
+function layout(S) {
+  const svg = $('#art'); svg.setAttribute('viewBox', `0 0 ${S.w} ${S.h}`);
+  L = LAYOUT[S.portrait ? 'port' : 'land'];
+  const sc = buildScene(L);
+  for (const el of [...lines, ...trail]) el.setAttribute('d', sc.d);
+  $('#glint path').setAttribute('d', sc.d); $('#glint path:last-child').setAttribute('d', sc.d);
+  TL = makeTimeline(lines[2]);
+  $('#gStart').setAttribute('x1', L.x0); $('#gStart').setAttribute('x2', L.x0 + 170);
+  M = { books: lenOf(sc.marks.books), cup: lenOf(sc.marks.cup), lamp: lenOf(sc.marks.lamp), end: TL.L };
+  // 画面区：上下各留一点边
+  const top = S.portrait ? 56 : 50, area = { x: 0, y: top, w: S.w, h: S.h - 2 * top };
+  const [vx0, vy0, vx1, vy1] = L.view;
+  L.full = { x: (vx0 + vx1) / 2, y: (vy0 + vy1) / 2, z: Math.min(area.w / (vx1 - vx0), area.h / (vy1 - vy0)) };
+  cam.ax = area.w / 2; cam.ay = area.y + area.h / 2; L.area = area;
+}
+
+/* ━━ 镜头 ━━ */
+const dust = makeDust($('#dust'), PAL.dust, PAL.dustAlpha);
+makeGrain($('#grain'), PAL.grain.rgb);
+function frameCommon(S, light) {
+  const t = tick(S);
+  const gp = cam.toScreen(L.gx, L.gy);
+  dust(t, light, gp[0] / S.w, gp[1] / S.h);
+  return t;
+}
+const SHOTS = [
+  // I — ONE LINE · 一笔：一根线，不离纸。整幅画只有一条路径。
+  { dur: 5.5,
+    draw(t, p, S) {
+      const T = frameCommon(S, 1);
+      const z = L.full.z * lerp(1, 1.035, ease.inOut(p));        // 极慢推近
+      Object.assign(cam, { x: L.full.x, y: L.full.y + 6 * (1 - p), z }); applyCam();
+      setLine(TL.L, TL.L, z); setTrail(0, z, false);
+      // 一道亮光沿整条线跑一遍，到灯泡时灯再亮一下
+      const g = ease.inOut(seg(p, .06, .72)), s = g * TL.L, gl = $('#glint');
+      gl.setAttribute('opacity', g > 0 && g < 1 ? 1 : 0);
+      gl.querySelectorAll('path').forEach((el, k) => {
+        el.setAttribute('stroke-dasharray', `0 ${Math.max(0, s - 150)} ${Math.min(150, s)} 99999`);
+        el.setAttribute('stroke-width', ((k ? 1.6 : 5) / z).toFixed(2));
+        el.setAttribute('opacity', k ? .85 : .5);
+      });
+      const arrive = seg(p, .7, .95);
+      setNib(TL.at(s), g > 0 && g < 1 ? .9 : 0, cam, .8);
+      setSparks(TL, () => s, 0, z, false);
+      const breath = .5 + .5 * Math.sin(T * 1.6);
+      setGlobe(L, 1, .18 + .1 * breath + .5 * Math.sin(Math.PI * arrive), arrive, z);
+      setMark(L, 1, L.full.x);
+      setCallout([0, 0], 0); setReadout(0, 0, 0, 0, '');
+    } },
+  // II — THE NIB · 笔尖：镜头跟着笔尖走。笔尖最亮，拖尾跟在后面。
+  { dur: 6.5,
+    draw(t, p, S) {
+      frameCommon(S, 0);
+      const sa = 130, sb = M.cup + 120;          // 从渐显段之后起笔，进镜第一帧就有线
+      const U = u => clamp((u - .04) / .9);
+      const sOf = u => penS(TL, sa, sb, U(u));
+      const s = sOf(p);
+      const f = followCam(TL, sOf, p);
+      const zc = L.full.z * (S.portrait ? 1.9 : 2.15);
+      const z = zc * lerp(1.12, 1, ease.out(seg(p, 0, .3)));      // 进镜时略推近，再回落
+      // 竖屏：读数放在地平线下方，镜头不许把地平线压到读数上
+      const ro = S.portrait ? { x: 22, y: L.area.y + L.area.h - 104 } : { x: S.w * .94 - 210, y: S.h - 214 };
+      let cy = lerp(f.y, L.g - 70, .45);
+      if (S.portrait) cy = Math.max(cy, L.g - (ro.y - 30 - cam.ay) / z);
+      Object.assign(cam, { x: f.x, y: cy, z }); applyCam();
+      setLine(s, TL.L, z); setTrail(s, z, true);
+      const nib = TL.at(s);
+      setNib(nib, s > 0 ? 1 : 0, cam);
+      setSparks(TL, tb => sOf(tb / this.dur), t, z, true);
+      setGlobe(L, 0, 0, 0, z); setMark(L, 0, 0); $('#glint').setAttribute('opacity', 0);
+      // 标注跟着笔尖，读数跳动
+      setCallout(cam.toScreen(nib.x, nib.y), seg(p, .14, .28) * (1 - seg(p, .64, .72)), S.portrait ? { x: 22, y: L.area.y + 74 } : null);
+      const corners = TL.corners.filter(c => c <= s).length;
+      setReadout(ro.x, ro.y, ease.out(seg(p, .05, .2)), s,
+        `转折 ${String(corners).padStart(2, '0')} · 离纸 0 次`);
+    } },
+  // III — THE FILL · 点亮：最后一处，填满颜色。全片只填这一次色，亮一下就收。
+  { dur: 6.5,
+    draw(t, p, S) {
+      const sa = M.cup + 120, sb = TL.L;
+      const U = u => clamp(u / .5);
+      const sOf = u => penS(TL, sa, sb, U(u));
+      const s = sOf(p);
+      const fill = seg(p, .5, .62), flash = Math.sin(Math.PI * seg(p, .5, .72)) * (1 - .3 * seg(p, .6, .72)), ring = seg(p, .52, .8);
+      frameCommon(S, fill);
+      // 跟笔 → 拉远揭示整幅
+      const f = followCam(TL, sOf, p, .014);
+      const zc = L.full.z * (S.portrait ? 1.9 : 2.15) * lerp(1, .72, ease.inOut(seg(p, .18, .5)));
+      const k = ease.inOut(seg(p, .5, .92));
+      Object.assign(cam, { x: lerp(lerp(f.x, L.gx, seg(p, .3, .5)), L.full.x, k), y: lerp(lerp(lerp(f.y, L.g - 70, .3), L.gy, seg(p, .3, .5)), L.full.y, k),
+        z: lerp(zc, L.full.z, k) });
+      applyCam();
+      setLine(s, TL.L, cam.z); setTrail(s, cam.z, p < .5);
+      setNib(TL.at(s), p < .5 ? 1 : (1 - seg(p, .5, .58)), cam, 1 + 1.4 * seg(p, .48, .56));
+      setSparks(TL, tb => sOf(tb / this.dur), t, cam.z, p < .5);
+      setGlobe(L, fill, flash, ring, cam.z);
+      setMark(L, seg(p, .7, .98), L.full.x); $('#glint').setAttribute('opacity', 0);
+      setCallout([0, 0], 0); setReadout(0, 0, 0, 0, '');
+    } },
+];
+
+makePlayer(SHOTS, {
+  onResize(S) { layout(S); },
+});
+</script>
+</body>
+</html>

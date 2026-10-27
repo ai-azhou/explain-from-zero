@@ -1,0 +1,855 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>微缩沙盘 · 样张</title>
+<!--
+风格：微缩沙盘  MINIATURE
+一句话：把东西做成摆在桌上的微缩模型——没有透视，三个面三档亮度；先一格格长出白模，再一件件挂上去，最后整片上色。
+擅长表现：空间布局和系统——谁挨着谁、谁连着谁、哪一块在干什么；「先白模、再上色」把结构和分工拆成前后两拍。
+搬到讲解里：
+  白模从中心一格格落下、整座坡先是一片白 → 先讲结构、只看形状和位置：用在「这个系统由哪几块组成、怎么摆」这类题，颜色先别给。
+  索一根根架上、吊椅一把把错峰挂上去 → 讲「按顺序就位、谁连着谁」：用在流程、链路、上下游，读数数「已挂上几把」。
+  整片上色 → 吊椅开动、坡上的计数牌跳数 → 讲分工和运转：结构讲完再上色，一种颜色就是一种角色；最后让它动起来、读数说结果。
+招牌细节：
+  材质：地砖是有厚度、圆角倒边的方块，倒边接住一条高光；雪坡四层台阶；底下三层石台。
+  光：顶面最亮、左侧面暗一档、右侧面暗两档（光照算出来）；低太阳略暖、天光冷蓝，雪上的影子是蓝的；软阴影贴地硬、离远虚；云影扫过；雪道上一道冰面闪光。
+  主体：一条小缆车——底站、三座塔架、顶站、两根下垂的索、十二把吊椅沿环一直在走；坡脚一间砖红屋顶的木屋，窗是暖的。
+  字：现场词做成石台正面的铭牌，贴在等轴竖面上跟着斜（不做躺在地上的大字标）；计数牌立在等轴竖面上，字跟着斜，引线连到顶站。
+  动效：白模从中心错峰落下，拉长→压扁→回弹；索一段段延伸、吊椅错峰挂上并晃一下；上色像水波从中心传开，刷到的格子轻跳；吊椅、云、松树一直在动。
+  角落小字：ORTHO · EL 30° · AZ 45°、TILE 11×11、R 0.075 这类模型自己的参数，帧号跟着跳。
+色彩结构（换题保留）：底是一层上下渐变，亮暗跟现场的光走；地砖 4 种区块色，同一明度带、中低饱和，只用来分功能区；
+  1 个深色当墨（字标侧面、读数）；1 组暖强调色只给会动、会亮的东西（吊椅、木屋窗、读数色条）；白模阶段只用一个近白的泥色。
+本例配色（从本例主体「小滑雪场」和它的现场「冬天晴朗的早上」推出来，换题就换）：底 bg.top #D8EBFA → bg.bot #8FB9E2；
+  地砖 snow #F6F9FC / piste #D3E4F4 / rock #8F9AA8 / deck #B89878；松树 pine #2E5A48；屋顶 roof #B0432D；石台 slab #C9CED4 / #9AA1AA / #767E89；
+  暖强调 chair #F0A23A + lamp（木屋窗）#FFC25E；白模 clay #EEF0F4；面板 panel #FFFFFF / 侧面 side #B4C8DE。
+换题示例（?pal=alt）：假设主角是「秋天傍晚的梯田茶园」（茶垄、运茶小缆车、晒茶棚）→ 光是低而暖的夕阳、天光发紫：
+  底换成杏色 → 陶土色，雪地换成茶垄绿，雪道换成土路，吊椅换成全片唯一的冷色（青绿），屋顶换成灰蓝。
+  bg #F8E1C8 → #D39A7C；snow #7FA86A / piste #C9A27A / rock #8C8078 / deck #B89A78；chair #2F8C8C；roof #5B6E7A；panel #FFF8F0 / side #E0BFA4。
+字：铭牌和计数牌 = SVG <text> 套等轴竖面矩阵（中文重黑体）；数字等宽；正文系统黑体。
+动效：60fps；缓动用 back 和阻尼弹簧；镜头只做正交缩放和平移（推近、拉远），镜间硬切；整片 20 秒一圈，环境动作按 20 秒周期写，循环接得上。
+做粗了 → 做精：
+  CSS 菱形贴色块 → 有厚度的圆角方块，三个面的明暗由主光 + 半球天光算出。
+  没阴影 / 一块黑椭圆 → 阴影贴图 + 按挡光距离变宽的软阴影（PCSS）+ 俯视高度图 AO 压暗砖缝、台阶根、树下。
+  所有东西同时出现 → 从中心错峰，先白模、再一件件挂上、最后上色，每样都有拉长—压扁—回弹。
+  数据牌是平面浮层 → 牌子立在等轴竖面上、字跟着斜，引线 + 锚点连到具体部件。
+  画面静止 → 吊椅、云影、松树一直在动。
+手机竖屏：重新取景——石台居中放大，计数牌只在讲解镜出现（右上）；阴影贴图降到 1024。
+技法目录：
+  T1 等轴正交相机：世界 → 屏幕，WebGL 和 SVG 共用一套投影
+  T2 圆角盒 / 圆角圆柱 / 球网格：内盒 ⊕ 球，倒边法线天然平滑
+  T3 实例化绘制与管线：一条实例 16 个数；光源深度 → 俯视高度 → 底色 → 接影 → 实体 → 发光
+  T4 光照（FS_LIT 里 ①–⑩）：软阴影 PCSS、高度图 AO、半球天光、主光、倒边高光、边缘天光、水面闪光、自发光（木屋窗）、点光、底部雾
+  T5 接影地面：只显示阴影和贴地暗角，乘法混进底色
+  T6 发光：加色光晕、地面光环、光柱（本例只用光晕给木屋窗；换题有灯时三种都用）
+  T7 白模落下 → 压扁 → 回弹（错峰）、索道延伸、吊椅错峰挂上、上色波
+  T8 场景表：四层台阶的雪坡分区、道具（松树、木屋、塔架、站房、索道、吊椅、雪堆、石块、云）
+  T9 SVG 等轴叠层：石台铭牌（现场词贴在等轴竖面上）、竖面计数牌、引线标注、对比分割线
+  T11 退路：拿不到 WebGL2 时 Canvas 2D 画静态等轴图
+-->
+<script>
+/* ━━ 配色：全片颜色只在这里。CSS 变量、着色器 uniform、SVG 叠层、Canvas 退路都从 PAL 取；网址带 ?pal=alt 换成「换题示例」 ━━ */
+/* ━━ 示范配色：必须换 ━━
+   下面两组颜色只属于这份样张自己的主体，不是这种风格的颜色。搬技法进你的成品时，
+   这组颜色、报头、角标文字、示例文案一律换成从你的主角、现场的光、题目的情绪推出来的；
+   颜色只改这一处，技法代码按角色名取色。按文件头「色彩结构」那一段保留结构。 */
+const PALETTES = {
+  base: {  // 本例：小滑雪场（雪坡、缆车、木屋、松树）+ 冬天晴朗的早上
+    bg: { top: '#D8EBFA', bot: '#8FB9E2', clayTop: '#EEF1F5', clayBot: '#C9D2DE', glow: '#FFFFFF', floor: '#7F9CBC' },  // 底渐变、主体身后的亮、地面影子（乘法）
+    light: { sun: [.66, .6, .52], sky: [.5, .6, .8], gnd: [.62, .66, .74], bulb: '#FFD08A', bulbI: 0, lampGlow: 0 },  // 主光（早上的低太阳，略暖）/ 天光（冷蓝）/ 雪地反光
+    scene: { clay: '#EEF0F4', snow: '#F6F9FC', snow2: '#E9F0F7', piste: '#D3E4F4', groom: '#B9D0EA', rock: '#8F9AA8', deck: '#B89878',
+      slab1: '#C9CED4', slab2: '#9AA1AA', slab3: '#767E89', pedestal: '#3A4250', metal: '#B8C1CC', cableC: '#3B4554', cloud: '#FFFFFF',
+      pine: '#2E5A48', pine2: '#3B6D58', trunk: '#6B4A36', wood: '#8A5E3E', roof: '#B0432D', lamp: '#FFC25E', chair: '#F0A23A', chair2: '#D9762A' },
+    fx: { glow: '#FFDEA8', glowCore: '#FFF3D9', ringGlow: '#FFE0B0', beam: '#FFFFFF', glint: '#FFFFFF' },
+    ui: { bg1: '#DCEDFA', bg2: '#9DC3E6', ink: '#1C2B40', ink2: '#4D6380', ink3: '#6B809C', panel: '#FFFFFF', side: '#B4C8DE', hl: '#F0A23A',
+      sh: 'rgba(20,50,90,.4)', vig: 'rgba(30,70,120,.18)', grid: '#5C8FC4', guide: '#FFFFFF', dot: '#F0A23A', stripe: '#F0A23A', split: '#FFFFFF',
+      iconL: '#D3E4F4', iconR: '#A9C2DC', bars: ['#E6EEF6', '#A9CBEA', '#8F9AA8', '#B89878'] },
+    mark: { faceTop: '#34557C', faceBot: '#1E3554', edge: '#6F95C2', sideBack: '#0D1A2C', sideFront: '#28405F', shadow: '#1D3A5E', shadowA: .24 },
+  },
+  alt: {  // 换题示例：秋天傍晚的梯田茶园（茶垄、运茶小缆车、晒茶棚）
+    bg: { top: '#F8E1C8', bot: '#D39A7C', clayTop: '#F4EEE8', clayBot: '#DCCDBF', glow: '#FFF1DE', floor: '#B07A62' },
+    light: { sun: [.72, .5, .32], sky: [.42, .4, .5], gnd: [.5, .42, .36], bulb: '#FFC27A', bulbI: 0, lampGlow: 0 },
+    scene: { clay: '#F3EEE8', snow: '#7FA86A', snow2: '#6E9A5C', piste: '#C9A27A', groom: '#A9845E', rock: '#8C8078', deck: '#B89A78',
+      slab1: '#C8B49E', slab2: '#9C8570', slab3: '#7A6553', pedestal: '#3E3028', metal: '#B3A89E', cableC: '#3E3028', cloud: '#FFF4E8',
+      pine: '#3F6B3A', pine2: '#4F7E45', trunk: '#5E4232', wood: '#8A6A4E', roof: '#5B6E7A', lamp: '#FFD27A', chair: '#2F8C8C', chair2: '#1F6E70' },
+    fx: { glow: '#FFC07A', glowCore: '#FFE9C4', ringGlow: '#FFB35C', beam: '#FFE0B0', glint: '#FFF0DA' },
+    ui: { bg1: '#F8E1C8', bg2: '#D39A7C', ink: '#3A2418', ink2: '#73513E', ink3: '#8E6C58', panel: '#FFF8F0', side: '#E0BFA4', hl: '#2F8C8C',
+      sh: 'rgba(90,40,20,.35)', vig: 'rgba(120,60,30,.2)', grid: '#A5704F', guide: '#FFF4E8', dot: '#2F8C8C', stripe: '#2F8C8C', split: '#FFF8F0',
+      iconL: '#E8D2BC', iconR: '#CFAF94', bars: ['#7FA86A', '#C9A27A', '#8C8078', '#B89A78'] },
+    mark: { faceTop: '#5A3A28', faceBot: '#3A2418', edge: '#9C6E52', sideBack: '#1E120B', sideFront: '#4A2E1E', shadow: '#5A2E18', shadowA: .24 },
+  },
+};
+const PAL = PALETTES[/[?&]pal=alt(&|$)/.test(location.search) ? 'alt' : 'base'];
+const toRGB = (h, g = 1) => [1, 3, 5].map(i => Math.pow(parseInt(h.substr(i, 2), 16) / 255, g));   // g = 2.2 时转成线性
+for (const [k, v] of Object.entries(PAL.ui)) if (typeof v === 'string') document.documentElement.style.setProperty('--' + k, v);
+</script>
+<style>
+  :root {--sans:-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;--mono:"SF Mono",Menlo,Consolas,monospace}
+  * {box-sizing:border-box;margin:0}
+  html,body {height:100%;background:var(--bg1);color:var(--ink);font-family:var(--sans)}
+  body {overflow:hidden}
+  #stage {position:fixed;inset:0;background:linear-gradient(var(--bg1),var(--bg2))}
+  #stage canvas, #ov {position:absolute;inset:0;width:100%;height:100%;display:block}
+  .grain {position:absolute;inset:0;pointer-events:none;opacity:.08;mix-blend-mode:multiply;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .4 0 0 0 0 .4 0 0 0 0 .4 0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+  .vig {position:absolute;inset:0;pointer-events:none;background:radial-gradient(130% 95% at 55% 42%,transparent 58%,var(--vig))}
+  #tag {position:fixed;left:32px;top:26px;display:flex;align-items:center;gap:12px;pointer-events:none}
+  #tag svg {width:34px;height:38px;flex:none}
+  #tag b {display:block;font-size:19px;font-weight:800;letter-spacing:.02em}
+  #tag span {display:block;margin-top:2px;font:600 11px/1.3 var(--mono);letter-spacing:.3em;color:var(--ink2)}
+  #meta {position:fixed;right:32px;top:28px;text-align:right;font:500 11px/1.75 var(--mono);letter-spacing:.2em;color:var(--ink2);pointer-events:none}
+  #meta svg {width:46px;height:42px;display:block;margin:0 0 4px auto}
+  /* SVG 叠层里的字 */
+  #ov .h{font:800 18px var(--sans);fill:var(--ink)} #ov .k1{font:800 30px var(--sans);letter-spacing:.12em;fill:var(--ink)}
+  #ov .k2{font:20px var(--mono);letter-spacing:.3em;fill:var(--ink2)} #ov .cm{font:15px var(--mono);letter-spacing:.16em;fill:var(--ink3)}
+  #ov .cn{font:700 58px var(--mono);letter-spacing:-.05em;fill:var(--ink)} #ov .cu{font:700 20px var(--sans);fill:var(--ink3)}
+  #ov .cf{font:16px var(--sans);fill:var(--ink3)} #ov .kt{font:13px var(--mono);letter-spacing:.04em;fill:var(--ink3)}
+  @media (orientation:portrait) {
+    #tag {left:16px;top:14px;gap:9px} #tag svg {width:26px;height:30px} #tag b {font-size:16px} #tag span {font-size:12px;letter-spacing:.18em}
+    #meta {right:16px;top:16px;font-size:12px;letter-spacing:.12em} #meta svg {display:none} #meta .m2 {display:none}
+ }
+</style>
+</head>
+<body>
+<main id="stage">
+  <canvas id="gl"></canvas>
+  <svg id="ov" aria-hidden="true"></svg>
+  <div class="grain"></div><div class="vig"></div>
+</main>
+<header id="tag">
+  <svg viewBox="0 0 34 38"><path d="M17 2 32 10 17 18 2 10Z" style="fill:var(--panel)"/><path d="M2 10 17 18v18L2 28Z" style="fill:var(--iconL)"/><path d="M32 10 17 18v18l15-8Z" style="fill:var(--iconR)"/><path d="M17 2 32 10 17 18 2 10Z" fill="none" style="stroke:var(--ink)" stroke-width="1.2" opacity=".25"/></svg>
+  <div><b>北坡缆车 · 模型</b><span>MINIATURE · 1:300</span></div>
+</header>
+<aside id="meta">
+  <svg viewBox="0 0 46 42"><g stroke-width="2" stroke-linecap="round" fill="none"><path d="M23 24V4" style="stroke:var(--ax0)"/><path d="M23 24 40 33" style="stroke:var(--ax1)"/><path d="M23 24 6 33" style="stroke:var(--ax2)"/></g><circle cx="23" cy="24" r="2.6" style="fill:var(--ink)"/></svg>
+  <div>ORTHO · EL 30° · AZ 45°</div><div class="m2">TILE 11×11 · R 0.075</div><div id="fr">SC.02 · F 0000</div>
+</aside>
+<script>
+/* ━━ 样张自己的播放代码：只为把这份样张播起来，不是成品该用的结构，不要照抄。成品页面上要有哪些东西见 形式.md「页面上要有的东西」，长什么样、怎么排按你的风格自己做 ━━ */
+function makePlayer(SHOTS, hooks = {}) {
+  const S = { i: 0, t: 0, playing: true, reduce: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    w: innerWidth, h: innerHeight, portrait: innerHeight > innerWidth };
+  function enter(i) {
+    S.i = (i + SHOTS.length) % SHOTS.length; S.t = 0;
+    const s = SHOTS[S.i];
+    s.enter && s.enter(S);
+    hooks.onShot && hooks.onShot(S.i, s, S);
+    if (S.reduce) s.draw(s.dur, 1, S);
+  }
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    if (S.playing) {
+      S.t += dt;
+      if (S.t >= SHOTS[S.i].dur) enter(S.i + 1);
+    }
+    const s = SHOTS[S.i];
+    if (!S.reduce) s.draw(Math.min(S.t, s.dur), Math.min(1, S.t / s.dur), S);
+    requestAnimationFrame(frame);
+  }
+  document.addEventListener('visibilitychange', () => { S.playing = !document.hidden; last = performance.now(); });
+  addEventListener('resize', () => {
+    S.w = innerWidth; S.h = innerHeight; S.portrait = S.h > S.w;
+    hooks.onResize && hooks.onResize(S);
+    if (S.reduce) SHOTS[S.i].draw(SHOTS[S.i].dur, 1, S);
+  });
+  hooks.onResize && hooks.onResize(S);
+  enter(0);
+  requestAnimationFrame(frame);
+  return S;
+}
+
+/* ━━ 缓动：动作要有预备、过冲、回落 ━━ */
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const seg = (p, a, b) => clamp((p - a) / (b - a));
+const ease = {
+  out: x => 1 - Math.pow(1 - x, 3),
+  inOut: x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2,
+  back: x => 1 + 2.7 * Math.pow(x - 1, 3) + 1.7 * Math.pow(x - 1, 2),
+  spring: x => 1 - Math.exp(-6 * x) * Math.cos(12 * x),
+  step: (x, n) => Math.floor(x * n) / n,
+};
+const lerp = (a, b, k) => a + (b - a) * k;
+
+/* ━━ T1 等轴正交相机：方位 45°、俯角 30°；同一个投影喂给 WebGL 矩阵和 SVG 叠层 ━━ */
+const AZ = Math.PI / 4, EL = Math.PI / 6;
+const CA = Math.cos(AZ), SA = Math.sin(AZ), CE = Math.cos(EL), SE = Math.sin(EL);
+const RX = [CA, 0, -SA], UP = [-SA * SE, CE, -CA * SE], FW = [-SA * CE, -SE, -CA * CE];  // 屏幕右、屏幕上、看进屏幕
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const nrm = a => { const l = Math.hypot(a[0], a[1], a[2]); return [a[0] / l, a[1] / l, a[2] / l]; };
+const crs = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+// cam = { W, H 视口；s 每单位像素；cx, cy 目标点 T 的屏幕位置 }
+function camMatrix(c) {
+  const kx = 2 * c.s / c.W, ky = 2 * c.s / c.H, kz = 1 / 30;
+  return new Float32Array([kx * RX[0], ky * UP[0], kz * FW[0], 0, kx * RX[1], ky * UP[1], kz * FW[1], 0, kx * RX[2], ky * UP[2], kz * FW[2], 0,
+    -kx * dot(c.T, RX) + 2 * c.cx / c.W - 1, -ky * dot(c.T, UP) + 1 - 2 * c.cy / c.H, -kz * dot(c.T, FW), 1]);
+}
+const project = (c, p) => { const d = sub(p, c.T); return [c.cx + c.s * dot(d, RX), c.cy - c.s * dot(d, UP)]; };
+// 任意方向的正交矩阵：dir 指向光源，half 覆盖半宽，depth 深度半程
+function orthoFrom(dir, half, depth) {
+  const f = nrm([-dir[0], -dir[1], -dir[2]]), up = Math.abs(f[1]) > .99 ? [0, 0, -1] : [0, 1, 0];
+  const r = nrm(crs(f, up)), u = crs(r, f), k = 1 / half, kz = 1 / depth;
+  return new Float32Array([k * r[0], k * u[0], kz * f[0], 0, k * r[1], k * u[1], kz * f[1], 0, k * r[2], k * u[2], kz * f[2], 0, 0, 0, 0, 1]);
+}
+
+/* ━━ T2 网格：圆角盒 = 内盒 ⊕ 半径 r 的球。顶点只存「内盒上的点 s」和「倒边方向 o」，位置 = s·(半尺寸−r) + o·r，法线 = o ━━ */
+function meshRoundBox(K = 3, w = .34) {
+  const L = [], V = [], I = [];
+  for (let k = 0; k <= K; k++) L.push(-1 + w * k / K);
+  for (let k = K; k >= 0; k--) L.push(1 - w * k / K);
+  const n = L.length;
+  for (let ax = 0; ax < 3; ax++) for (const sg of [-1, 1]) {
+    const base = V.length / 6, t1 = (ax + 1) % 3, t2 = (ax + 2) % 3;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+      const q = [0, 0, 0], s = [0, 0, 0], b = [0, 0, 0]; q[ax] = sg; q[t1] = L[i]; q[t2] = L[j];
+      for (let c = 0; c < 3; c++) {
+        if (c === ax) { s[c] = b[c] = sg; continue; }
+        s[c] = clamp(q[c] / (1 - w), -1, 1);
+        b[c] = Math.sign(q[c]) * clamp((Math.abs(q[c]) - (1 - w)) / w);
+      }
+      const o = nrm(b); V.push(s[0], s[1], s[2], o[0], o[1], o[2]);
+    }
+    for (let i = 0; i < n - 1; i++) for (let j = 0; j < n - 1; j++) {
+      const a = base + i * n + j, b2 = a + 1, c = a + n, d = c + 1;
+      sg > 0 ? I.push(a, c, b2, b2, c, d) : I.push(a, b2, c, b2, d, c);
+    }
+  }
+  return { V: new Float32Array(V), I: new Uint16Array(I) };
+}
+// 圆角圆柱：车床剖面（顶心→顶边圆弧→侧壁→底边圆弧→底心），同一套 s/o 编码
+function meshRoundCyl(M = 30, K = 3) {
+  const prof = [[0, 1, 0, 1]], V = [], I = [];
+  for (let k = 0; k <= K; k++) { const a = k / K * Math.PI / 2; prof.push([1, 1, Math.sin(a), Math.cos(a)]); }
+  for (let k = 0; k <= K; k++) { const a = Math.PI / 2 + k / K * Math.PI / 2; prof.push([1, -1, Math.sin(a), Math.cos(a)]); }
+  prof.push([0, -1, 0, -1]);
+  for (let m = 0; m <= M; m++) { const th = m / M * Math.PI * 2, c = Math.cos(th), s = Math.sin(th);
+    for (const [a, b, ox, oy] of prof) V.push(a * c, b, a * s, ox * c, oy, ox * s); }
+  const P = prof.length;
+  for (let m = 0; m < M; m++) for (let p = 0; p < P - 1; p++) {
+    const a = m * P + p, b = a + P, c = a + 1, d = b + 1; I.push(a, b, c, b, d, c);
+  }
+  return { V: new Float32Array(V), I: new Uint16Array(I) };
+}
+function meshSphere(M = 28, P = 16) {
+  const V = [], I = [];
+  for (let m = 0; m <= M; m++) for (let p = 0; p <= P; p++) {
+    const th = m / M * Math.PI * 2, ph = p / P * Math.PI;
+    V.push(0, 0, 0, Math.sin(ph) * Math.cos(th), Math.cos(ph), Math.sin(ph) * Math.sin(th));
+  }
+  for (let m = 0; m < M; m++) for (let p = 0; p < P; p++) {
+    const a = m * (P + 1) + p, b = a + P + 1, c = a + 1, d = b + 1; I.push(a, b, c, b, d, c);
+  }
+  return { V: new Float32Array(V), I: new Uint16Array(I) };
+}
+
+/* ━━ T3 实例化顶点着色器：圆角盒 / 圆柱 / 球共用；一条实例 = 中心、圆角、半尺寸、转角、偏移、颜色、材质 ━━ */
+const VS_INST = `#version 300 es
+layout(location=0) in vec3 aS;  // 内盒上的点
+layout(location=1) in vec3 aO;  // 倒边方向（= 法线）
+layout(location=2) in vec4 iA;  // 中心 xyz、圆角半径
+layout(location=3) in vec4 iB;  // 半尺寸 xyz、绕 Y 转角
+layout(location=4) in vec4 iC;  // 局部偏移 xyz（转轴在哪）、绕局部 Z 转角
+layout(location=5) in vec4 iD;  // 颜色 rgb（线性）、材质号
+uniform mat4 uVP;
+out vec3 vP; out vec3 vN; out vec3 vC; flat out float vM;
+void main(){
+  vec3 H = iB.xyz; float r = min(iA.w, min(H.x, min(H.y, H.z)));
+  float cy = cos(iB.w), sy = sin(iB.w), cz = cos(iC.w), sz = sin(iC.w);
+  mat3 R = mat3(cy,0.,-sy, 0.,1.,0., sy,0.,cy) * mat3(cz,sz,0., -sz,cz,0., 0.,0.,1.);
+  vec3 P = iA.xyz + R * (aS * (H - r) + aO * r + iC.xyz);
+  vP = P; vN = R * aO; vC = iD.rgb; vM = iD.a;
+  gl_Position = uVP * vec4(P, 1.);
+}`;
+const FS_DEPTH = `#version 300 es
+precision mediump float; void main(){}`;
+/* ━━ T4 光照：软阴影、高度图 AO（主光和接影地面共用），FS_LIT 里 ③–⑨ 每项一行 ━━ */
+const GLSL_SHADOW = `
+uniform mat4 uLVP; uniform float uSM;
+uniform highp sampler2D uSR; uniform highp sampler2DShadow uSC;  // 同一张深度图：读原值 / 硬件比较
+uniform highp sampler2D uHM; uniform float uHH, uHD;  // 俯视高度图：覆盖半宽、深度半程
+vec2 PD(int i){ float k = float(i); return sqrt((k + .5) / 12.) * vec2(cos(k * 2.4), sin(k * 2.4)); }  // 12 点向日葵盘，均匀不扎堆
+float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+// ① 软阴影 PCSS：先找挡光物平均深度，再按受光点离它多远放大模糊半径——贴地硬、离远虚
+float softShadow(vec3 P, vec3 N){
+  vec3 q = (uLVP * vec4(P + N * .035, 1.)).xyz * .5 + .5;
+  if (q.x < 0. || q.y < 0. || q.x > 1. || q.y > 1.) return 1.;
+  float tx = 1. / uSM, a = hash(gl_FragCoord.xy) * 6.283; mat2 R = mat2(cos(a), sin(a), -sin(a), cos(a));
+  float sum = 0., cnt = 0.;
+  for (int i = 0; i < 12; i++){ float d = texture(uSR, q.xy + R * PD(i) * tx * 12.).r; if (d < q.z - .0015){ sum += d; cnt += 1.; } }
+  if (cnt < .5) return 1.;
+  float pen = clamp((q.z - sum / cnt) * 300., 1.3, 26.);
+  float lit = 0.;
+  for (int i = 0; i < 12; i++) lit += texture(uSC, vec3(q.xy + R * PD(i) * tx * pen, q.z - .0012));
+  return lit / 12.;
+}
+float heightAt(vec2 xz){ return (1. - 2. * texture(uHM, vec2(xz.x, -xz.y) / uHH * .5 + .5).r) * uHD; }
+// ② 高度图 AO：法线外侧两圈采样，比自己高且在法线半球里的点算遮挡——砖缝、墙根、树下变暗
+float heightAO(vec3 P, vec3 N){
+  float occ = 0., a0 = hash(gl_FragCoord.yx) * .8; vec2 b = P.xz + N.xz * .05;
+  for (int i = 0; i < 8; i++){
+    float a = a0 + float(i) * .7854; vec2 d = vec2(cos(a), sin(a));
+    for (int j = 1; j <= 2; j++){
+      float rr = .13 * float(j * j);
+      float h = heightAt(b + d * rr) - P.y;
+      vec3 v = vec3(d.x * rr, h, d.y * rr);
+      occ += max(dot(normalize(v), N) - .05, 0.) * step(0., h) / (1. + dot(v, v) * 1.2);
+    }
+  }
+  return clamp(1. - occ * .17, 0., 1.);
+}`;
+const FS_LIT = `#version 300 es
+precision highp float;
+in vec3 vP; in vec3 vN; in vec3 vC; flat in float vM;
+uniform vec3 uL, uV, uSun, uSky, uGnd, uFog, uGlint, uBP, uBC; uniform float uT, uSplit;   // uBP/uBC：灯泡点光的位置、颜色×强度
+out vec4 o;
+${GLSL_SHADOW}
+vec3 toSRGB(vec3 c){ return pow(clamp(c, 0., 1.), vec3(1. / 2.2)); }
+void main(){
+  vec3 N = normalize(vN), A = vC;
+  if (gl_FragCoord.x < uSplit){ o = vec4(toSRGB(A), 1.); return; }  // 对比：分割线左边只有颜色（=CSS 菱形的做法）
+  float sh = softShadow(vP, N), ao = heightAO(vP, N);
+  vec3 amb = mix(uGnd, uSky, N.y * .5 + .5) * ao;  // ③ 半球环境光：朝天拿冷天光，朝下拿地面反光
+  vec3 col = A * (amb + uSun * max(dot(N, uL), 0.) * sh);  // ④ 主光：兰伯特 × 软阴影 → 三个面三档亮度
+  float gl = vM == 2. ? 1. : 0.;
+  col += uSun * pow(max(dot(N, normalize(uL + uV)), 0.), mix(40., 160., gl)) * mix(.10, .6, gl) * sh;  // ⑤ 倒边高光：45° 倒边把主光反给相机
+  col += uSky * pow(1. - max(dot(N, uV), 0.), 4.) * .12 * ao;  // ⑥ 边缘天光：掠射处一点冷色，轮廓更清
+  if (vM == 1. && N.y > .9){  // ⑦ 水面：沿对角线流动的闪光条
+    float g = sin((vP.x - vP.z) * 6. + uT * 1.885) * sin((vP.x + vP.z) * 2.1 - uT * .942);
+    col += uGlint * smoothstep(.8, .97, g) * .45 * sh;
+  }
+  if (vM >= 10.) col += A * (vM - 10.);
+  vec3 Lb = uBP - vP; float db = length(Lb);
+  col += A * uBC * max(dot(N, Lb / db), 0.) / (1. + db * db * .3);  // ⑩ 灯泡点光：一圈暖色光池，白天很弱、夜里是主光源  // ⑧ 自发光：灯丝、光圈
+  col = mix(col, uFog, smoothstep(-.4, -1.5, vP.y) * .5);  // ⑨ 底部雾：地台下半截往底色里融
+  o = vec4(toSRGB(col), 1.);
+}`;
+/* ━━ T5 底色与接影地面：底色渐变 + 一块看不见的地板只显示阴影和平台正下方的暗角，乘法混进底色 ━━ */
+const VS_FULL = `#version 300 es
+layout(location=0) in vec2 aQ; out vec2 vQ; void main(){ vQ = aQ; gl_Position = vec4(aQ, 0., 1.); }`;
+const FS_BG = `#version 300 es
+precision highp float;
+in vec2 vQ; uniform vec3 uTop, uBot, uGlowC; uniform vec2 uGlow; uniform float uAsp; out vec4 o;
+float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+void main(){
+  vec2 uv = vQ * .5 + .5;
+  vec3 c = mix(uBot, uTop, smoothstep(0., 1., uv.y));
+  vec2 d = (uv - uGlow) * vec2(uAsp, 1.);
+  c += uGlowC * exp(-dot(d, d) * 2.4) * .10;  // 主体身后一团亮
+  c += (hash(gl_FragCoord.xy) - .5) / 200.;  // 抖动，防渐变色带
+  o = vec4(c, 1.);
+}`;
+const VS_FLOOR = `#version 300 es
+layout(location=0) in vec2 aQ; uniform mat4 uVP; uniform float uFY, uFH; out vec3 vP;
+void main(){ vP = vec3(aQ.x * uFH, uFY, aQ.y * uFH); gl_Position = uVP * vec4(vP, 1.); }`;
+const FS_FLOOR = `#version 300 es
+precision highp float;
+in vec3 vP; uniform float uFY, uFH, uSplit; uniform vec3 uTint; out vec4 o;
+${GLSL_SHADOW}
+void main(){
+  if (gl_FragCoord.x < uSplit){ o = vec4(1.); return; }
+  float sh = softShadow(vP, vec3(0., 1., 0.)), cov = 0.;
+  for (int i = 0; i < 10; i++){ float a = float(i) * .628; cov += step(uFY + .3, heightAt(vP.xz + vec2(cos(a), sin(a)) * 1.7)); }
+  float fade = smoothstep(uFH, uFH * .35, length(vP.xz));
+  float dark = ((1. - sh) * .55 + cov / 10. * .6) * fade;
+  o = vec4(mix(vec3(1.), uTint, dark), 1.);
+}`;
+/* ━━ T6 发光：加色光晕（0）、地面光环（1）、光柱（2）。本例只用 0 给木屋窗；换题有灯、有光源时三种都用 ━━ */
+const VS_SPR = `#version 300 es
+layout(location=0) in vec2 aQ; uniform mat4 uVP; uniform vec3 uC, uR, uU; uniform vec2 uSz; uniform int uK; out vec2 vQ;
+void main(){ vQ = aQ; vec3 P = uK == 1 ? uC + vec3(aQ.x * uSz.x, 0., aQ.y * uSz.y) : uC + uR * aQ.x * uSz.x + uU * aQ.y * uSz.y;
+  gl_Position = uVP * vec4(P, 1.); }`;
+const FS_SPR = `#version 300 es
+precision highp float; precision highp int;
+in vec2 vQ; uniform int uK; uniform vec3 uCol; uniform float uA, uPh, uSplit; out vec4 o;
+void main(){
+  if (gl_FragCoord.x < uSplit) discard;
+  float d = length(vQ), v = 0.;
+  if (uK == 0) v = exp(-d * d * 5.);
+  else if (uK == 1){
+    for (int i = 0; i < 3; i++){ float r = fract(uPh + float(i) / 3.); v += exp(-pow((d - r) * 16., 2.)) * (1. - r) * .9; }
+    v += exp(-pow((d - .36) * 22., 2.)) * .7;
+  } else v = exp(-vQ.x * vQ.x * 40.) * smoothstep(1., .1, abs(vQ.y));
+  o = vec4(uCol * v * uA, 0.);
+}`;
+
+/* ━━ T8 场景表：11×11 地砖分区（四层台阶的雪坡）+ 道具（松树、木屋、缆车塔架、索道、吊椅、雪堆、石块、云）；每样东西 = 一条实例 ━━ */
+const N = 11, HALF = (N - 1) / 2, LOOP = 20, STEP = .42;
+const hex = h => toRGB(h, 2.2), rgb = h => toRGB(h);   // sRGB → 线性 / sRGB 0–1
+const COL = Object.fromEntries(Object.entries(PAL.scene).map(([k, v]) => [k, hex(v)]));   // 场景色全部来自 PAL.scene
+let seedN = 7; const rnd = () => (seedN = (seedN * 16807) % 2147483647) / 2147483647;
+const level = (x, z) => clamp(Math.floor((4 - Math.round(x)) / 2), 0, 4);   // 坡：越往 −x 台阶越高（台阶立面朝 +x，镜头看得见）
+const hAt = (x, z) => level(x, z) * STEP;
+function zoneOf(x, z, sd) {
+  if (Math.abs(z) <= 1) return 'piste';                // 一条雪道，从坡顶顺着台阶直下
+  if (x >= 2 && z >= 3) return 'deck';                 // 坡脚木屋前的一块木平台
+  if (level(x, z) === 4 && sd < .45) return 'rock';     // 坡顶露出的石头
+  return 'snow';
+}
+const TILES = [];
+for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+  const x = i - HALF, z = j - HALF, sd = rnd(), zone = zoneOf(x, z, sd), jit = .96 + rnd() * .06;
+  TILES.push({ x, z, zone, L: level(x, z), d: Math.hypot(x, z), sd, col: COL[zone === 'snow' && (i + j) % 2 ? 'snow2' : zone].map(v => v * jit) });
+}
+const ZONES = ['snow', 'piste', 'rock', 'deck'].map(z => ({ z, n: TILES.filter(t => t.zone === z).length }));
+const PROPS = [];
+const P_ = (k, x, z, o = {}) => PROPS.push(Object.assign({ k, x, z, d: Math.hypot(x, z), sd: rnd() }, o));
+[[-4, 2], [-3, 3], [-5, 4], [-4, 5], [-2, 4], [-1, 2], [0, 4], [1, 5], [-2, 2], [-5, 2], [-3, 5], [1, 3], [2, -5], [4, -5], [0, -4], [-2, -5],
+ [-4, -4], [3, -4], [5, -5], [-1, -5], [1, -4]].forEach(([x, z]) => P_('pine', x, z));
+[[-1, 3], [-1, 4], [-3, -4], [2, -4], [5, -4]].forEach(([x, z]) => P_('drift', x, z));
+[[-5, 3], [-5, -5], [-5, -4]].forEach(([x, z]) => P_('rock', x, z));
+P_('cabin', 3.4, 4.3);
+// 缆车：底站 → 三座塔架 → 顶站，沿 z = −2.6 这条线上坡；两根索（上行 / 下行）在线两侧
+const LB = [4.6, -2.6], LT = [-4.6, -2.6], LDIR = nrm([LT[0] - LB[0], 0, LT[1] - LB[1]]), LPERP = [-LDIR[2], 0, LDIR[0]];
+const LIFT = [0, .25, .5, .75, 1].map((u, i) => { const x = lerp(LB[0], LT[0], u), z = lerp(LB[1], LT[1], u);
+  return { x, z, top: hAt(x, z) + (i === 0 || i === 4 ? 1.05 : 1.6), station: i === 0 || i === 4 }; });
+LIFT.forEach((p, i) => P_(p.station ? 'station' : 'tower', p.x, p.z, { top: p.top, i }));
+// 索道折线：每跨分 4 小段，中间下垂一点；返回 [x,y,z] 列表
+function cablePts(side) {
+  const pts = [];
+  for (let i = 0; i < LIFT.length - 1; i++) for (let s = 0; s < 4; s++) {
+    const a = LIFT[i], b = LIFT[i + 1], u = s / 4;
+    pts.push([lerp(a.x, b.x, u) + LPERP[0] * .26 * side, lerp(a.top, b.top, u) - .5 * u * (1 - u), lerp(a.z, b.z, u) + LPERP[2] * .26 * side]);
+  }
+  const e = LIFT[LIFT.length - 1]; pts.push([e.x + LPERP[0] * .26 * side, e.top, e.z + LPERP[2] * .26 * side]);
+  return pts;
+}
+const CABLES = [cablePts(1), cablePts(-1)];
+const along = (pts, a) => { const f = clamp(a) * (pts.length - 1), i = Math.min(pts.length - 2, Math.floor(f)), k = f - i;
+  return [lerp(pts[i][0], pts[i + 1][0], k), lerp(pts[i][1], pts[i + 1][1], k), lerp(pts[i][2], pts[i + 1][2], k)]; };
+const CHAIRS = 12, LSPEED = .024;   // 12 把吊椅；一圈 = 上行 + 下行
+// 一把吊椅在环上的位置：u∈[0,.5) 上行（索 +1），[.5,1) 下行（索 −1）
+const chairAt = u => { u = ((u % 1) + 1) % 1; return u < .5 ? along(CABLES[0], u * 2) : along(CABLES[1], 1 - (u - .5) * 2); };
+const arrivals = T => Math.floor(T * LSPEED * CHAIRS * 2);   // 到顶站的把数：环上 12 把，每过 1/24 圈有一把到站
+
+// 实例写入器：每条 16 个浮点，顺序和顶点着色器的 iA..iD 对应
+function Batch(cap) { this.a = new Float32Array(cap * 16); this.n = 0; }
+Batch.prototype.add = function (c, h, r, col, mat = 0, yaw = 0, off = [0, 0, 0], roll = 0) {
+  this.a.set([...c, r, ...h, yaw, ...off, roll, ...col, mat], this.n++ * 16);
+};
+const BX = new Batch(500), CY = new Batch(220), SP = new Batch(400), GL_ = new Batch(4), CLOUD = new Batch(16);
+const mixc = (a, b, k) => [lerp(a[0], b[0], k), lerp(a[1], b[1], k), lerp(a[2], b[2], k)];
+// 一段细棍：从 a 到 b 的圆角盒（yaw 对准水平方向，roll 抬到坡度）
+function rod(a, b, w, col, mat = 0) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2], hl = Math.hypot(dx, dz);
+  BX.add([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2], [Math.hypot(hl, dy) / 2 + w * .5, w, w], w * .9, col, mat, Math.atan2(-dz, dx), [0, 0, 0], Math.atan2(dy, hl));
+}
+
+/* ━━ T7 白模落下：拉长下落 → 落地压扁 → 阻尼回弹；buildScene 按动画状态把场景表写成实例 ━━ */
+function dropPose(tau, fall = 1.9) {
+  if (tau <= 0) return null;
+  if (tau >= 1) return [0, 1, 1];
+  if (tau < .42) { const k = tau / .42, st = 1 + .4 * k; return [fall * (1 - k * k), st, 1 / Math.sqrt(st)]; }
+  const k = (tau - .42) / .58, sy = 1 - .38 * Math.exp(-4.5 * k) * Math.cos(13 * k);
+  return [0, sy, 1 / Math.sqrt(sy)];
+}
+// st：tile(格)→τ、prop(物)→τ、cable(第几根)→τ、chair(第几把)→τ、paint(距离)→0..1、base、lit、run（吊椅开动）、T（环境时间，20 秒一圈）
+function buildScene(st) {
+  BX.n = CY.n = SP.n = GL_.n = CLOUD.n = 0;
+  const T = st.T, w = Math.PI * 2 / LOOP;
+  // 石台三层：薄压顶、厚石台、底座
+  if (st.base > 0) {
+    const b = st.base, hw = HALF + .56;
+    BX.add([0, -.43, 0], [hw, .07 * b, hw], .05, mixc(COL.clay, COL.slab1, st.paintAll));
+    BX.add([0, -.5 - .34 * b, 0], [hw - .07, .34 * b, hw - .07], .08, mixc(COL.clay, COL.slab2, st.paintAll));
+    BX.add([0, -.5 - .68 * b - .1 * b, 0], [hw - .2, .1 * b, hw - .2], .06, mixc(COL.clay, COL.slab3, st.paintAll));
+  }
+  for (const t of TILES) {
+    const pose = dropPose(st.tile(t)); if (!pose) continue;
+    const k = st.paint(t.d), hop = .16 * Math.sin(Math.PI * k) * (k < 1 ? 1 : 0);
+    const top = t.L * STEP, hh = (.36 + top) / 2 * pose[1], y = top + pose[0] + hop;
+    // 微细节：雪道上的压雪机纹（一道道细条，顺着坡）、雪砖上的小雪包
+    if (pose[0] === 0 && t.zone === 'piste') for (let n = -1; n <= 1; n++)
+      BX.add([t.x, y + .008, t.z + n * .14], [.4, .008, .025], .006, mixc(COL.clay, COL.groom, k));
+    if (pose[0] === 0 && t.zone === 'snow' && t.sd < .3)
+      SP.add([t.x - .15 + t.sd * .5, y + .01, t.z + .12 - t.sd * .4], [1, 1, 1], .07, mixc(COL.clay, COL.snow, k));
+    BX.add([t.x, -.36 + hh + pose[0] + hop, t.z], [.465 * pose[2], hh, .465 * pose[2]], .075, mixc(COL.clay, t.col, k), t.zone === 'piste' && k > .5 ? 1 : 0);   // 雪道走材质 1：冰面闪光
+  }
+  for (const p of PROPS) {
+    const tau = st.prop(p); if (tau <= 0) continue;
+    const s = ease.back(clamp(tau)), k = st.paint(p.d), gy = hAt(p.x, p.z);
+    const at = (dx, dy, dz) => [p.x + dx * s, gy + dy * s, p.z + dz * s], pk = c => mixc(COL.clay, c, k);  // pk：白模色 → 本色
+    if (p.k === 'pine') {   // 松树：一截树干 + 三层越往上越细的圆台
+      const sway = Math.sin(T * w * 2 + p.sd * 6) * .02, c = p.sd > .5 ? COL.pine2 : COL.pine;
+      CY.add(at(0, .1, 0), [.05 * s, .1 * s, .05 * s], .02, pk(COL.trunk));
+      [[.3, .3, .1], [.23, .52, .09], [.15, .72, .08], [.07, .88, .06]].forEach(([r, y, h], n) =>
+        CY.add(at(sway * n, y, 0), [r * s, h * s, r * s], .04, pk(c)));
+      SP.add(at(sway * 3, .95, 0), [1, 1, 1], .05 * s, pk(COL.snow));
+    } else if (p.k === 'drift') {
+      SP.add(at(-.08, .05, .05), [.2, .2, .2], .2 * s, pk(COL.snow));
+      SP.add(at(.16, .03, -.1), [.13, .13, .13], .13 * s, pk(COL.snow2));
+    } else if (p.k === 'rock') {
+      BX.add(at(0, .09, 0), [.18 * s, .1 * s, .14 * s], .07, pk(COL.rock), 0, p.sd * 3);
+      BX.add(at(.2, .05, .14), [.09 * s, .05 * s, .08 * s], .04, pk(COL.rock), 0, p.sd * 5);
+      SP.add(at(-.02, .19, 0), [1, 1, 1], .07 * s, pk(COL.snow));
+    } else if (p.k === 'cabin') {   // 木屋：木墙 + 两片坡屋顶（压着雪）+ 烟囱 + 两扇暖窗
+      BX.add(at(0, .3, 0), [.46 * s, .3 * s, .62 * s], .04, pk(COL.wood));
+      for (const sd of [-1, 1]) {
+        BX.add(at(sd * .25, .72, 0), [.33 * s, .035 * s, .7 * s], .03, pk(COL.roof), 0, 0, [0, 0, 0], -sd * .62);
+        BX.add(at(sd * .23, .77, 0), [.26 * s, .025 * s, .66 * s], .02, pk(COL.snow), 0, 0, [0, 0, 0], -sd * .62);
+      }
+      CY.add(at(-.15, .9, .32), [.07 * s, .16 * s, .07 * s], .02, pk(COL.slab2));
+      for (const dz of [-.3, .3]) BX.add(at(.465, .32, dz), [.02 * s, .11 * s, .12 * s], .02, mixc(COL.clay, COL.lamp, st.lit), 10 + 1.3 * st.lit);
+      BX.add(at(0, .2, .63), [.1 * s, .2 * s, .015 * s], .02, pk(COL.trunk));
+    } else if (p.k === 'tower' || p.k === 'station') {   // 塔架：一根杆 + 横担；站房：一个盒子 + 一只平放的大轮
+      const H = p.top - gy, yaw = Math.atan2(-LDIR[2], LDIR[0]);
+      if (p.k === 'tower') {
+        CY.add(at(0, H / 2, 0), [.06 * s, H / 2 * s, .06 * s], .02, pk(COL.metal), 2);
+        BX.add(at(0, H + .02, 0), [.05 * s, .04 * s, .34 * s], .02, pk(COL.metal), 2, yaw);
+      } else {
+        BX.add(at(0, .32, 0), [.34 * s, .32 * s, .4 * s], .05, pk(COL.wood), 0, yaw);
+        BX.add(at(0, .68, 0), [.42 * s, .05 * s, .5 * s], .03, pk(COL.roof), 0, yaw);
+        CY.add(at(0, H - .02, 0), [.32 * s, .035 * s, .32 * s], .02, pk(COL.metal), 2);
+        CY.add(at(0, (H + .7) / 2, 0), [.05 * s, (H - .7) / 2 * s, .05 * s], .02, pk(COL.metal), 2);
+      }
+    }
+  }
+  // 索道：两根索一段段架上（cable(i)），再一把把挂上吊椅（chair(i)），开动后沿环走
+  CABLES.forEach((pts, ci) => {
+    const g = clamp(st.cable(ci)); if (g <= 0) return;
+    const n = Math.ceil(g * (pts.length - 1));
+    for (let i = 0; i < n; i++) { const e = i < n - 1 ? 1 : (g * (pts.length - 1)) - i; const b = [lerp(pts[i][0], pts[i + 1][0], e), lerp(pts[i][1], pts[i + 1][1], e), lerp(pts[i][2], pts[i + 1][2], e)];
+      rod(pts[i], b, .014, mixc(COL.clay, COL.cableC, st.paintAll), 2); }
+  });
+  const yawL = Math.atan2(-LDIR[2], LDIR[0]);
+  for (let i = 0; i < CHAIRS; i++) {
+    const tau = st.chair(i); if (tau <= 0) continue;
+    const drop = dropPose(clamp(tau), .5) || [0, 1, 1], u = i / CHAIRS + st.run, c = chairAt(u), up = (((u % 1) + 1) % 1) < .5;
+    const sw = Math.sin(T * 2.4 + i) * .04, y = c[1] - .34 + drop[0];
+    CY.add([c[0], c[1] - .17 + drop[0], c[2]], [.012, .17, .012], .006, mixc(COL.clay, COL.metal, st.paintAll), 2);
+    BX.add([c[0], y, c[2]], [.15, .025 * drop[1], .12], .02, mixc(COL.clay, COL.chair, st.lit), 0, yawL + (up ? 0 : Math.PI), [0, 0, 0], sw);
+    BX.add([c[0], y + .09, c[2]], [.15, .08, .018], .015, mixc(COL.clay, COL.chair2, st.lit), 0, yawL + (up ? 0 : Math.PI), [0, 0, -.1], sw);
+  }
+  // 云：四个球一朵，按 20 秒周期来回飘，影子扫过雪坡
+  [[-6, 5.2, 3, 0], [-2, 6, -4, 2.1]].forEach(([x, y, z, ph]) => {
+    const dx = Math.sin(T * w + ph) * 1.4;
+    [[0, 0, 0, .55], [.6, -.12, .12, .42], [-.58, -.14, 0, .4], [.18, .26, -.1, .44]].forEach(([a, b, c, r]) =>
+      CLOUD.add([x + dx + a, y + b, z + c], [r, r, r], r, COL.cloud));
+  });
+}
+
+/* ━━ T3（续）WebGL2 管线：两张深度图（光源、俯视高度）→ 底色 → 接影地面 → 实体 → 玻璃 → 发光 ━━ */
+const cv = document.getElementById('gl');
+const gl = cv.getContext('webgl2', { antialias: true, alpha: false, powerPreference: 'high-performance' });
+const R = { ok: !!gl, scale: 1, SM: 2048 };
+function prog(vs, fs) {
+  const p = gl.createProgram();
+  for (const [t, src] of [[gl.VERTEX_SHADER, vs], [gl.FRAGMENT_SHADER, fs]]) {
+    const s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+    gl.attachShader(p, s);
+  }
+  gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+  const U = {}, n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+  for (let i = 0; i < n; i++) { const nm = gl.getActiveUniform(p, i).name.replace(/\[0\]$/, ''); U[nm] = gl.getUniformLocation(p, nm); }
+  return { p, U };
+}
+function setU(P, vals) {
+  for (const k in vals) { const l = P.U[k]; if (l == null) continue; const v = vals[k];
+    if (v instanceof Float32Array && v.length === 16) gl.uniformMatrix4fv(l, false, v);
+    else if (typeof v === 'number') gl.uniform1f(l, v);
+    else if (v.i !== undefined) gl.uniform1i(l, v.i);
+    else [, gl.uniform1fv, gl.uniform2fv, gl.uniform3fv, gl.uniform4fv][v.length].call(gl, l, v); }
+}
+function meshVAO(m) {
+  const vao = gl.createVertexArray(); gl.bindVertexArray(vao);
+  const vb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vb); gl.bufferData(gl.ARRAY_BUFFER, m.V, gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 24, 0);
+  gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 24, 12);
+  const ib = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, m.I, gl.STATIC_DRAW);
+  const inst = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, inst);
+  for (let k = 0; k < 4; k++) { gl.enableVertexAttribArray(2 + k); gl.vertexAttribPointer(2 + k, 4, gl.FLOAT, false, 64, k * 16); gl.vertexAttribDivisor(2 + k, 1); }
+  gl.bindVertexArray(null);
+  return { vao, inst, count: m.I.length };
+}
+function depthTarget(size) {
+  const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texStorage2D(gl.TEXTURE_2D, 1, gl.DEPTH_COMPONENT24, size, size);
+  const fb = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, tex, 0);
+  gl.drawBuffers([gl.NONE]); gl.readBuffer(gl.NONE); gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  return { tex, fb, size };
+}
+if (R.ok) {
+  try {
+    R.SM = Math.min(innerWidth, innerHeight) < 600 ? 1024 : 2048;  // 手机阴影贴图减半
+    R.pLit = prog(VS_INST, FS_LIT); R.pDep = prog(VS_INST, FS_DEPTH);
+    R.pBg = prog(VS_FULL, FS_BG); R.pFloor = prog(VS_FLOOR, FS_FLOOR); R.pSpr = prog(VS_SPR, FS_SPR);
+    R.box = meshVAO(meshRoundBox()); R.cyl = meshVAO(meshRoundCyl()); R.sph = meshVAO(meshSphere());
+    R.quad = gl.createVertexArray(); gl.bindVertexArray(R.quad);
+    const qb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, qb);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0); gl.bindVertexArray(null);
+    R.sh = depthTarget(R.SM); R.hm = depthTarget(512);
+    R.sRaw = gl.createSampler(); R.sCmp = gl.createSampler();
+    // 一张深度图配两个采样器：原值（找挡光物）+ 硬件比较（PCF）
+    [[R.sRaw, gl.NEAREST], [R.sCmp, gl.LINEAR]].forEach(([s, f]) => [[gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE],
+      [gl.TEXTURE_MIN_FILTER, f], [gl.TEXTURE_MAG_FILTER, f]].forEach(([k, v]) => gl.samplerParameteri(s, k, v)));
+    gl.samplerParameteri(R.sCmp, gl.TEXTURE_COMPARE_MODE, gl.COMPARE_REF_TO_TEXTURE); gl.samplerParameteri(R.sCmp, gl.TEXTURE_COMPARE_FUNC, gl.LEQUAL);
+  } catch (e) { console.warn('WebGL2 初始化失败，改画静态图：', e.message); R.ok = false; }
+}
+cv.addEventListener('webglcontextlost', e => { e.preventDefault(); R.ok = false; R.dirty = true; });
+
+// 主光从左上来（早上的低太阳）：顶面最亮、左侧面暗一档、右侧面暗两档
+const LIGHT = nrm([-.35, 1, .45]);
+const LVP = orthoFrom(LIGHT, 11, 26), HVP = orthoFrom([0, 1, 0], 9, 12);
+function upload(m, b) { gl.bindBuffer(gl.ARRAY_BUFFER, m.inst); gl.bufferData(gl.ARRAY_BUFFER, b.a.subarray(0, b.n * 16), gl.DYNAMIC_DRAW); }
+function drawSet(sets) { for (const [m, b] of sets) { if (!b.n) continue; upload(m, b); gl.bindVertexArray(m.vao); gl.drawElementsInstanced(gl.TRIANGLES, m.count, gl.UNSIGNED_SHORT, 0, b.n); } }
+function renderGL(cam, st) {
+  const W = cv.width, H = cv.height, VP = camMatrix(cam), split = st.split * W;
+  const solid = [[R.box, BX], [R.cyl, CY], [R.sph, SP]];
+  gl.enable(gl.DEPTH_TEST); gl.enable(gl.CULL_FACE); gl.disable(gl.BLEND);
+  // 1 光源深度（云也投影）2 俯视高度（云不算）
+  gl.useProgram(R.pDep.p); gl.enable(gl.POLYGON_OFFSET_FILL); gl.polygonOffset(2, 4);
+  for (const [tg, M, sets] of [[R.sh, LVP, [...solid, [R.sph, CLOUD]]], [R.hm, HVP, solid]]) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, tg.fb); gl.viewport(0, 0, tg.size, tg.size); gl.clear(gl.DEPTH_BUFFER_BIT);
+    setU(R.pDep, { uVP: M }); drawSet(sets);
+  }
+  gl.disable(gl.POLYGON_OFFSET_FILL);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, W, H);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, R.sh.tex); gl.bindSampler(0, R.sRaw);
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, R.sh.tex); gl.bindSampler(1, R.sCmp);
+  gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, R.hm.tex); gl.bindSampler(2, R.sRaw);
+  const shU = { uLVP: LVP, uSM: R.SM, uSR: { i: 0 }, uSC: { i: 1 }, uHM: { i: 2 }, uHH: 9, uHD: 12, uSplit: split };
+  // 底色
+  gl.disable(gl.DEPTH_TEST); gl.depthMask(false);
+  gl.useProgram(R.pBg.p); const g = project(cam, [0, 1, 0]);
+  setU(R.pBg, { uTop: st.bgTop, uBot: st.bgBot, uGlowC: rgb(PAL.bg.glow), uGlow: [g[0] / cam.W, 1 - g[1] / cam.H], uAsp: cam.W / cam.H });
+  gl.bindVertexArray(R.quad); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  // 接影地面（乘法）
+  gl.enable(gl.BLEND); gl.blendFunc(gl.DST_COLOR, gl.ZERO); gl.disable(gl.CULL_FACE);
+  gl.useProgram(R.pFloor.p); setU(R.pFloor, { ...shU, uVP: VP, uFY: -2.3, uFH: 13, uTint: rgb(PAL.bg.floor) });
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  // 实体
+  gl.disable(gl.BLEND); gl.enable(gl.DEPTH_TEST); gl.enable(gl.CULL_FACE); gl.depthMask(true); gl.clear(gl.DEPTH_BUFFER_BIT);
+  gl.useProgram(R.pLit.p);
+  setU(R.pLit, { ...shU, uVP: VP, uL: LIGHT, uV: [-FW[0], -FW[1], -FW[2]], uSun: PAL.light.sun, uSky: PAL.light.sky, uGnd: PAL.light.gnd, uGlint: hex(PAL.fx.glint),
+    uBP: [0, 3.05, 0], uBC: hex(PAL.light.bulb).map(v => v * PAL.light.bulbI * st.lit * (st.bulbT > 0 ? 1 : 0)),
+    uFog: st.bgBot.map(v => Math.pow(v, 2.2)), uT: st.T });
+  drawSet([...solid, [R.sph, CLOUD]]);
+  // 发光（加色）
+  gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.depthMask(false); gl.disable(gl.CULL_FACE);
+  gl.useProgram(R.pSpr.p); gl.bindVertexArray(R.quad);
+  const spr = (k, c, sz, col, a, ph = 0) => { setU(R.pSpr, { uVP: VP, uC: c, uR: RX, uU: UP, uSz: sz, uK: { i: k }, uCol: col, uA: a, uPh: ph, uSplit: split });
+    gl.uniform1i(R.pSpr.U.uK, k); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); };
+  if (st.lit > 0) for (const dz of [-.3, .3]) spr(0, [3.9, .32, 4.3 + dz], [.5, .5], hex(PAL.fx.glow), .35 * st.lit);  // 木屋窗的小光晕
+  if (st.lit > 0 && st.bulbT > 0) {
+    const pulse = .85 + .15 * Math.sin(st.T * Math.PI * 2 / LOOP * 10);
+    spr(0, [0, 3.26, 0], [2.7, 2.7], hex(PAL.fx.glow), .2 * st.lit * pulse);
+    spr(0, [0, 3.21, 0], [.8, .8], hex(PAL.fx.glowCore), .38 * st.lit);
+    spr(1, [0, .29, 0], [3.6, 3.6], hex(PAL.fx.ringGlow), .9 * st.lit, st.T / LOOP * 6);
+    if (st.beam > 0) spr(2, [0, 7, 0], [1.1, 4.6], hex(PAL.fx.beam), st.beam);
+  }
+  gl.depthMask(true);
+}
+
+/* ━━ T11 退路：拿不到 WebGL2 → Canvas 2D 按同一个投影画一张静态等轴图（三个面三档明暗） ━━ */
+function renderFallback(cam) {
+  let c2 = document.getElementById('fb');
+  if (!c2) { c2 = document.createElement('canvas'); c2.id = 'fb'; cv.replaceWith(c2); }
+  const d = Math.min(devicePixelRatio || 1, 2), w = Math.round(cam.W * d), h = Math.round(cam.H * d);
+  if (c2.width !== w || c2.height !== h) { c2.width = w; c2.height = h; }
+  const x = c2.getContext('2d'); x.setTransform(d, 0, 0, d, 0, 0);
+  const g = x.createLinearGradient(0, 0, 0, cam.H); g.addColorStop(0, PAL.bg.top); g.addColorStop(1, PAL.bg.bot); x.fillStyle = g; x.fillRect(0, 0, cam.W, cam.H);
+  const srgb = c => 'rgb(' + c.map(v => Math.round(Math.pow(Math.min(1, v), 1 / 2.2) * 255)).join(',') + ')';
+  const poly = (pts, fill) => { x.beginPath(); pts.forEach((p, i) => { const q = project(cam, p); i ? x.lineTo(q[0], q[1]) : x.moveTo(q[0], q[1]); }); x.closePath(); x.fillStyle = fill; x.fill(); };
+  const box = (cx, cy, cz, hx, hy, hz, col) => {
+    const t = cy + hy, b = cy - hy;
+    poly([[cx - hx, t, cz + hz], [cx + hx, t, cz + hz], [cx + hx, b, cz + hz], [cx - hx, b, cz + hz]], srgb(col.map(v => v * .72)));
+    poly([[cx + hx, t, cz + hz], [cx + hx, t, cz - hz], [cx + hx, b, cz - hz], [cx + hx, b, cz + hz]], srgb(col.map(v => v * .52)));
+    poly([[cx - hx, t, cz - hz], [cx + hx, t, cz - hz], [cx + hx, t, cz + hz], [cx - hx, t, cz + hz]], srgb(col));
+  };
+  box(0, -.9, 0, HALF + .5, .45, HALF + .5, COL.slab2);
+  // 从后往前画（x+z 小的在后），树跟着它所在的砖一起画
+  [...TILES].sort((a, b) => (a.x + a.z) - (b.x + b.z)).forEach(t => { const top = t.L * STEP; box(t.x, (top - .36) / 2, t.z, .46, (top + .36) / 2, .46, t.col);
+    if (PROPS.some(p => p.k === 'pine' && p.x === t.x && p.z === t.z)) { const q = project(cam, [t.x, top, t.z]), r = .3 * cam.s; x.fillStyle = srgb(COL.pine); x.beginPath(); x.moveTo(q[0] - r, q[1]); x.lineTo(q[0] + r, q[1]); x.lineTo(q[0], q[1] - 3.2 * r); x.fill(); } });
+  box(3.4, .3, 4.3, .46, .3, .62, COL.wood); box(3.4, .7, 4.3, .5, .08, .66, COL.roof);   // 木屋
+  x.strokeStyle = srgb(COL.cableC); x.lineWidth = 1.5; x.beginPath(); CABLES[0].forEach((p, i) => { const q = project(cam, p); i ? x.lineTo(q[0], q[1]) : x.moveTo(q[0], q[1]); }); x.stroke();
+  for (let i = 0; i < 6; i++) { const q = project(cam, chairAt(i / 12)); x.fillStyle = srgb(COL.chair); x.fillRect(q[0] - 5, q[1] + 8, 10, 6); }
+}
+
+/* ━━ T9 SVG 等轴叠层：立体字标、竖面数据牌、引线标注、对比分割线（和 WebGL 共用 project） ━━ */
+const NS = 'http://www.w3.org/2000/svg', ov = document.getElementById('ov');
+const SANS = '-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif',
+  LATIN = 'Futura,"Avenir Next","Arial Black",Impact,sans-serif';
+const el = (tag, attrs = {}, parent = ov, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return parent.appendChild(e); };
+const mixHex = (a, b, k) => 'rgb(' + toRGB(a).map((v, i) => Math.round(lerp(v, toRGB(b)[i], k) * 255)).join(',') + ')';
+// 等轴三个面的仿射矩阵（k 缩放，x,y 原点）：地面 u→右上 v→右下；X–Y 竖面 u→右下 v↓；Z–Y 竖面 u→右上 v↓
+const mGround = (k, x, y) => `matrix(${.707 * k} ${-.354 * k} ${.707 * k} ${.354 * k} ${x} ${y})`;
+const mWall = (k, x, y) => `matrix(${.707 * k} ${.354 * k} 0 ${.866 * k} ${x} ${y})`;
+const mSide = (k, x, y) => `matrix(${.707 * k} ${-.354 * k} 0 ${.866 * k} ${x} ${y})`;
+el('defs', {}, ov).innerHTML = '<filter id="bl" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="7"/></filter>' +
+  `<linearGradient id="fc" gradientUnits="userSpaceOnUse" x1="0" y1="-92" x2="0" y2="6"><stop offset="0" stop-color="${PAL.mark.faceTop}"/><stop offset="1" stop-color="${PAL.mark.faceBot}"/></linearGradient>`;
+const gGrid = el('g', { fill: 'none', stroke: PAL.ui.grid, 'stroke-width': 1.2, 'stroke-dasharray': '3 5' });
+const gridPath = el('path', {}, gGrid);
+// 铭牌：现场词印在石台正面（X–Y 竖面，朝 +z）上，像模型底座的铭牌：一块浅色金属牌 + 深色字，跟着等轴斜
+const gMark = el('g');
+el('rect', { x: 0, y: -40, width: 330, height: 52, rx: 4, fill: PAL.ui.panel, opacity: .9 }, gMark);
+el('rect', { x: 0, y: -40, width: 330, height: 52, rx: 4, fill: 'none', stroke: PAL.ui.ink, 'stroke-width': 1.2, opacity: .5 }, gMark);
+el('text', { x: 14, y: -6, 'font-size': 26, 'font-weight': 900, 'font-family': SANS, fill: PAL.ui.ink }, gMark, '北坡 3 号道');
+el('text', { x: 172, y: -8, class: 'kt' }, gMark, '1:300 · 4 TIERS');
+// 数据牌：立在 X–Y 竖面，后面错一层暗色当厚度；色条 + 标签 + 等宽大数字 + 迷你柱图
+const gLead = el('g');
+const leadLine = el('polyline', { fill: 'none', stroke: PAL.ui.ink, 'stroke-width': 1.4 }, gLead);
+const leadRing = el('circle', { r: 9, fill: 'none', stroke: PAL.ui.ink, 'stroke-width': 1.2 }, gLead);
+const leadDot = el('circle', { r: 3.6, fill: PAL.ui.ink }, gLead);
+const gCard = el('g');
+el('rect', { x: 8, y: -5, width: 216, height: 140, rx: 10, fill: PAL.ui.side }, gCard);
+el('rect', { width: 216, height: 140, rx: 10, fill: PAL.ui.panel }, gCard);
+el('rect', { y: 16, width: 6, height: 108, fill: PAL.ui.stripe }, gCard);
+const cLab = el('text', { x: 20, y: 34, class: 'h' }, gCard), cLab2 = el('text', { y: 34, class: 'cm' }, gCard);
+const cNum = el('text', { x: 16, y: 97, class: 'cn' }, gCard), cUnit = el('text', { y: 97, class: 'cu' }, gCard);
+const cBars = PAL.ui.bars.map((f, i) => el('rect', { x: 176 + i * 9, width: 6, rx: 2, fill: f }, gCard));
+el('text', { x: 20, y: 127, class: 'cf' }, gCard, '4 区 · 侧面暗两档');
+// 键帽小牌（屏幕对齐）：讲解镜的引线标注、对比镜的两块标签
+function keyTag(parent, t1, t2) {
+  const g = el('g', {}, parent), b = el('rect', { y: 4, height: 58, rx: 11, fill: PAL.ui.side }, g), f = el('rect', { height: 58, rx: 11, fill: PAL.ui.panel }, g);
+  const a = el('text', { x: 14, y: 26, class: 'h' }, g, t1), c = el('text', { x: 14, y: 47, class: 'kt' }, g, t2);
+  g.w = Math.ceil(Math.max(a.getComputedTextLength(), c.getComputedTextLength())) + 28 || 190;
+  b.setAttribute('width', g.w); f.setAttribute('width', g.w);
+  return g;
+}
+const gTag = el('g');
+const tagLine = el('polyline', { fill: 'none', stroke: PAL.ui.ink, 'stroke-width': 1.4 }, gTag);
+const tagRing = el('circle', { r: 8, fill: 'none', stroke: PAL.ui.ink, 'stroke-width': 1.2 }, gTag);
+const tagDot = el('circle', { r: 3.4, fill: PAL.ui.ink }, gTag);
+const tagBox = keyTag(gTag, '圆角倒边', 'R 0.075 · 接住一条高光');
+const gSplit = el('g');
+const spLine = el('line', { stroke: PAL.ui.split, 'stroke-width': 3 }, gSplit);
+const spKnob = el('g', {}, gSplit);
+el('circle', { r: 21, cy: 4, fill: PAL.ui.side }, spKnob); el('circle', { r: 21, fill: PAL.ui.panel }, spKnob);
+el('path', { d: 'M-7-6-13 0l6 6M7-6l6 6-6 6', fill: 'none', stroke: PAL.ui.ink, 'stroke-width': 2.4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, spKnob);
+const spL = keyTag(gSplit, '平涂', 'FLAT · 只有颜色'), spR = keyTag(gSplit, '打光', 'LIT · 三档 · 蓝影 · 台阶根暗');
+const sa = (e, o) => { for (const k in o) e.setAttribute(k, o[k]); };
+const show = (g, a) => { g.style.opacity = a; g.style.display = a > .01 ? '' : 'none'; };
+const pos = (g, x, y) => g.setAttribute('transform', `translate(${x} ${y})`);
+
+/* ━━ 取景：横屏和竖屏各一套（竖屏不是缩小横屏，是重新构图：字标放上面、模型放中间） ━━ */
+const DIAG = N * Math.SQRT2;
+function frameFor(name, W, H) {
+  const k = Math.min(W, H * 1.55), F = H > W
+    ? { poster: { s: W * 1.02 / DIAG, cx: W * .5, cy: H * .55 }, build: { s: W * 1.04 / DIAG, cx: W * .5, cy: H * .42 }, compare: { s: W * 1.1 / DIAG, cx: W * .5, cy: H * .41 } }
+    : { poster: { s: k * .64 / DIAG, cx: W * .5, cy: H * .47 }, build: { s: k * .62 / DIAG, cx: W * .53, cy: H * .44 }, compare: { s: k * .68 / DIAG, cx: W * .5, cy: H * .45 } };
+  return Object.assign({ W, H, T: [0, .4, 0] }, F[name]);
+}
+const mixCam = (a, b, k) => ({ W: a.W, H: a.H, T: a.T, s: lerp(a.s, b.s, k), cx: lerp(a.cx, b.cx, k), cy: lerp(a.cy, b.cy, k) });
+const BG = { clayTop: rgb(PAL.bg.clayTop), clayBot: rgb(PAL.bg.clayBot), top: rgb(PAL.bg.top), bot: rgb(PAL.bg.bot) };
+
+/* ━━ 每一帧：算状态 → WebGL → SVG 叠层 ━━ */
+let lastKey = '', lastT = performance.now(), slow = 0;
+function render(cam, st, ui) {
+  const key = [ui.shot, st.T.toFixed(3), cam.W, cam.H, R.scale, R.ok].join('|');
+  if (key === lastKey && !R.dirty) return; lastKey = key; R.dirty = false;
+  buildScene(st);
+  // 自适应分辨率：连续慢帧就降一点渲染倍率
+  const now = performance.now(), dt = now - lastT; lastT = now;
+  if (dt > 26 && dt < 200) { if (++slow > 40 && R.scale > .55) { R.scale -= .1; slow = 0; resize(); } } else slow = Math.max(0, slow - 1);
+  R.ok ? renderGL(cam, st) : renderFallback(cam);
+  overlay(cam, st, ui);
+}
+function overlay(cam, st, ui) {
+  ov.setAttribute('viewBox', `0 0 ${cam.W} ${cam.H}`);
+  const P = cam.H > cam.W, s = cam.s, W = cam.W, H = cam.H;
+  show(gGrid, ui.grid);
+  if (ui.grid > .01) {
+    let d = ''; const e = HALF + .5;
+    for (let i = 0; i <= N; i++) { const v = -e + i, a = project(cam, [v, 0, -e]), b = project(cam, [v, 0, e]), c = project(cam, [-e, 0, v]), f = project(cam, [e, 0, v]);
+      d += `M${a[0]} ${a[1]}L${b[0]} ${b[1]}M${c[0]} ${c[1]}L${f[0]} ${f[1]}`; }
+    gridPath.setAttribute('d', d);
+  }
+  // 铭牌：贴在石台正面左段，世界 1 单位 = 100 个牌面单位
+  show(gMark, ui.mark);
+  if (ui.mark > .01) { const o = project(cam, [-HALF + .3, -.62, HALF + .5]); gMark.setAttribute('transform', mWall(s / 100, o[0], o[1])); }
+  // 数据牌 + 引线：牌子挂在地台右角上方，引线拐一下连到灯泡顶
+  show(gCard, ui.card); show(gLead, ui.card);
+  if (ui.card > .01) {
+    const k = P ? .92 : clamp(s / 50, .95, 1.15), lift = (1 - ease.back(ui.card)) * 40, anchor = project(cam, ui.cardAnchor);
+    const rc = project(cam, [HALF + .5, 0, -HALF - .5]), cw = 216 * .707 * k, chh = (140 * .866 + 216 * .354) * k;
+    const cx = P ? W - cw - 16 : Math.min(W - cw - 40, rc[0] - cw - 20), cy = P ? H * .09 : Math.max(H * .17, rc[1] - chh - 70);
+    gCard.setAttribute('transform', mWall(k, cx, cy + lift));
+    const bl = [cx, cy + lift + 140 * .866 * k], ex = anchor[0], ey = anchor[1], yy = bl[1] - 18 * k, mx = Math.max(ex + 20, Math.min(bl[0] - 30, ex + (yy - ey)));
+    leadLine.setAttribute('points', `${bl[0] + 9 * k},${yy} ${mx},${yy} ${ex},${ey}`);
+    for (const c of [leadDot, leadRing]) sa(c, { cx: ex, cy: ey });
+    const ph = (st.T * .8) % 1; sa(leadRing, { r: 7 + 5 * ph, opacity: 1 - ph });
+    cLab.textContent = ui.cardLab; cLab2.textContent = ui.cardLab2; sa(cLab2, { x: 30 + ui.cardLab.length * 18 });
+    cNum.textContent = ui.cardNum; cUnit.textContent = ui.cardUnit; sa(cUnit, { x: 22 + ui.cardNum.length * 32 });
+    cBars.forEach((b, i) => { const h = 14 + 58 * ui.bars[i]; sa(b, { y: 118 - h, height: h }); });
+  }
+  // 引线标注：锚在前角那块砖的倒边上
+  show(gTag, ui.tag);
+  if (ui.tag > .01) {
+    const a = project(cam, [4.47, -.04, 4.47]), y = a[1] + (P ? 40 : 30), x = P ? Math.max(12, a[0] - tagBox.w - 30) : a[0] + 60;
+    for (const c of [tagDot, tagRing]) sa(c, { cx: a[0], cy: a[1] });
+    tagLine.setAttribute('points', `${a[0]},${a[1]} ${a[0] + (P ? -14 : 14)},${y + 29} ${P ? x + tagBox.w : x},${y + 29}`);
+    pos(tagBox, x, y + (1 - ease.back(ui.tag)) * 16);
+  }
+  // 对比分割线：左边平涂、右边打光
+  show(gSplit, ui.splitUI);
+  if (ui.splitUI > .01) {
+    const x = st.split * W, y0 = P ? H * .64 : H * .13;
+    sa(spLine, { x1: x, x2: x, y1: 0, y2: H });
+    pos(spKnob, x, P ? H * .56 : H * .5);
+    pos(spL, Math.max(8, x - spL.w - 16), y0); pos(spR, Math.min(W - spR.w - 8, x + 16), y0);
+  }
+  document.getElementById('fr').textContent = 'SC.0' + (ui.shot + 1) + ' · F ' + String(Math.floor(ui.abs * 60)).padStart(4, '0');
+}
+
+/* ━━ 三个镜头 ━━ */
+const ALL = () => 1;
+const FULL = { tile: ALL, prop: ALL, paint: ALL, cable: ALL, chair: ALL, base: 1, lit: 1, bulbT: 0, paintAll: 1, beam: 0, split: 0 };
+const zoneBars = ZONES.map(z => clamp(z.n / 70));
+const TOPST = [LT[0], LIFT[4].top + .5, LT[1]];
+let VIEW = { W: innerWidth, H: innerHeight };
+const run = T => T * LSPEED;   // 吊椅沿环走了多少圈
+const arrCard = T => ({ cardAnchor: TOPST, cardLab: '到站', cardLab2: 'ARRIVALS', cardNum: String(arrivals(T)).padStart(3, '0'), cardUnit: '把' });
+const SHOTS = [
+  // 全景：冬天晴朗的早上，一座摆在石台上的小滑雪场；吊椅沿索道一直在走，坡上的计数牌数到站的吊椅
+  { dur: 6.5,
+    draw(t, p) {
+      const a = frameFor('poster', VIEW.W, VIEW.H), cam = { ...a, s: a.s * (1 + .05 * ease.inOut(p)) };
+      render(cam, { ...FULL, T: t, run: run(t + 40), bgTop: BG.top, bgBot: BG.bot }, { ...arrCard(t + 40), shot: 0, abs: t, grid: 0, mark: 1, card: VIEW.H > VIEW.W ? 0 : 1,
+        bars: zoneBars.map((v, i) => v * (.9 + .1 * Math.sin(t * 2 + i))), tag: 0, splitUI: 0 });
+    } },
+  // 白模：坡先一格格落下 → 塔架、木屋、松树弹起 → 两根索一段段架上 → 吊椅一把把挂上 → 整片上色 → 开动
+  { dur: 7,
+    draw(t, p) {
+      const cam = frameFor('build', VIEW.W, VIEW.H); cam.s *= 1 - .03 * seg(t, 0, 3.6) + .13 * ease.inOut(seg(t, 3.9, 7));  // 上色时镜头推近
+      const all = seg(t, 4.1, 5.5), tileT = tl => (t - (.15 + tl.d * .17 + tl.sd * .1)) / .6;
+      const chairT = i => (t - (3.0 + i * .08)) / .45;
+      const st = { T: 6.5 + t, tile: tileT, prop: pr => (t - (1.7 + pr.d * .06 + pr.sd * .3)) / .5, cable: ci => (t - 2.3 - ci * .25) / .6, chair: chairT,
+        paint: d => clamp((t - (4.1 + d / 5.2)) / .3), run: .5 * Math.pow(seg(t, 5.3, 7), 2) * 1.7 * LSPEED,
+        base: ease.out(seg(t, 1.3, 2.0)), lit: ease.inOut(seg(t, 4.9, 5.6)), bulbT: 0, paintAll: all, split: 0, beam: 0,
+        bgTop: BG.clayTop.map((v, i) => lerp(v, BG.top[i], all)), bgBot: BG.clayBot.map((v, i) => lerp(v, BG.bot[i], all)) };
+      let landed = 0; for (const tl of TILES) if (tileT(tl) >= .42) landed++;
+      let hung = 0; for (let i = 0; i < CHAIRS; i++) if (chairT(i) >= .42) hung++;
+      const phase = t > 4.1 ? 2 : t > 2.9 ? 1 : 0;
+      render(cam, st, { shot: 1, abs: 6.5 + t, grid: seg(t, 0, .3) * (1 - seg(t, 1.6, 2.3)), mark: 0,
+        card: seg(t, .5, 1.1), cardAnchor: phase === 1 ? TOPST : [0, 1.3, 0],
+        cardLab: ['已落下', '已挂上', '上色'][phase], cardLab2: ['TILES', 'CHAIRS', 'PAINT'][phase],
+        cardNum: phase === 2 ? String(Math.round(all * 100)) : phase === 1 ? String(hung).padStart(2, '0') : String(landed).padStart(3, '0'),
+        cardUnit: ['/121', '/12 把', '%'][phase],
+        bars: zoneBars.map(v => v * (phase === 2 ? all : phase === 1 ? hung / 12 : landed / 121)), tag: seg(t, 2.0, 2.5) * (1 - seg(t, 3.9, 4.3)), splitUI: 0 });
+    } },
+  // 打光 + 收尾：左边平涂，右边打光（侧面暗两档、软影、台阶根暗角）；分割线收回，镜头拉远，计数牌数到站的吊椅
+  { dur: 6.5,
+    draw(t, p) {
+      const pull = ease.inOut(seg(t, 4.7, 6.2));
+      const cam = mixCam(frameFor('compare', VIEW.W, VIEW.H), frameFor('poster', VIEW.W, VIEW.H), pull);
+      const sp = .5 * ease.out(seg(t, .3, 1.3)) * (1 - ease.inOut(seg(t, 4.1, 4.9))), T = 13.5 + t;
+      render(cam, { ...FULL, T, run: run(T - 12.9), split: sp, bgTop: BG.top, bgBot: BG.bot }, { shot: 2, abs: T, grid: 0, mark: 1,
+        ...arrCard(T - 12.9), card: VIEW.H > VIEW.W ? seg(t, 5.2, 5.8) : seg(t, 5.0, 5.6), bars: zoneBars, tag: 0, splitUI: sp > .005 ? 1 : 0 });
+    } },
+];
+
+[0, 3, 2].forEach((b, i) => document.documentElement.style.setProperty('--ax' + i, PAL.ui.bars[b]));
+function resize() {
+  VIEW = { W: innerWidth, H: innerHeight };
+  const d = Math.min(devicePixelRatio || 1, 2) * R.scale;
+  cv.width = Math.round(VIEW.W * d); cv.height = Math.round(VIEW.H * d); R.dirty = true;
+}
+const S = makePlayer(SHOTS, {
+  onResize() { resize(); },
+});
+</script>
+</body>
+</html>

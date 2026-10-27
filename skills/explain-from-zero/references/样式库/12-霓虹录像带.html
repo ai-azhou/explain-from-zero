@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>霓虹录像带 · 样张</title>
+<!--
+风格：霓虹录像带  NEON TAPE · VHS
+一句话：一盘八十年代的录像带——按下播放先是雪花，然后是向前滚的霓虹网格、横条切开的落日、镀铬斜体大字和一笔写出的霓虹手写字，整片再压一层扫描线和色散。
+擅长表现：速度和时间——画面一直在往地平线冲，速度快慢一眼看得见；倒带、回放、「再来一遍」；把一个结论做成一张有分量的「片名」。
+招牌细节：
+  材质  录像带后期（WebGL 一遍过）：扫描线、RGB 色散、雪花噪点、跟踪条横移、画面上下抖、暗角、亮部辉光。
+  光    地平线一道最亮的光线 + 落日的光晕；网格线越近越亮越粗；路边一排小灯；地面两道尾灯光迹向远处流。
+  主体  落日：三段竖向渐变（最亮的一头在上），下半被横条切开，条越往下越宽，并且慢慢往下走。
+  主体  两侧线框山（三角网格 + 深色填充）；棕榈剪影从远处迎面掠过（透视放大）；天上星星闪。
+  字    镀铬斜体大字分五层：挤出厚度 / 深色描边 / 上半映天 / 下半映地 / 中缝地平线高光 + 星芒；
+        霓虹手写体是一条手绘路径（不靠字体），一笔写完再「通电」闪两下；字距拉开的小字两侧带细线。
+  动效  网格持续向前滚；落日条纹往下走；手写字沿路径写、笔头有亮点；开场雪花 1 秒散去；结尾 ◀◀ REW 倒带转回开头。
+  角落小字  左上「PLAY ▶」，左下「TRACKING」，右下「SP 0:00:08」时间码，都是录像机屏显字体（等宽粗体 + 黑影）。
+色彩结构（换题保留）：霓虹夕阳是这种画面语言本身，结构不变，色相可以换。
+  ① 天：上暗下亮的竖向渐变，天顶接近黑，地平线是全片最亮的一道光（底必须暗：霓虹、辉光、扫描线都靠暗底才成立）。
+  ② 落日：全片最亮的一团光，三段渐变，最亮那头在上；地面有它的倒影。
+  ③ 霓虹主色：网格、地平线、手写字都用这一种高饱和色。
+  ④ 对位色：线框山和路边小灯用和主色拉开的另一种色（冷暖相对）。
+  ⑤ 镀铬字：上半映天（对位色那一侧，冷）、下半映地（落日那一侧，暖），中缝一道近白高光，外面深色描边。
+  ⑥ 尾灯：唯一一处小面积的暖强调色。高饱和、低明度的底，亮部全部发光；不用灰、不用平涂的中间色。
+本例配色（从本例主体「夏夜海边公路的落日」和它的现场「紫红色的晚霞天、湿热的空气」推出来，换题就换）：
+  天 #0c0220 → #5a1270 → 地平线 #ff4fae；落日 #ffe56a → #ff8a3c → #ff2f96；霓虹主色（网格、手写）#ff46d7 / #ff1ea0；
+  对位色（山线、路灯）#78f0ff / #50dcff；镀铬上半 #0f2f7a → #a7e6ff，下半 #7a1668 → #ff4f9a → #ffe7a6；尾灯 #ff2846。
+换题示例（?pal=alt）：假设主角是「北方海边的一座灯塔」、现场是「冬天傍晚，冷色的落日沉进海里」→ 保留结构、换色相：
+  天从深海军蓝落到青绿，落日变成冰白 → 天蓝 → 钴蓝的冷光（手写字是青绿，落日偏蓝才托得住它）；霓虹主色用极光一样的青绿；对位色换成紫，山线和镀铬上半都映紫；
+  唯一的暖色留给尾灯和路灯，用琥珀 →
+  天 #020a1c → #0b3157 → 地平线 #5fe0d0；落日 #e9fbff → #6fd4f5 → #2a6fc0；霓虹主色 #32f0d2 / #28ffc8；对位色（山线）#c8a0ff；
+  镀铬上半 #141a5e → #c9c2ff，下半 #0b5a6e → #2fd0c8 → #f0fffb；尾灯、路灯 #ff9628。
+字：镀铬字用 "Arial Black" / "Helvetica Neue" 900 / Impact 退路，Canvas 里斜切 + 横向拉宽，五层预渲染到离屏画布；
+  霓虹手写是 SVG 路径（Path2D 画、SVG 元素量长度）；屏显字等宽粗体。
+动效：画面 60fps，网格速度随镜头变（慢 → 冲）；镀铬五层逐层落下（back 过冲）；手写笔速匀、通电 3 次闪；
+  录像带开场：雪花 1 → 0、跟踪条、上下抖 3 下；转场用倒带（跟踪条 + 横纹），不用淡入淡出。
+做粗了 → 做精：
+  网格是静态背景图 → 每帧按透视重算，横线向前滚，近粗远细、地平线处挤成一片光。
+  标题只是渐变字 → 五层：挤出、描边、上天下地两套渐变、中缝高光、星芒。
+  手写字用某个系统手写字体 → 自己画一条路径，一笔写出，笔头带亮点，写完通电闪。
+  没有后期 → 扫描线 + 色散 + 雪花 + 辉光 + 暗角，开场和转场用录像机的毛病。
+  落日只是渐变圆 → 下半横条切开，条宽往下递增，还在往下走，背后有光晕，地面有倒影。
+手机竖屏：地平线提到 43%，落日缩小；镀铬字拆两行（NEON / TAPE）；手写字落在落日上。
+技法目录：
+  T0 配色：全片颜色只在文件头一个对象里（着色器的雪花偏色也从这里传 uniform），?pal=alt 切换
+  T1 夜空：渐变 + 星星闪烁
+  T2 条纹落日：离屏画布上画渐变圆，再用 destination-out 切掉往下走的横条
+  T3 线框山：一条山脊线 + 两层三角网，深色填充挡住后面
+  T4 透视霓虹网格：按 1/z 算横线、竖线汇聚到灭点，滚动 = 改 z 的偏移
+  T5 迎面掠过：棕榈剪影、路灯、尾灯光迹，都按同一套透视放大
+  T6 镀铬斜体字：五层预渲染，可单独显示（讲解时一层层落下）
+  T7 星芒：两根细长菱形交叉 + 光晕
+  T8 霓虹手写：一条路径、一笔写出、写完通电闪
+  T9 录像机屏显：PLAY ▶ / TRACKING / SP 时间码 / ◀◀ REW；开场先是一台圆角小电视，再撑满全屏
+  T10 录像带后期（WebGL）：跟踪条、色散、辉光、扫描线、雪花、暗角；拿不到 WebGL 就直接显示 2D 画面 + CSS 扫描线
+-->
+<script>
+/* ━━ T0 配色：全片的颜色只在这里（[r,g,b] 给 Canvas，'#hex' 给渐变，CSS 变量由下面写入）。默认本例配色；网址带 ?pal=alt 换成换题示例 ━━ */
+/* ━━ 示范配色：必须换 ━━
+   下面两组颜色只属于这份样张自己的主体，不是这种风格的颜色。搬技法进你的成品时，
+   这组颜色、报头、角标文字、示例文案一律换成从你的主角、现场的光、题目的情绪推出来的；
+   颜色只改这一处，技法代码按角色名取色。按文件头「色彩结构」那一段保留结构。 */
+const PALETTES = {
+  base: {   // 本例：夏夜海边公路的落日 → 紫红晚霞、黄橙粉落日、品红霓虹、青色对位、红尾灯
+    sky: ['#0c0220', '#24074a', '#5a1270', '#b0237f', '#ff4fae'], star: [255, 240, 255],
+    sun: ['#ffe56a', '#ffc24a', '#ff8a3c', '#ff4f7e', '#ff2f96'], sunGlow: [[255, 110, 170], [255, 60, 150]],
+    horizon: { band: [255, 120, 210], edge: [255, 80, 190], line: [255, 220, 250] },
+    floor: ['#3a0748', '#1a0329', '#0b0116'], reflect: [[255, 120, 180], [255, 70, 150]],
+    grid: { near: [255, 60, 215], far: [255, 180, 215], vert: [255, 70, 215] },
+    mount: { fill: ['#1c0740', '#3c0a52'], wire: [[120, 240, 255], [70, 160, 255], [255, 80, 200]], ridge: [170, 248, 255] },
+    silhouette: '#0a0212', post: [30, 8, 40], lamp: [[220, 255, 255], [80, 220, 255]],
+    tail: { glow: [255, 40, 70], core: [255, 80, 90], hot: [255, 200, 190] },
+    chrome: { extrude: [[120, 30, 110], [20, 6, 40]], edge: [255, 90, 200], outline: '#12021f', rim: [255, 120, 220],
+      top: ['#0f2f7a', '#2f86ea', '#a7e6ff', '#f5fdff'], bottom: ['#2c0638', '#7a1668', '#ff4f9a', '#ffad5e', '#ffe7a6'] },
+    flare: [[255, 255, 255], [200, 240, 255], [160, 220, 255]],
+    neon: { under: [40, 0, 50], tube: [[255, 30, 160], [255, 50, 180], [255, 90, 205], [255, 240, 252]], dot: [255, 220, 245],
+      nib: [[255, 255, 255], [255, 150, 230], [255, 60, 180]] },
+    tag: { text: [245, 252, 255], glow: [80, 200, 255], line: [120, 220, 255] },
+    osd: [255, 255, 255], label: { sub: '#ffc6ef', zh: '#ffd7f3' }, snow: [.9, .9, 1],
+    ui: { page: '#07010f', band: [9, 1, 20], ink: '#fff4fd' },
+  },
+  alt: {    // 换题示例：冬天傍晚北方海边的一座灯塔，冷色落日沉进海里 → 海军蓝到青绿的天、冰蓝冷落日、青绿霓虹、紫色对位、琥珀尾灯
+    sky: ['#020a1c', '#06183a', '#0b3157', '#1a6b86', '#5fe0d0'], star: [230, 250, 255],
+    sun: ['#e9fbff', '#b8efff', '#6fd4f5', '#3aa4dc', '#2a6fc0'], sunGlow: [[140, 220, 255], [60, 150, 230]],
+    horizon: { band: [120, 255, 230], edge: [60, 220, 210], line: [225, 255, 250] },
+    floor: ['#06283a', '#04172a', '#020a16'], reflect: [[140, 220, 255], [60, 150, 230]],
+    grid: { near: [40, 255, 200], far: [170, 255, 235], vert: [50, 240, 210] },
+    mount: { fill: ['#0a1238', '#14204a'], wire: [[215, 180, 255], [160, 120, 255], [60, 220, 210]], ridge: [230, 210, 255] },
+    silhouette: '#020611', post: [8, 16, 30], lamp: [[255, 248, 225], [255, 170, 60]],
+    tail: { glow: [255, 140, 30], core: [255, 160, 50], hot: [255, 235, 190] },
+    chrome: { extrude: [[30, 80, 120], [4, 12, 30]], edge: [90, 230, 220], outline: '#020814', rim: [140, 240, 230],
+      top: ['#141a5e', '#5a52d8', '#c9c2ff', '#f7f5ff'], bottom: ['#04263a', '#0b5a6e', '#2fd0c8', '#a8ffe8', '#f0fffb'] },
+    flare: [[255, 255, 255], [200, 255, 245], [150, 240, 230]],
+    neon: { under: [0, 20, 30], tube: [[30, 240, 190], [50, 255, 205], [120, 255, 225], [235, 255, 250]], dot: [210, 255, 240],
+      nib: [[255, 255, 255], [150, 255, 225], [40, 230, 190]] },
+    tag: { text: [245, 250, 255], glow: [180, 150, 255], line: [190, 170, 255] },
+    osd: [255, 255, 255], label: { sub: '#bff7ea', zh: '#c9fff0' }, snow: [.88, .96, 1],
+    ui: { page: '#020611', band: [2, 10, 22], ink: '#f2fffb' },
+  },
+};
+const PAL = PALETTES[new URLSearchParams(location.search).get('pal') === 'alt' ? 'alt' : 'base'];
+const RGBA = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+(function applyPalette(u) {                                          // 页面底色和文字色
+  const r = document.documentElement.style;
+  r.setProperty('--page', u.page); r.setProperty('--ink', u.ink);
+})(PAL.ui);
+</script><style>
+  :root { /* 颜色变量由 T0 写入：--page --ink */
+    --mono:"SF Mono",Menlo,Consolas,"Roboto Mono","Liberation Mono",monospace;
+    --sans:-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif; }
+  * { box-sizing:border-box; margin:0; }
+  html,body { height:100%; background:var(--page); color:var(--ink); font-family:var(--sans); }
+  body { overflow:hidden; }
+  #stage { position:fixed; inset:0; overflow:hidden; transform-origin:50% 45%; }
+  #stage canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  #c2d { visibility:hidden; }
+  body.nogl #c2d { visibility:visible; } body.nogl #gl { display:none; }
+  /* 拿不到 WebGL 时的退路：CSS 扫描线 + 暗角 */
+  #fallbackFx { position:fixed; inset:0; pointer-events:none; display:none;
+    background:repeating-linear-gradient(to bottom, rgba(0,0,0,.25) 0 1px, transparent 1px 3px), radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0,0,0,.6)); }
+  body.nogl #fallbackFx { display:block; }
+
+</style>
+</head>
+<body>
+<main id="stage"><canvas id="gl"></canvas><canvas id="c2d"></canvas></main>
+<div id="fallbackFx"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><path id="scriptProbe"/></svg>
+<script>
+/* ━━ 样张自己的播放代码：只为把这份样张播起来，不是成品该用的结构，不要照抄。成品页面上要有哪些东西见 形式.md「页面上要有的东西」，长什么样、怎么排按你的风格自己做 ━━ */
+function makePlayer(SHOTS, hooks = {}) {
+  const S = { i: 0, t: 0, playing: true, reduce: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    w: innerWidth, h: innerHeight, portrait: innerHeight > innerWidth };
+  function enter(i) {
+    S.i = (i + SHOTS.length) % SHOTS.length; S.t = 0;
+    const s = SHOTS[S.i];
+    s.enter && s.enter(S);
+    hooks.onShot && hooks.onShot(S.i, s, S);
+    if (S.reduce) s.draw(s.dur, 1, S);
+  }
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    if (S.playing) {
+      S.t += dt;
+      if (S.t >= SHOTS[S.i].dur) enter(S.i + 1);
+    }
+    const s = SHOTS[S.i];
+    if (!S.reduce) s.draw(Math.min(S.t, s.dur), Math.min(1, S.t / s.dur), S);
+    requestAnimationFrame(frame);
+  }
+  document.addEventListener('visibilitychange', () => { S.playing = !document.hidden; last = performance.now(); });
+  addEventListener('resize', () => {
+    S.w = innerWidth; S.h = innerHeight; S.portrait = S.h > S.w;
+    hooks.onResize && hooks.onResize(S);
+    if (S.reduce) SHOTS[S.i].draw(SHOTS[S.i].dur, 1, S);
+  });
+  hooks.onResize && hooks.onResize(S);
+  enter(0);
+  requestAnimationFrame(frame);
+  return S;
+}
+
+/* ━━ 缓动：动作要有预备、过冲、回落 ━━ */
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const seg = (p, a, b) => clamp((p - a) / (b - a));
+const ease = {
+  out: x => 1 - Math.pow(1 - x, 3),
+  inOut: x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2,
+  back: x => 1 + 2.7 * Math.pow(x - 1, 3) + 1.7 * Math.pow(x - 1, 2),
+  spring: x => 1 - Math.exp(-6 * x) * Math.cos(12 * x),
+  step: (x, n) => Math.floor(x * n) / n,
+};
+const lerp = (a, b, k) => a + (b - a) * k;
+const $ = s => document.querySelector(s);
+const TAU = Math.PI * 2;
+const MONO = '"SF Mono",Menlo,Consolas,"Roboto Mono","Liberation Mono",monospace';
+const HEAVY = '"Arial Black","Helvetica Neue",Impact,"Segoe UI Black",sans-serif';
+const hash = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const CLK = { t: 0, last: performance.now() };
+function tick(S) {
+  const n = performance.now(), dt = Math.min(.1, (n - CLK.last) / 1000); CLK.last = n;
+  if (S.playing && !S.reduce) CLK.t += dt;
+  return CLK.t;
+}
+
+/* ━━ 画布 ━━ */
+const c2 = $('#c2d'), x2 = c2.getContext('2d');
+let W = 0, H = 0, SC = 1, LY = {};
+
+/* ━━ T1 夜空：渐变 + 星星 ━━ */
+const STARS = Array.from({ length: 140 }, (_, i) => ({ x: hash(i * 3.1), y: Math.pow(hash(i * 7.7), 1.6), r: .4 + hash(i * 1.3) * 1.1, ph: hash(i) * TAU }));
+function sky(t) {
+  const g = x2.createLinearGradient(0, 0, 0, LY.hy);
+  [0, .45, .78, .93, 1].forEach((o, i) => g.addColorStop(o, PAL.sky[i]));
+  x2.fillStyle = g; x2.fillRect(0, 0, W, LY.hy + 1);
+  for (const s of STARS) {
+    const a = (.35 + .65 * Math.pow(.5 + .5 * Math.sin(t * 2 + s.ph * 5), 4)) * (1 - s.y * .7);
+    x2.fillStyle = RGBA(PAL.star, a.toFixed(2)); x2.fillRect(s.x * W, s.y * LY.hy * .85, s.r, s.r);
+  }
+}
+
+/* ━━ T2 条纹落日：离屏画渐变圆，切掉往下走的横条 ━━ */
+const sunC = document.createElement('canvas'), sunX = sunC.getContext('2d');
+function sun(t, glow = 1) {
+  const R = LY.sunR, cx = W / 2, cy = LY.hy - R * .5;
+  // 背后光晕
+  const hg = x2.createRadialGradient(cx, cy, R * .6, cx, cy, R * 2.4);
+  hg.addColorStop(0, RGBA(PAL.sunGlow[0], .5 * glow)); hg.addColorStop(.4, RGBA(PAL.sunGlow[1], .16 * glow)); hg.addColorStop(1, RGBA(PAL.sunGlow[1], 0));
+  x2.fillStyle = hg; x2.fillRect(cx - R * 2.4, cy - R * 2.4, R * 4.8, R * 2.4 + (LY.hy - cy));
+  const s = Math.ceil(R * 2 + 4); if (sunC.width !== s) { sunC.width = s; sunC.height = s; }
+  sunX.globalCompositeOperation = 'source-over'; sunX.clearRect(0, 0, s, s);
+  // 渐变只铺到地平线：看得见的部分从黄走到粉
+  const vis = s / 2 + R * .5, g = sunX.createLinearGradient(0, 2, 0, vis);
+  [0, .3, .6, .85, 1].forEach((o, i) => g.addColorStop(o, PAL.sun[i]));
+  sunX.fillStyle = g; sunX.beginPath(); sunX.arc(s / 2, s / 2, R, 0, TAU); sunX.fill();
+  // 横条：从圆心稍上开始切，越往下越宽，整体缓缓往下走
+  sunX.globalCompositeOperation = 'destination-out';
+  const n = 7, top = s / 2 - R * .12, span = vis - top, off = (t * .12) % 1;
+  for (let i = -1; i < n + 1; i++) {
+    const u = (i + off) / n; if (u < 0 || u > 1) continue;
+    sunX.fillRect(0, top + u * span, s, 1.5 + u * R * .085);
+  }
+  x2.drawImage(sunC, cx - s / 2, cy - s / 2);
+  return { cx, cy, R };
+}
+
+/* ━━ T3 线框山：山脊线 + 两层三角网，深色填充挡住后面 ━━ */
+function makeRange(x0, x1, peak, seed) {
+  const n = 28, ridge = [];
+  for (let i = 0; i <= n; i++) {
+    const u = i / n, edge = Math.pow(Math.sin(Math.PI * clamp(u * 1.04)), .7) * .85 + .1;
+    const h = peak * edge * (.4 + .6 * hash(seed + i * 1.7)) * (i % 2 ? .62 : 1);
+    ridge.push([lerp(x0, x1, u) + (hash(seed + i) - .5) * 14, h]);
+  }
+  return ridge;
+}
+function mountains(ranges) {
+  const hy = LY.hy;
+  for (const ridge of ranges) {
+    // 山脊往下再插两层点，层与层之间连成三角网
+    const rows = [ridge, ...[.62, .3].map((f, r) => ridge.map(([x, h], i) => [x + (hash(i * 5.3 + r * 17 + h) - .5) * 22 + (r ? 9 : -6), h * f])),
+      ridge.map(([x], i) => [x + (i % 2 ? 7 : -7), 0])];
+    const fg = x2.createLinearGradient(0, hy - LY.peak, 0, hy);
+    fg.addColorStop(0, PAL.mount.fill[0]); fg.addColorStop(1, PAL.mount.fill[1]);
+    x2.fillStyle = fg; x2.beginPath(); x2.moveTo(ridge[0][0], hy);
+    for (const [x, h] of ridge) x2.lineTo(x, hy - h);
+    x2.lineTo(ridge[ridge.length - 1][0], hy); x2.closePath(); x2.fill();
+    const lg = x2.createLinearGradient(0, hy - LY.peak, 0, hy);
+    lg.addColorStop(0, RGBA(PAL.mount.wire[0], .95)); lg.addColorStop(.55, RGBA(PAL.mount.wire[1], .6)); lg.addColorStop(1, RGBA(PAL.mount.wire[2], .45));
+    x2.strokeStyle = lg; x2.lineWidth = 1; x2.beginPath();
+    for (let r = 0; r < rows.length - 1; r++) {
+      const A = rows[r], B = rows[r + 1];
+      for (let i = 0; i < A.length; i++) {
+        x2.moveTo(A[i][0], hy - A[i][1]); x2.lineTo(B[i][0], hy - B[i][1]);
+        if (i) { x2.moveTo(A[i - 1][0], hy - A[i - 1][1]); x2.lineTo(B[i][0], hy - B[i][1]); x2.moveTo(B[i - 1][0], hy - B[i - 1][1]); x2.lineTo(B[i][0], hy - B[i][1]); }
+      }
+    }
+    x2.stroke();
+    x2.strokeStyle = RGBA(PAL.mount.ridge); x2.lineWidth = 1.5; x2.beginPath();
+    ridge.forEach(([x, h], i) => i ? x2.lineTo(x, hy - h) : x2.moveTo(x, hy - h)); x2.stroke();
+  }
+}
+
+/* ━━ T4 透视霓虹网格：y = 地平线 + k / z，滚动就是改 z 的偏移 ━━ */
+const proj = (X, z) => [W / 2 + X * LY.k / z, LY.hy + LY.k * LY.ch / z];
+function floor(travel, bright = 1) {
+  const hy = LY.hy;
+  const fg = x2.createLinearGradient(0, hy, 0, H);
+  fg.addColorStop(0, PAL.floor[0]); fg.addColorStop(.25, PAL.floor[1]); fg.addColorStop(1, PAL.floor[2]);
+  x2.fillStyle = fg; x2.fillRect(0, hy, W, H - hy);
+  // 落日在地面的倒影
+  x2.save(); x2.translate(W / 2, hy); x2.scale(1, (H - hy) / LY.sunR * .7);
+  const rg = x2.createRadialGradient(0, 0, 0, 0, 0, LY.sunR * 1.1);
+  rg.addColorStop(0, RGBA(PAL.reflect[0], .5)); rg.addColorStop(.4, RGBA(PAL.reflect[1], .16)); rg.addColorStop(1, RGBA(PAL.reflect[1], 0));
+  x2.fillStyle = rg; x2.fillRect(-LY.sunR * 1.1, 0, LY.sunR * 2.2, LY.sunR * 1.1); x2.restore();
+  x2.save(); x2.globalCompositeOperation = 'lighter';
+  // 横线
+  const step = LY.p ? 1.1 : 1.4, off = travel % step;
+  for (let i = 0; i < 40; i++) {
+    const z = .55 + i * step - off; if (z < .5) continue;
+    const y = proj(0, z)[1]; if (y > H + 4) continue;
+    const near = clamp(1.6 / z);
+    const gn = PAL.grid.near, gf = PAL.grid.far, k = 1 - near;
+    x2.strokeStyle = RGBA([gn[0] + (gf[0] - gn[0]) * k, gn[1] + (gf[1] - gn[1]) * k, gn[2] + (gf[2] - gn[2]) * k], (.25 + .7 * near) * bright);
+    x2.lineWidth = .8 + 2.4 * near; x2.beginPath(); x2.moveTo(0, y); x2.lineTo(W, y); x2.stroke();
+  }
+  // 竖线
+  for (let X = -18; X <= 18; X += LY.p ? 1 : 1.5) {
+    const [xb, yb] = proj(X, .5), a = .55 + .4 * (1 - Math.abs(X) / 18);
+    x2.strokeStyle = RGBA(PAL.grid.vert, a * bright); x2.lineWidth = 1.6;
+    x2.beginPath(); x2.moveTo(W / 2, hy); x2.lineTo(xb, yb); x2.stroke();
+  }
+  // 地平线亮线 + 光带
+  const hb = x2.createLinearGradient(0, hy - 14, 0, hy + 22);
+  hb.addColorStop(0, RGBA(PAL.horizon.edge, 0)); hb.addColorStop(.4, RGBA(PAL.horizon.band, .7)); hb.addColorStop(1, RGBA(PAL.horizon.edge, 0));
+  x2.fillStyle = hb; x2.fillRect(0, hy - 14, W, 36);
+  x2.fillStyle = RGBA(PAL.horizon.line, .95); x2.fillRect(0, hy - 1, W, 2);
+  x2.restore();
+}
+
+/* ━━ T5 迎面掠过：棕榈剪影、路灯、尾灯光迹（同一套透视） ━━ */
+function palm(x, yb, s, lean, seed) {
+  x2.fillStyle = PAL.silhouette;
+  // 树干：弯的、上细下粗、一节一节
+  const top = [x + lean * s * .6, yb - s * 4.2];
+  x2.beginPath(); x2.moveTo(x - s * .14, yb);
+  x2.quadraticCurveTo(x + lean * s * .2 - s * .1, yb - s * 2.4, top[0] - s * .05, top[1]);
+  x2.lineTo(top[0] + s * .05, top[1]);
+  x2.quadraticCurveTo(x + lean * s * .2 + s * .1, yb - s * 2.4, x + s * .14, yb); x2.fill();
+  // 叶：九片向两边拱起再下垂，下沿有锯齿
+  for (let i = 0; i < 9; i++) {
+    const ang = lerp(-2.95, -.19, i / 8) + (hash(seed + i) - .5) * .18, len = s * (1.5 + hash(seed * 3 + i) * .7);
+    const dx = Math.cos(ang), dy = Math.sin(ang);
+    const p0 = top, p1 = [top[0] + dx * len * .55, top[1] + dy * len * .55 - len * .28], p2 = [top[0] + dx * len, top[1] + dy * len * .25 + len * .5];
+    const at = u => [(1 - u) * (1 - u) * p0[0] + 2 * u * (1 - u) * p1[0] + u * u * p2[0], (1 - u) * (1 - u) * p0[1] + 2 * u * (1 - u) * p1[1] + u * u * p2[1]];
+    const wd = s * .2, up = [], lo = [];
+    for (let k = 0; k <= 10; k++) {
+      const u = k / 10, [px, py] = at(u), [qx, qy] = at(Math.min(1, u + .02)), l = Math.hypot(qx - px, qy - py) || 1;
+      const nx = -(qy - py) / l, ny = (qx - px) / l, w = wd * Math.sin(Math.PI * Math.min(1, u * 1.15)) * (1 - u * .6);
+      const sgn = ny < 0 ? 1 : -1;                    // 让 up 总在上面
+      up.push([px + nx * w * .35 * sgn, py + ny * w * .35 * sgn]);
+      lo.push([px - nx * w * sgn * (k % 2 ? 1.25 : .55), py - ny * w * sgn * (k % 2 ? 1.25 : .55)]);
+    }
+    x2.beginPath(); up.forEach(([x, y], k) => k ? x2.lineTo(x, y) : x2.moveTo(x, y));
+    for (let k = lo.length - 1; k >= 0; k--) x2.lineTo(lo[k][0], lo[k][1]);
+    x2.closePath(); x2.fill();
+  }
+}
+function roadside(travel, trail = 1) {
+  const items = [];
+  // 棕榈
+  for (let side of [-1, 1]) for (let i = 0; i < 6; i++) {
+    const sp = 7, z = ((i * sp + (side > 0 ? 3.5 : 0) - travel * .9) % (6 * sp) + 6 * sp) % (6 * sp) + .9;
+    items.push({ z, f: () => { const [x, y] = proj(side * (4.2 + (i % 2) * 1.6), z), s = LY.k / z * .55; palm(x, y, s, side * -.4 * (.6 + hash(i)), i + side * 9); } });
+  }
+  // 路灯：青色小灯
+  for (let side of [-1, 1]) for (let i = 0; i < 10; i++) {
+    const sp = 3, z = ((i * sp - travel) % 30 + 30) % 30 + .8;
+    items.push({ z, f: () => {
+      const [x, y] = proj(side * 2.6, z), s = LY.k / z;
+      x2.strokeStyle = RGBA(PAL.post, .9); x2.lineWidth = Math.max(1, s * .02); x2.beginPath(); x2.moveTo(x, y); x2.lineTo(x, y - s * .35); x2.stroke();
+      const r = Math.max(1.5, s * .03), gl = x2.createRadialGradient(x, y - s * .35, 0, x, y - s * .35, r * 5);
+      gl.addColorStop(0, RGBA(PAL.lamp[0])); gl.addColorStop(.25, RGBA(PAL.lamp[1], .7)); gl.addColorStop(1, RGBA(PAL.lamp[1], 0));
+      x2.fillStyle = gl; x2.fillRect(x - r * 5, y - s * .35 - r * 5, r * 10, r * 10);
+    } });
+  }
+  items.sort((a, b) => b.z - a.z).forEach(it => it.f());
+  // 尾灯光迹：两条红光沿车道流向远处，一段段按透视变细，亮段往前跑
+  if (trail > 0) {
+    x2.save(); x2.globalCompositeOperation = 'lighter'; x2.lineCap = 'round';
+    for (const X of [-.5, .5]) for (let i = 0; i < 60; i++) {
+      const z0 = .62 + i * .45, z1 = z0 + .42, [xa, ya] = proj(X, z0), [xb, yb] = proj(X, z1);
+      if (ya > H + 20) continue;
+      const pulse = .35 + .65 * Math.pow(.5 + .5 * Math.sin((z0 * 1.3 - travel * 2.2)), 3), fade = clamp(1 - z0 / 27);
+      const w = LY.k / z0 * (LY.p ? .022 : .03);
+      x2.strokeStyle = RGBA(PAL.tail.glow, .22 * trail * fade); x2.lineWidth = w * 2.6; x2.beginPath(); x2.moveTo(xa, ya); x2.lineTo(xb, yb); x2.stroke();
+      const tc = PAL.tail.core, th = PAL.tail.hot;
+      x2.strokeStyle = RGBA([tc[0] + (th[0] - tc[0]) * pulse, tc[1] + (th[1] - tc[1]) * pulse, tc[2] + (th[2] - tc[2]) * pulse], .8 * trail * fade * pulse); x2.lineWidth = Math.max(.6, w); x2.beginPath(); x2.moveTo(xa, ya); x2.lineTo(xb, yb); x2.stroke();
+    }
+    x2.restore();
+  }
+}
+
+/* ━━ T6 镀铬斜体字：五层预渲染到离屏画布（挤出 / 描边 / 上半 / 下半 / 高光） ━━ */
+function buildChrome(text, size) {
+  const m = document.createElement('canvas').getContext('2d');
+  m.font = `900 ${size}px ${HEAVY}`;
+  const tw = m.measureText(text).width * 1.06 + size * .1, depth = Math.round(size * .1);
+  const w = Math.ceil(tw + size * .6 + depth), h = Math.ceil(size * 1.25 + depth), base = Math.round(size * .95), x0 = size * .3;
+  const capTop = base - size * .73, mid = base - size * .37;
+  const layer = draw => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d');
+    x.font = `900 ${size}px ${HEAVY}`; x.textBaseline = 'alphabetic'; x.lineJoin = 'round';
+    x.setTransform(1.06, 0, -.21, 1, x0 + size * .2, 0);                  // 斜切 + 横向拉宽
+    draw(x); return c; };
+  const L = [];
+  L.push(layer(x => {                                                  // 1 挤出厚度：深紫往右下叠
+    const [e0, e1] = PAL.chrome.extrude;
+    for (let i = depth; i >= 1; i--) { const k = i / depth; x.fillStyle = RGBA([lerp(e0[0], e1[0], k), lerp(e0[1], e1[1], k), lerp(e0[2], e1[2], k)]); x.fillText(text, i * .35, base + i * .9); }
+    x.strokeStyle = RGBA(PAL.chrome.edge, .55); x.lineWidth = 1.2; x.strokeText(text, depth * .35, base + depth * .9);
+  }));
+  L.push(layer(x => {                                                  // 2 深色描边 + 一圈粉色细边
+    x.strokeStyle = PAL.chrome.outline; x.lineWidth = size * .08; x.strokeText(text, 0, base);
+    x.strokeStyle = RGBA(PAL.chrome.rim, .7); x.lineWidth = 1.5; x.strokeText(text, 0, base);
+  }));
+  L.push(layer(x => {                                                  // 3 上半：天空反射（深蓝 → 天蓝 → 近白）
+    const g = x.createLinearGradient(0, capTop, 0, mid);
+    [0, .35, .75, 1].forEach((o, i) => g.addColorStop(o, PAL.chrome.top[i]));
+    x.save(); x.beginPath(); x.rect(-w, 0, w * 3, mid); x.clip(); x.fillStyle = g; x.fillText(text, 0, base); x.restore();
+  }));
+  L.push(layer(x => {                                                  // 4 下半：地面反射（深紫 → 粉 → 橙 → 浅黄）
+    const g = x.createLinearGradient(0, mid, 0, base);
+    [0, .1, .45, .8, 1].forEach((o, i) => g.addColorStop(o, PAL.chrome.bottom[i]));
+    x.save(); x.beginPath(); x.rect(-w, mid, w * 3, h); x.clip(); x.fillStyle = g; x.fillText(text, 0, base); x.restore();
+  }));
+  L.push(layer(x => {                                                  // 5 中缝地平线高光 + 顶边亮线（只落在字形里）
+    x.fillStyle = '#fff'; x.fillText(text, 0, base);
+    x.globalCompositeOperation = 'source-in';
+    const g = x.createLinearGradient(0, capTop, 0, base);
+    const hm = (mid - capTop) / (base - capTop);
+    g.addColorStop(0, 'rgba(255,255,255,.9)'); g.addColorStop(.06, 'rgba(255,255,255,0)');
+    g.addColorStop(hm - .045, 'rgba(255,255,255,0)'); g.addColorStop(hm - .012, 'rgba(255,255,255,1)'); g.addColorStop(hm + .006, 'rgba(255,255,255,.9)'); g.addColorStop(hm + .03, 'rgba(255,255,255,0)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g; x.fillRect(-w, 0, w * 3, h);
+  }));
+  return { L, w, h, base, mid, cap: capTop, x0 };
+}
+/* 画出镀铬字：k[i] 是第 i 层的 0–1 进度（落下 + 出现），全部 1 = 完整 */
+function drawChrome(T, cx, cy, k = [1, 1, 1, 1, 1], scale = 1) {
+  const sx = cx - T.w * scale / 2, sy = cy - T.base * scale + (T.base - T.cap) * scale / 2;
+  T.L.forEach((c, i) => {
+    const a = clamp(k[i]); if (a <= 0) return;
+    const drop = (1 - ease.back(a)) * -70 * scale;
+    x2.globalAlpha = clamp(a * 1.6);
+    x2.drawImage(c, sx, sy + drop, T.w * scale, T.h * scale);
+  });
+  x2.globalAlpha = 1;
+  return { x: sx, y: sy, s: scale };
+}
+
+/* ━━ T7 星芒：两根细长菱形交叉 + 光晕 ━━ */
+function starFlare(x, y, r, a) {
+  if (a <= 0) return;
+  x2.save(); x2.globalCompositeOperation = 'lighter'; x2.globalAlpha = a;
+  const gl = x2.createRadialGradient(x, y, 0, x, y, r * .6);
+  gl.addColorStop(0, RGBA(PAL.flare[0])); gl.addColorStop(.2, RGBA(PAL.flare[1], .6)); gl.addColorStop(1, RGBA(PAL.flare[2], 0));
+  x2.fillStyle = gl; x2.fillRect(x - r, y - r, r * 2, r * 2);
+  x2.fillStyle = '#fff';
+  for (const [w, h, rot] of [[r, r * .035, 0], [r * .035, r * .8, 0], [r * .45, r * .02, .78], [r * .45, r * .02, -.78]]) {
+    x2.save(); x2.translate(x, y); x2.rotate(rot); x2.beginPath(); x2.moveTo(-w, 0); x2.lineTo(0, -h); x2.lineTo(w, 0); x2.lineTo(0, h); x2.closePath(); x2.fill(); x2.restore();
+  }
+  x2.restore();
+}
+
+/* ━━ T8 霓虹手写：一条手画路径（不靠字体），一笔写出，写完通电 ━━ */
+const SCRIPT_D = 'M 18,100 C 20,72 22,40 24,12 C 46,2 86,6 84,32 C 82,52 54,60 30,56 C 50,62 60,82 66,94 C 70,102 80,104 90,96 C 102,88 116,72 112,63 C 108,55 92,58 90,74 C 88,96 106,106 124,94 C 128,84 130,70 130,60 C 130,82 132,100 144,100 C 154,100 158,84 158,72 C 158,88 162,100 174,100 C 186,100 192,76 190,60 C 190,54 186,54 186,60 C 188,64 198,62 206,60 C 207,74 207,90 210,98 C 214,104 224,100 230,92 C 232,80 232,68 232,60 C 232,74 232,88 232,100 C 234,76 248,58 260,62 C 270,66 268,90 270,98 C 272,104 282,104 290,96 C 296,88 314,66 304,62 C 290,56 274,72 278,88 C 282,104 302,104 312,86 C 316,64 318,30 318,8 C 318,40 316,80 320,98 C 324,106 336,102 344,90 C 364,68 392,112 300,124 C 200,134 100,130 30,118';
+const scriptPath = new Path2D(SCRIPT_D), probe = $('#scriptProbe'); probe.setAttribute('d', SCRIPT_D);
+const SCRIPT_LEN = probe.getTotalLength();
+function neonScript(cx, cy, scale, k, power, t) {
+  if (k <= 0) return;
+  const len = SCRIPT_LEN * clamp(k);
+  x2.save();
+  x2.translate(cx, cy); x2.scale(scale, scale); x2.transform(1, 0, -.25, 1, 0, 0); x2.translate(-205, -66);
+  x2.lineCap = 'round'; x2.lineJoin = 'round'; x2.setLineDash([len, SCRIPT_LEN + 10]);
+  const flick = power;                                           // 通电闪烁：0 暗 – 1 全亮
+  // 先压一道深色底，霓虹落在亮底（落日）上也看得清
+  x2.strokeStyle = RGBA(PAL.neon.under, .55); x2.lineWidth = 9; x2.save(); x2.translate(1.5, 2.5); x2.stroke(scriptPath); x2.restore();
+  const tb = PAL.neon.tube, layers = [[24, RGBA(tb[0], .2 * flick)], [12, RGBA(tb[1], .45 * flick)], [7, RGBA(tb[2], .9 * (.35 + .65 * flick))], [3.4, RGBA(tb[3], .6 + .4 * flick)]];
+  x2.globalCompositeOperation = 'lighter';
+  for (const [w, c] of layers) { x2.strokeStyle = c; x2.lineWidth = w; x2.stroke(scriptPath); }
+  // i 的点：写完才亮
+  if (k >= 1) { x2.fillStyle = RGBA(PAL.neon.dot, flick); x2.beginPath(); x2.arc(214, 42, 3.6, 0, TAU); x2.fill(); }
+  x2.restore();
+  // 笔头亮点
+  if (k < 1) {
+    const p = probe.getPointAtLength(len), px = (p.x - 205) - .25 * (p.y - 66), py = p.y - 66;
+    const sx = cx + px * scale, sy = cy + py * scale;
+    x2.save(); x2.globalCompositeOperation = 'lighter';
+    const g = x2.createRadialGradient(sx, sy, 0, sx, sy, 26);
+    g.addColorStop(0, RGBA(PAL.neon.nib[0])); g.addColorStop(.25, RGBA(PAL.neon.nib[1], .8)); g.addColorStop(1, RGBA(PAL.neon.nib[2], 0));
+    x2.fillStyle = g; x2.fillRect(sx - 26, sy - 26, 52, 52); x2.restore();
+  }
+}
+/* 字距拉开的小字，两侧细线（逐字画，退路浏览器也稳） */
+function spaced(s, cx, y, size, track, a = 1, lineK = 1) {
+  x2.font = `700 ${size}px ${MONO}`; x2.textBaseline = 'middle';
+  const ws = [...s].map(c => x2.measureText(c).width), tw = ws.reduce((p, q) => p + q, 0) + track * (s.length - 1);
+  let x = cx - tw / 2;
+  x2.fillStyle = RGBA(PAL.tag.text, a); x2.shadowColor = RGBA(PAL.tag.glow); x2.shadowBlur = 10;
+  [...s].forEach((c, i) => { x2.fillText(c, x, y); x += ws[i] + track; });
+  x2.shadowBlur = 0;
+  const L = 90 * lineK;
+  x2.fillStyle = RGBA(PAL.tag.line, a * .8);
+  x2.fillRect(cx - tw / 2 - 18 - L, y - .75, L, 1.5); x2.fillRect(cx + tw / 2 + 18, y - .75, L, 1.5);
+}
+
+/* ━━ T9 录像机屏显：等宽粗体 + 黑影（画进场景，跟着后期一起抖、一起色散） ━━ */
+function osd(s, x, y, size, align = 'left', a = 1) {
+  x2.font = `800 ${size}px ${MONO}`; x2.textAlign = align; x2.textBaseline = 'alphabetic';
+  x2.fillStyle = `rgba(0,0,0,${.75 * a})`; x2.fillText(s, x + size * .08, y + size * .08);
+  x2.fillStyle = RGBA(PAL.osd, a); x2.fillText(s, x, y);
+  x2.textAlign = 'left';
+}
+
+/* ━━ T10 录像带后期（WebGL）：跟踪条、色散、辉光、扫描线、雪花、暗角 ━━ */
+const VHS = (() => {
+  const cv = $('#gl');
+  let gl = null;
+  try { gl = cv.getContext('webgl', { antialias: false, premultipliedAlpha: false }) || cv.getContext('experimental-webgl'); } catch (e) { gl = null; }
+  if (!gl) { document.body.classList.add('nogl'); return null; }
+  const vs = 'attribute vec2 p; varying vec2 uv; void main(){ uv = p * .5 + .5; gl_Position = vec4(p, 0., 1.); }';
+  const fs = `precision mediump float;
+  uniform sampler2D tex, btex; uniform vec2 res; uniform vec3 snowTint; uniform float time, snow, track, jitter, chroma, bloom, line;
+  varying vec2 uv;
+  float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+  void main(){
+    vec2 q = uv; q.y += jitter;
+    float ty = 1. - fract(time * .21);
+    float band = exp(-pow((q.y - ty) * 16., 2.)) * track;
+    float row = floor(q.y * res.y / 3.);
+    q.x += (h(vec2(row, floor(time * 30.))) - .5) * .05 * band;
+    q.x += sin(q.y * 160. + time * 8.) * .0006 * (.5 + track * 3.);
+    float ca = chroma / res.x * (1. + band * 6.);
+    vec3 c = vec3(texture2D(tex, q + vec2(ca, 0.)).r, texture2D(tex, q).g, texture2D(tex, q - vec2(ca * .7, 0.)).b);
+    vec3 b = texture2D(btex, q).rgb;                       // 1/4 分辨率的模糊画面
+    c += (max(b - .28, 0.) * 1.1 + b * .12) * bloom;
+    c *= .84 + .16 * sin(gl_FragCoord.y * 3.14159 / line);
+    float n = h(gl_FragCoord.xy * .7 + fract(time * 7.) * 91.);
+    c = mix(c, vec3(.55 + .45 * n) * snowTint, snow * .78);
+    c += (n - .5) * .07;
+    c += band * step(.86, h(vec2(row * .37, floor(time * 24.)))) * .55;
+    vec2 v = uv - .5;
+    c *= smoothstep(1.0, .28, length(v * vec2(1.05, 1.3)));
+    gl_FragColor = vec4(c, 1.);
+  }`;
+  const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; };
+  const pr = gl.createProgram(); gl.attachShader(pr, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(pr);
+  if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) { document.body.classList.add('nogl'); return null; }
+  gl.useProgram(pr);
+  const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+  const mk = unit => { const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t);
+    for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v);
+    return t; };
+  const tex = mk(0), btex = mk(1);
+  const U = {}; for (const n of ['tex', 'btex', 'res', 'snowTint', 'time', 'snow', 'track', 'jitter', 'chroma', 'bloom', 'line']) U[n] = gl.getUniformLocation(pr, n);
+  gl.uniform1i(U.tex, 0); gl.uniform1i(U.btex, 1); gl.uniform3fv(U.snowTint, PAL.snow);
+  const bc = document.createElement('canvas'), bx = bc.getContext('2d'), canFilter = 'filter' in bx;
+  return {
+    resize(w, h, dpr) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); gl.viewport(0, 0, cv.width, cv.height); this.dpr = dpr; },
+    draw(src, f) {
+      // 辉光：整帧缩到 1/4 再糊一下，当第二张纹理
+      const bw = Math.max(2, src.width >> 2), bh = Math.max(2, src.height >> 2);
+      if (bc.width !== bw) { bc.width = bw; bc.height = bh; }
+      if (canFilter) bx.filter = 'blur(3px)';
+      bx.drawImage(src, 0, 0, bw, bh); if (canFilter) bx.filter = 'none';
+      gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, btex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bc);
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
+      gl.uniform2f(U.res, src.width, src.height); gl.uniform1f(U.time, f.time); gl.uniform1f(U.snow, f.snow); gl.uniform1f(U.track, f.track);
+      gl.uniform1f(U.jitter, f.jitter); gl.uniform1f(U.chroma, f.chroma); gl.uniform1f(U.bloom, f.bloom); gl.uniform1f(U.line, 1.5 * this.dpr);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    },
+  };
+})();
+
+/* ━━ 布局：横屏地平线 56%，竖屏 43%，字拆两行 ━━ */
+let TITLE = [], RANGES = [];
+function layout(S) {
+  W = S.w; H = S.h; const dpr = Math.min(2, devicePixelRatio || 1);
+  SC = Math.min(dpr, S.portrait ? 1.6 : 1.25);
+  c2.width = Math.round(W * SC); c2.height = Math.round(H * SC);
+  VHS && VHS.resize(W, H, dpr);
+  const p = S.portrait;
+  const hy = Math.round(H * (p ? .43 : .56)), sunR = p ? Math.min(W * .25, 104) : Math.min(H * .21, W * .13);
+  LY = { p, hy, sunR, k: (H - hy) * .9, ch: 1, peak: p ? H * .07 : H * .11,
+    titleY: p ? [hy - 214, hy - 136] : [hy - sunR * 1.45],
+    titleSize: p ? Math.min(W * .155, 66) : Math.min(W * .095, 148),
+    scriptY: p ? hy - 26 : hy - sunR * .6, scriptX: p ? W * .5 : W * .6, scriptS: p ? W / 560 : Math.min(W / 1150, 1.4),
+    tagY: p ? hy - 268 : hy - sunR * 2.25 };
+  TITLE = (p ? ['NEON', 'TAPE'] : ['NEON TAPE']).map(s => buildChrome(s, LY.titleSize));
+  RANGES = [makeRange(-20, W / 2 - sunR * 1.15, LY.peak, 3), makeRange(W / 2 + sunR * 1.15, W + 20, LY.peak * .9, 11)];
+}
+
+/* ━━ 一帧：画 2D 场景，再交给录像带后期 ━━ */
+function frame(S, st) {
+  const t = tick(S);
+  x2.setTransform(SC, 0, 0, SC, 0, 0);
+  x2.globalCompositeOperation = 'source-over'; x2.globalAlpha = 1;
+  sky(t);
+  const su = sun(t, st.sunGlow ?? 1);
+  mountains(RANGES);
+  floor(t * st.speed + 40, 1);
+  roadside(t * st.speed + 40, st.trail);
+  // 标题
+  if (st.title) {
+    const boxes = TITLE.map((T, i) => drawChrome(T, W / 2 + (LY.p ? (i ? 22 : -14) : 0), LY.titleY[i] + st.titleDy, st.layers, st.titleScale || 1));
+    st.onTitle && st.onTitle(boxes);
+    const b = boxes[0], T0 = TITLE[0];
+    starFlare(b.x + T0.w * b.s * (LY.p ? .2 : .14), b.y + T0.cap * b.s + 6, LY.p ? 70 : 110, st.flare || 0);
+  }
+  if (st.script) neonScript(LY.scriptX, LY.scriptY, LY.scriptS * (LY.p ? 1.05 : 1.15), st.script, st.power ?? 1, t);
+  if (st.tag) spaced('SIDE A  ·  HI-FI STEREO  ·  SP', W / 2, LY.tagY, LY.p ? 12 : 17, LY.p ? 3 : 8, st.tag, ease.out(st.tag));
+  st.overlay && st.overlay(t);
+  // 屏显
+  const m = LY.p ? 18 : Math.max(36, W * .035), fs = LY.p ? 18 : Math.min(34, W * .024);
+  if (st.osd) {
+    if (st.osd.play) osd(st.osd.play, m, m + fs + (LY.p ? 6 : 0), fs, 'left', st.osd.a ?? 1);
+    if (st.osd.track) osd('TRACKING', m, LY.p ? LY.hy + 160 : H * .7, fs * .8, 'left', st.osd.track);
+  }
+  const tc = 'SP ' + '0:00:' + String(Math.floor(t) % 60).padStart(2, '0');
+  osd(tc, W - m, LY.p ? m + fs + 6 : H * .7, fs * .8, 'right', .92);
+  // 交给后期
+  if (VHS) VHS.draw(c2, { time: t, snow: st.snow || 0, track: st.track || 0, jitter: st.jitter || 0, chroma: st.chroma ?? 1.6, bloom: st.bloom ?? 1 });
+}
+
+/* ━━ T9 录像带开场：先是一台小电视，再撑满全屏 ━━ */
+const stageEl = $('#stage');
+function inset(k) {
+  stageEl.style.transform = k < 1 ? `scale(${k.toFixed(4)})` : '';
+  stageEl.style.borderRadius = k < 1 ? `${((1 - k) * 160).toFixed(1)}px` : '';
+}
+/* ━━ 镜头 ━━ */
+const vhsIntro = (t, S) => S.reduce ? { snow: 0, track: 0, jitter: 0 } : {
+  snow: Math.pow(1 - seg(t, 0, 1.1), 1.5), track: 1 - seg(t, .4, 1.8),
+  jitter: (t < 1.2 ? Math.sin(t * 38) * .012 * (1 - t / 1.2) : 0) };
+const SHOTS = [
+  // 镜1 · CH 01 ▸ PLAY  播放 · 开场像按下播放键：雪花一闪，画面上下抖两下。
+  { dur: 6,
+    draw(t, p, S) {
+      const v = vhsIntro(t, S);
+      inset(S.reduce ? 1 : lerp(.8, 1, ease.inOut(seg(t, .55, 1.25))));
+      frame(S, { ...v, speed: 5, trail: .8, title: true, titleDy: 0, layers: [1, 1, 1, 1, 1], flare: Math.sin(Math.PI * seg(p, .45, .7)),
+        tag: 1, osd: { play: 'PLAY ▶', a: 1 - seg(p, .75, .9), track: 1 - seg(t, 1.2, 2) }, chroma: 1.6 + 4 * v.track });
+    } },
+  // 镜2 · CH 02 ▸ CHROME  镀铬字 · 镀铬字是叠出来的：上半映天、下半映地，中缝亮线。
+  { dur: 6.5,
+    draw(t, p, S) {
+      inset(1);
+      const L = [0, 1, 2, 3, 4].map(i => seg(p, .04 + i * .13, .2 + i * .13));
+      const n = L.filter(x => x >= .6).length, names = ['挤出厚度', '深色描边', '上半映天', '下半映地', '中缝高光'];
+      const zoom = lerp(1, LY.p ? 1.06 : 1.12, ease.inOut(seg(p, 0, .8)));
+      frame(S, { speed: 2.4, trail: .5, title: true, titleDy: LY.p ? 30 : 30 * zoom, titleScale: zoom, layers: L, flare: Math.sin(Math.PI * seg(p, .7, .9)), sunGlow: .7,
+        bloom: .9, onTitle: boxes => this._box = boxes,
+        overlay: () => {
+          // 读数：落下了几层
+          const x = LY.p ? 18 : Math.max(36, W * .035), y = LY.p ? LY.hy + 150 : H * .14;
+          osd('LAYER ' + n + '/5', x, y, LY.p ? 22 : 30, 'left', 1);
+          x2.font = `700 ${LY.p ? 16 : 18}px ${MONO}`; x2.fillStyle = PAL.label.sub; x2.fillText(n ? names[n - 1] : '—', x, y + (LY.p ? 26 : 34));
+          // 引线标注：指向中缝高光
+          const a = seg(p, .7, .82); if (a <= 0 || !this._box) return;
+          const T0 = TITLE[LY.p ? 1 : 0], b = this._box[LY.p ? 1 : 0];
+          const ax = b.x + T0.w * b.s * .62, ay = b.y + T0.mid * b.s, k = ease.out(a);
+          const ex = ax + (LY.p ? -20 : 120) * k, ey = ay + (LY.p ? 150 : 128) * k, fx = ex + (LY.p ? -150 : 210) * k;
+          x2.strokeStyle = 'rgba(255,255,255,.95)'; x2.lineWidth = 1.5; x2.beginPath(); x2.arc(ax, ay, 7, 0, TAU); x2.stroke();
+          x2.fillStyle = '#fff'; x2.fillRect(ax - 2, ay - 2, 4, 4);
+          x2.beginPath(); x2.moveTo(ax + 3, ay + 6); x2.lineTo(ex, ey); x2.lineTo(fx, ey); x2.stroke();
+          const tx = LY.p ? fx : ex + 6;
+          x2.globalAlpha = a; x2.fillStyle = RGBA(PAL.ui.band, .88); x2.fillRect(tx - 8, ey - 58, 214, 52);
+          osd('HORIZON LINE', tx, ey - 36, 17, 'left');
+          x2.font = `600 16px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif`; x2.fillStyle = PAL.label.zh; x2.fillText('中缝一道地平线高光', tx, ey - 13);
+          x2.globalAlpha = 1;
+        } });
+    } },
+  // 镜3 · CH 03 ▸ NEON  霓虹 · 霓虹手写，一笔写完：写完再通电，底下是条纹落日。
+  { dur: 6.5,
+    draw(t, p, S) {
+      inset(1);
+      const k = ease.inOut(seg(p, .05, .55));
+      // 通电：写完后闪三下再稳住
+      const f = seg(p, .56, .7), power = p < .56 ? .45 : f >= 1 ? 1 : [1, .15, 1, .3, 1, .6, 1][Math.floor(f * 7)];
+      const rew = S.reduce ? 0 : seg(p, .9, 1);
+      frame(S, { speed: lerp(5, 11, ease.inOut(seg(p, .1, .8))), trail: lerp(.8, 1.6, seg(p, .2, .8)), title: true, titleDy: 0, layers: [1, 1, 1, 1, 1],
+        flare: Math.sin(Math.PI * seg(p, .66, .86)), script: k, power, tag: ease.out(seg(p, .6, .8)),
+        osd: rew > 0 ? { play: '◀◀ REW', a: 1 } : null, track: rew, snow: rew * .35, jitter: rew ? Math.sin(t * 40) * .008 : 0, chroma: 1.6 + 6 * rew });
+    } },
+];
+
+makePlayer(SHOTS, {
+  onResize(S) { layout(S); },
+});
+</script>
+</body>
+</html>
