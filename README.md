@@ -99,6 +99,7 @@ skills/explain-from-zero/
 - HyperFrames 的 faceless-explainer（Apache-2.0）：按理解的顺序重组材料；先定关键画面再加动作。
 - humanizer-zh（MIT，歸藏）：文字去空话、去模板腔的检查项。
 - 抖音创作者 Vincent 的短视频「盘点达到商业制作水准的 15 种风格」（2026-09-29，https://www.douyin.com/video/7690973351082881939）：`样式库/` 里 15 种风格的分类和「做到商业水准要做足哪几层」的标准来自这支片子；样张的代码和画面都是我们重新写的，不含原片的任何素材，另外补了数据特稿、工程蓝图、自然纪录片三种。
+- earshot 的 real-sound（MIT，Leon Lin，https://github.com/Leonxlnx/earshot）：声音先从画面列出一张分镜、每个声音都有画面里看得见的起因、全片一个声音家族、大时刻靠音乐自己撑、听不见就靠读谱和测量来核，以及「廉价声音」的清单。它用的是授权的真实录音，我们只借了做法，声音仍是代码现场合成。
 - pdf-to-interactive-web（MIT，ai-azhou）：「事实账本」——原句和转述并排核对；只给风格方向、不写技法细节。
 
 具体出处和许可证核对记录见实验仓库的 `research/形式调研-2026-10-26/借鉴来源.md`。
