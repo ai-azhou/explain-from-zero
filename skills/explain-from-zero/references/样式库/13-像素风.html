@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>像素风 · 样张</title>
+<!--
+风格：像素风 PIXEL ART
+一句话：一张很小的画布（横屏约 360×225），每个点用 32 色调色板里的编号摆出来，整数倍放大不糊；
+        换一套调色板，同一张画就从白天到了黄昏和夜里。
+擅长表现：时间流逝和一步步的进展——同一个地方从白天到黄昏到夜里、一个东西一格一格长大或过关；
+        规则和「做对了才能过」的流程；每一步都能用一句对话框说清。
+招牌细节：
+  材质  画布存的是颜色编号不是颜色；天空 5 段色带，交界处 4×4 抖动网点；外层显像管：圆角、暗角、扫描线
+  光    太阳光晕和光束都是抖动网点，不用半透明；夜里星星早就画在天上，白天它的编号和天同色
+  主体  多层视差：云 0.15、远山 0.25、丘陵 0.4、松林 0.6、地面 1.0；每层自己的两三档明暗
+  动效  12 帧一格的帧动画（芽苗摇摆、长大 4 帧、萤火虫）；瀑布和水面靠调色板轮换在流，图一笔没重画
+  字    5×7 点阵字自绘（HUD、标题）；中文用 12px 画进小画布再按阈值变成纯色点，不糊不发虚
+  标题  点阵字放大 4 倍 + 金→橙渐变 + 顶边一行白高光 + 1px 墨色描边 + 右下实心投影；红丝带副标；PRESS START 闪
+  角落  TIME 06:00 逐小时跳、COLORS 32 + 8 格当前色板、GROW 3/4、DUSK / NIGHT 分界小字
+色彩结构（换题保留）：一套 32 个编号，每个编号是一个角色，白天 / 黄昏 / 夜里各一整套颜色，换时间只换色板不重画。
+  天 5 段 = 同一色相由深到浅（顶上最深，地平线最浅），交界抖动；远处的层更接近天色（空气透视），远山影直接借天色编号。
+  每层地物 2–3 档明暗（亮面 / 暗面 / 缝），亮面靠光源那侧；墨色描边固定是全片最暗。
+  主角（花）和名牌用同一个最饱和的颜色，任何时间都是画面里饱和度最高的那块；金色只给标题、HUD 标签和光束。
+  星和萤火虫的编号白天等于天色 / 树色，夜里才亮；水的 4 个编号按明度排好，靠轮换在流。
+  底亮底暗不写死：由场景里的时间和光定。
+本例配色（从本例主体「一盆红花的芽苗」和它的现场「夏天的山谷，有松林、砖地和瀑布」推出来，换题就换）：
+  白天：天 #2a5fd6→#c2e4f4，松 #30894a / #1c5c3a，草 #82d24e，砖 #b8703e，水 #3a7fe0→#eaf8ff，花 #d8314a，金 #ffd23a
+  黄昏：天 #2c1c5c→#ffc070，山 #8c4a8a / #5a2e6e；夜里：天 #0a0a24→#3c4c8c，月 #f4f0d6，星 #ffffff，萤 #e8ff7a
+换题示例（?pal=alt）：假设主角是「一枝雪里的红梅」、现场是「下过雪的山谷」→ 山、丘、地面、灌木都换成雪的白和蓝影，
+  松林压成深青，砖地换成石墙的灰紫，水结成冰蓝；花用梅红，标题从淡金过渡到珊瑚粉；黄昏让雪被夕阳染成粉，
+  夜里是月光下的蓝雪、星和冰晶闪点。
+  白天：天 #3f6fc0→#cddff2（冷而透的晴空，衬出雪白），雪山 #f2f6fb / #8a9fc6，松 #3f6e6c / #24464c，石墙 #9a9bb0，冰 #6f9fd0→#ffffff，花 #c8234a，金 #ffe08a，珊瑚 #ff8a7a
+  黄昏：天 #2b2350→#ffc9a0，雪被染成 #f0c6c6；夜里：天 #070b1c→#2c4678，雪 #9fb2d8，冰晶 #bff4ff
+字：全部画在画布里。拉丁字 = 5×7 点阵表；中文 = 系统黑体 12px 渲染后阈值化
+动效：场景帧动画 12 fps（ease.step）；镜头横移按整像素走；换色板分 6 档跳，不做平滑渐变；转场是竖向分界扫过
+做粗了 → 做精：
+  只换了像素字体、画面是矢量 → 整张画就是低分辨率画布，所有东西同一个点距
+  放大 3.7 倍发糊 → 只用整数倍，image-rendering: pixelated
+  渐变用平滑过渡 → 色带 + 抖动网点；光用网点不用透明度
+  颜色越用越多 → 固定 32 色编号，换时间只换色板
+  昼夜重画一遍 → 同一个编号缓冲区，换调色板就行（星星、水流都是这么来的）
+手机竖屏：画布按宽度取 2 倍放大（约 195×422），天空更高、标题在上半屏
+技法目录：
+  T1 画布：整数倍放大 + 编号缓冲区 + 调色板换算（含左右两套色板的分界）
+  T2 调色板：三套 32 色 + 分档插值 + 水的颜色轮换
+  T3 视差场景：抖动天空、星、日月、云、远山、丘陵、松林、砖地、瀑布、水塘
+  T4 精灵：程序画形 + 自动描边（芽苗 5 个阶段、摇摆两帧）
+  T5 点阵字：5×7 拉丁字 + 中文阈值化
+  T6 标题：放大点阵字 + 渐变 + 高光 + 描边 + 投影 + 丝带 + PRESS START
+  T7 光束：抖动网点放射光 + 闪光 + 萤火虫
+  T9 HUD：读数、色板格
+  T10 显像管：圆角、暗角、扫描线
+  T0 配色：全片颜色只在下面 PALETTES 一处（三个时间的场景色板 + 界面 4 色 + 外框）；?pal=alt 切换
+-->
+<script>
+/* ━━ T0 配色：全片颜色只在这里。默认 main 是本例；网址带 ?pal=alt 换成换题示例 ━━
+   场景 32 个编号的角色（每套都按这个顺序）：
+   0–4 天（顶→地平线）5 日月 6 红（花、名牌、丝带）7 云亮 8 云暗 9 山亮 10 山暗 11 山顶雪 12 丘亮 13 丘暗 14 松亮 15 松暗
+   16 地面亮 17 地面暗 18 砖亮 19 砖暗 20 砖缝 21–24 水（由深到浅，轮换）25 星（白天 = 天0）26 萤（白天 = 松暗）
+   27 叶 28 橙（标题下半、花瓣亮边、盆沿）29 白 30 墨（描边，最暗）31 金（标题上半、HUD、光束）
+   界面 ui：对话框底、暗纹、字、框；bezel 显像管外框 */
+/* ━━ 示范配色：必须换 ━━
+   下面两组颜色只属于这份样张自己的主体，不是这种风格的颜色。搬技法进你的成品时，
+   这组颜色、报头、角标文字、示例文案一律换成从你的主角、现场的光、题目的情绪推出来的；
+   颜色只改这一处，技法代码按角色名取色。按文件头「色彩结构」那一段保留结构。 */
+const PALETTES = {
+  main: {
+    day: ['#2a5fd6', '#3c84ea', '#5aa4f2', '#88c4f6', '#c2e4f4', '#fff3bf', '#d8314a', '#ffffff', '#c8dbf2', '#93b2da', '#5f80ba', '#eef4ff',
+      '#62b04a', '#3d8a3e', '#30894a', '#1c5c3a', '#82d24e', '#4aa23c', '#b8703e', '#8a4a2a', '#5e2e1c', '#3a7fe0', '#5aa6f0', '#a2d6ff', '#eaf8ff',
+      '#2a5fd6', '#1c5c3a', '#9cf05a', '#ff8a2a', '#ffffff', '#1a1c3a', '#ffd23a'],
+    dusk: ['#2c1c5c', '#6a2a7a', '#c2406e', '#f07a4e', '#ffc070', '#ffd28a', '#d8314a', '#ffc27a', '#c2507a', '#8c4a8a', '#5a2e6e', '#ffb8a0',
+      '#6c7a3a', '#3e4e34', '#3a5a3a', '#22362e', '#aaa84a', '#6c7a34', '#a05a3a', '#6e3a2e', '#42201e', '#8a3a7a', '#c2507a', '#f08a6a', '#ffd0a0',
+      '#2c1c5c', '#22362e', '#b8e05a', '#ff8a2a', '#ffffff', '#1a1030', '#ffd23a'],
+    night: ['#0a0a24', '#121644', '#1c2462', '#2a3478', '#3c4c8c', '#f4f0d6', '#b02c50', '#5a6aa8', '#3a4680', '#3a4a82', '#262e5e', '#8a9ad0',
+      '#24486a', '#183452', '#1c3c4e', '#102434', '#2e6a5a', '#1e4a46', '#4a3a5a', '#2e2440', '#1a1428', '#1c2a6a', '#2a3c8a', '#4a6ac0', '#a6c4ff',
+      '#ffffff', '#e8ff7a', '#7ae0b0', '#ff8a2a', '#ffffff', '#080818', '#ffd23a'],
+    ui: ['#1b2a6b', '#131d50', '#c8d6ff', '#8fb0ff'], bezel: '#07060d' },
+  alt: {
+    day: ['#3f6fc0', '#5a8ad0', '#7ea6de', '#a6c3ea', '#cddff2', '#fff8e6', '#c8234a', '#ffffff', '#c9d6ea', '#f2f6fb', '#8a9fc6', '#ffffff',
+      '#eef3fa', '#b9c8de', '#3f6e6c', '#24464c', '#f7f9fc', '#c8d4e6', '#9a9bb0', '#6c6f8c', '#43465f', '#6f9fd0', '#9cc4e8', '#cfe6f8', '#ffffff',
+      '#3f6fc0', '#24464c', '#6fae8a', '#ff8a7a', '#ffffff', '#1d2238', '#ffe08a'],
+    dusk: ['#2b2350', '#5b3a72', '#a65a86', '#e88a8a', '#ffc9a0', '#ffe0b0', '#c8234a', '#ffd0b8', '#c07a96', '#f0c6c6', '#7a6a9a', '#ffe6e0',
+      '#f6d4d0', '#a58fb0', '#3a4e62', '#232c44', '#fbe0da', '#b49ab8', '#8a7890', '#5e4f6e', '#3a2f4a', '#7a6aa8', '#a88ab8', '#e0b0c0', '#ffe0d8',
+      '#2b2350', '#232c44', '#7a9e88', '#ff8a7a', '#ffffff', '#1a1430', '#ffe08a'],
+    night: ['#070b1c', '#0e1838', '#16264e', '#203566', '#2c4678', '#f2f4ff', '#a01d44', '#4a5c8a', '#2e3c66', '#9fb2d8', '#3b4a78', '#d8e4ff',
+      '#8fa4cc', '#4a5c88', '#1c3346', '#0f1e2e', '#a9bce0', '#5e70a0', '#4a4e6e', '#2f3352', '#1b1e36', '#1c2c66', '#2c4488', '#5a7ac0', '#b8ccff',
+      '#ffffff', '#bff4ff', '#6fc0a0', '#ff8a7a', '#ffffff', '#05081a', '#ffe08a'],
+    ui: ['#4a1f3f', '#36152e', '#ffd9e6', '#ff9fc0'], bezel: '#0b0a12' },
+};
+const C = PALETTES[/[?&]pal=alt\b/.test(location.search) ? 'alt' : 'main'];
+document.documentElement.style.setProperty('--bezel', C.bezel);
+document.documentElement.style.setProperty('--gold', C.day[31]);
+</script>
+<style>
+  * { box-sizing:border-box; margin:0; }
+  html,body { height:100%; background:var(--bezel); color:#fff; font-family:-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif; }
+  body { overflow:hidden; }
+  #stage { position:fixed; inset:0; display:grid; place-items:center; }
+  /* ━━ T1 + T10：整数倍放大，外面套一层显像管 ━━ */
+  #tv { position:relative; border-radius:var(--r,22px); overflow:hidden; background:#000; }
+  #px { display:block; image-rendering:pixelated; image-rendering:crisp-edges; filter:saturate(1.12) contrast(1.05) brightness(1.04); }
+  .crt { position:absolute; inset:0; pointer-events:none; border-radius:inherit; }
+  .scan { background:repeating-linear-gradient(to bottom, rgba(0,0,0,.16) 0 1px, rgba(0,0,0,0) 1px var(--s,4px)); mix-blend-mode:multiply; }
+  .vig { background:radial-gradient(120% 100% at 50% 50%, rgba(0,0,0,0) 58%, rgba(0,0,0,.42) 100%);
+    box-shadow:inset 0 0 0 2px rgba(0,0,0,.9), inset 0 0 70px rgba(0,0,0,.55), inset 0 0 6px rgba(255,255,255,.08); }
+  .glare { background:linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,0) 38%); }
+</style>
+</head>
+<body>
+<main id="stage"><div id="tv"><canvas id="px"></canvas><div class="crt scan"></div><div class="crt vig"></div><div class="crt glare"></div>
+</div></main>
+<script>
+/* ━━ 样张自己的播放代码：只为把这份样张播起来，不是成品该用的结构，不要照抄。成品页面上要有哪些东西见 形式.md「页面上要有的东西」，长什么样、怎么排按你的风格自己做 ━━ */
+function makePlayer(SHOTS, hooks = {}) {
+  const S = { i: 0, t: 0, playing: true, reduce: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    w: innerWidth, h: innerHeight, portrait: innerHeight > innerWidth };
+  function enter(i) {
+    S.i = (i + SHOTS.length) % SHOTS.length; S.t = 0;
+    const s = SHOTS[S.i];
+    s.enter && s.enter(S);
+    hooks.onShot && hooks.onShot(S.i, s, S);
+    if (S.reduce) s.draw(s.dur, 1, S);
+  }
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    if (S.playing) {
+      S.t += dt;
+      if (S.t >= SHOTS[S.i].dur) enter(S.i + 1);
+    }
+    const s = SHOTS[S.i];
+    if (!S.reduce) s.draw(Math.min(S.t, s.dur), Math.min(1, S.t / s.dur), S);
+    requestAnimationFrame(frame);
+  }
+  document.addEventListener('visibilitychange', () => { S.playing = !document.hidden; last = performance.now(); });
+  addEventListener('resize', () => {
+    S.w = innerWidth; S.h = innerHeight; S.portrait = S.h > S.w;
+    hooks.onResize && hooks.onResize(S);
+    if (S.reduce) SHOTS[S.i].draw(SHOTS[S.i].dur, 1, S);
+  });
+  hooks.onResize && hooks.onResize(S);
+  enter(0);
+  requestAnimationFrame(frame);
+  return S;
+}
+
+/* ━━ 缓动 ━━ */
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const seg = (p, a, b) => clamp((p - a) / (b - a));
+const ease = {
+  out: x => 1 - Math.pow(1 - x, 3),
+  inOut: x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2,
+  back: x => 1 + 2.7 * Math.pow(x - 1, 3) + 1.7 * Math.pow(x - 1, 2),
+  spring: x => 1 - Math.exp(-6 * x) * Math.cos(12 * x),
+  step: (x, n) => Math.floor(x * n) / n,
+};
+const lerp = (a, b, e) => a + (b - a) * e;
+const FPS = 12, tq = t => ease.step(t, FPS);          // 场景动画按 12 帧一格走
+const hash = (x, y) => { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); };
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + .5) / 16);
+const bay = (x, y) => BAYER[(y & 3) * 4 + (x & 3)];
+
+/* ━━ T2 调色板：三套，同一套编号（0–31 场景，32–35 界面） ━━ */
+const hx = s => [parseInt(s.slice(1, 3), 16), parseInt(s.slice(3, 5), 16), parseInt(s.slice(5, 7), 16)];
+const PAL = { day: C.day, dusk: C.dusk, night: C.night }, UI = C.ui;   // 颜色在文件头 PALETTES 里
+for (const k in PAL) PAL[k] = PAL[k].concat(UI).map(hx);
+const I = { sky: 0, sun: 5, red: 6, cloudHi: 7, cloudLo: 8, mtnHi: 9, mtnLo: 10, snow: 11, hillHi: 12, hillLo: 13, pineHi: 14, pineLo: 15,
+  grassHi: 16, grassLo: 17, brickHi: 18, brickLo: 19, mortar: 20, water: 21, star: 25, fly: 26, leaf: 27, orange: 28, white: 29, ink: 30, gold: 31,
+  navy: 32, navy2: 33, pale: 34, frame: 35 };
+function mixPal(A, B, e, steps = 6) {      // 分档插值：只走 6 档，像老游戏的淡变
+  const q = Math.round(e * steps) / steps;
+  return A.map((c, i) => c.map((v, k) => Math.round(lerp(v, B[i][k], q))));
+}
+function cycleWater(P, phase) {            // 水的 4 个编号轮流换颜色：图不动，水在流
+  const out = P.slice(), w = [21, 22, 23, 24].map(i => P[i]);
+  for (let k = 0; k < 4; k++) out[21 + k] = w[(k + phase) & 3];
+  return out;
+}
+
+/* ━━ T1 画布：编号缓冲区 → 颜色；wipeX 左边用 A 色板，右边用 B ━━ */
+const cv = document.getElementById('px'), cx = cv.getContext('2d');
+let iw, ih, SC, buf, img, P;
+function setupCanvas() {
+  const W = innerWidth, H = innerHeight; P = H > W;
+  SC = P ? Math.max(2, Math.min(6, Math.floor(W / 190))) : Math.max(2, Math.min(8, Math.floor(Math.min(W / 300, H / 170))));
+  iw = Math.floor(W / SC); ih = Math.floor(H / SC);
+  cv.width = iw; cv.height = ih; cv.style.width = iw * SC + 'px'; cv.style.height = ih * SC + 'px';
+  const tv = document.getElementById('tv'); tv.style.setProperty('--s', SC + 'px'); tv.style.setProperty('--r', (P ? 14 : 22) + 'px');
+  buf = new Uint8Array(iw * ih); img = cx.createImageData(iw, ih);
+}
+function present(PA, PB, wipeX) {
+  const d = img.data;
+  for (let y = 0, i = 0; y < ih; y++) for (let x = 0; x < iw; x++, i++) {
+    const c = (x < wipeX ? PA : PB)[buf[i]], o = i * 4; d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+  }
+  cx.putImageData(img, 0, 0);
+}
+const pset = (x, y, c) => { x |= 0; y |= 0; if (x >= 0 && y >= 0 && x < iw && y < ih) buf[y * iw + x] = c; };
+const rect = (x, y, w, h, c) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) pset(x + i, y + j, c); };
+
+/* ━━ T5 点阵字：5×7 拉丁字表（每行 5 位） + 中文阈值化 ━━ */
+const F5 = {}, GL = {
+  A: '01110 10001 10001 11111 10001 10001 10001', C: '01111 10000 10000 10000 10000 10000 01111', D: '11110 10001 10001 10001 10001 10001 11110',
+  E: '11111 10000 10000 11110 10000 10000 11111', G: '01111 10000 10000 10011 10001 10001 01111', H: '10001 10001 10001 11111 10001 10001 10001',
+  I: '11111 00100 00100 00100 00100 00100 11111', K: '10001 10010 10100 11000 10100 10010 10001', L: '10000 10000 10000 10000 10000 10000 11111',
+  M: '10001 11011 10101 10101 10001 10001 10001', N: '10001 11001 10101 10011 10001 10001 10001', O: '01110 10001 10001 10001 10001 10001 01110',
+  P: '11110 10001 10001 11110 10000 10000 10000', R: '11110 10001 10001 11110 10100 10010 10001', S: '01111 10000 10000 01110 00001 00001 11110',
+  T: '11111 00100 00100 00100 00100 00100 00100', U: '10001 10001 10001 10001 10001 10001 01110', W: '10001 10001 10001 10101 10101 11011 10001',
+  Y: '10001 10001 01010 00100 00100 00100 00100', 0: '01110 10011 10101 10101 11001 10001 01110', 1: '00100 01100 00100 00100 00100 00100 01110',
+  2: '01110 10001 00001 00110 01000 10000 11111', 3: '11110 00001 00001 01110 00001 00001 11110', 4: '00010 00110 01010 10010 11111 00010 00010',
+  5: '11111 10000 11110 00001 00001 10001 01110', 6: '00110 01000 10000 11110 10001 10001 01110', 7: '11111 00001 00010 00100 01000 01000 01000',
+  8: '01110 10001 10001 01110 10001 10001 01110', 9: '01110 10001 10001 01111 00001 00010 01100', ':': '00000 00100 00100 00000 00100 00100 00000',
+  '/': '00001 00010 00010 00100 01000 01000 10000', '-': '00000 00000 00000 01110 00000 00000 00000', '.': '00000 00000 00000 00000 00000 00000 00100',
+  '▼': '00000 11111 11111 01110 01110 00100 00000' };
+for (const k in GL) F5[k] = GL[k].split(' ').map(r => parseInt(r, 2));
+F5[' '] = [0, 0, 0, 0, 0, 0, 0];
+function text5(str, x, y, c, k = 1, shadow = -1) {   // 返回宽度；shadow ≥ 0 时先画右下 1 点投影
+  if (shadow >= 0) text5(str, x + k, y + k, shadow, k);
+  let cx0 = x;
+  for (const ch of str) { const g = F5[ch] || F5[' '];
+    for (let r = 0; r < 7; r++) for (let b = 0; b < 5; b++) if (g[r] >> (4 - b) & 1) rect(cx0 + b * k, y + r * k, k, k, c);
+    cx0 += 6 * k; }
+  return cx0 - x - k;
+}
+const CJK_FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+const cjkCache = new Map(), mcv = document.createElement('canvas'), mcx = mcv.getContext('2d', { willReadFrequently: true });
+function cjkMask(str, px) {                // 中文先按 px 字号画出来，再按 alpha 阈值变成 0/1 点
+  const key = px + '|' + str; if (cjkCache.has(key)) return cjkCache.get(key);
+  mcx.font = `${px}px ${CJK_FONT}`; const w = Math.ceil(mcx.measureText(str).width) + 2, h = px + 4;
+  mcv.width = Math.max(1, w); mcv.height = h; mcx.font = `${px}px ${CJK_FONT}`; mcx.textBaseline = 'top'; mcx.fillStyle = '#fff';
+  mcx.fillText(str, 1, 1); const d = mcx.getImageData(0, 0, mcv.width, h).data, m = new Uint8Array(mcv.width * h);
+  for (let i = 0; i < m.length; i++) m[i] = d[i * 4 + 3] > 110 ? 1 : 0;
+  const r = { w: mcv.width, h, m }; if (cjkCache.size > 400) cjkCache.clear(); cjkCache.set(key, r); return r;
+}
+function cjk(str, x, y, c, px = 12, shadow = -1) {
+  const M = cjkMask(str, px);
+  for (let j = 0; j < M.h; j++) for (let i = 0; i < M.w; i++) if (M.m[j * M.w + i]) { if (shadow >= 0) pset(x + i + 1, y + j + 1, shadow); }
+  for (let j = 0; j < M.h; j++) for (let i = 0; i < M.w; i++) if (M.m[j * M.w + i]) pset(x + i, y + j, c);
+  return M.w - 2;
+}
+/* ━━ T4 精灵：先填形，再自动描一圈墨色边 ━━ */
+function sprite(w, h, paint) {
+  const b = new Uint8Array(w * h), put = (x, y, c) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && y >= 0 && x < w && y < h) b[y * w + x] = c; };
+  paint(put);
+  const o = b.slice();
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (!b[y * w + x]) {
+    if ((x > 0 && b[y * w + x - 1]) || (x < w - 1 && b[y * w + x + 1]) || (y > 0 && b[(y - 1) * w + x]) || (y < h - 1 && b[(y + 1) * w + x])) o[y * w + x] = I.ink;
+  }
+  return { w, h, b: o };
+}
+function blit(sp, x, y) { for (let j = 0; j < sp.h; j++) for (let i = 0; i < sp.w; i++) { const c = sp.b[j * sp.w + i]; if (c) pset(x + i, y + j, c); } }
+const ell = (put, cx0, cy0, rx, ry, c, tilt = 0, lo = -1) => {
+  for (let y = -ry; y <= ry; y++) for (let x = -rx; x <= rx; x++) if ((x * x) / (rx * rx + .3) + (y * y) / (ry * ry + .3) <= 1)
+    put(cx0 + x, cy0 + y + Math.round(x * tilt), lo >= 0 && y > 0 ? lo : c);
+};
+const sproutCache = {}, STEM = [0, 10, 17, 23, 27];
+function sprout(stage, sway) {             // 5 个阶段：0 种子 1 两叶 2 四叶 3 花苞 4 开花；sway 0/1 摇摆两帧；底下一只陶土花盆
+  const key = stage + '-' + sway; if (sproutCache[key]) return sproutCache[key];
+  const sp = sprite(35, 58, put => {
+    const base = 44, h = STEM[stage], mx = 17;
+    // 花盆：盆沿 + 梯形盆身，左亮右暗
+    for (let y = 0; y < 3; y++) for (let x = -9; x <= 9; x++) put(mx + x, base + 1 + y, y === 0 ? I.orange : x > 6 ? I.brickLo : I.brickHi);
+    for (let y = 0; y < 9; y++) { const hw = 7 - Math.floor(y / 3); for (let x = -hw; x <= hw; x++) put(mx + x, base + 4 + y, x <= -hw + 1 ? I.orange : x >= hw - 1 ? I.brickLo : (y === 8 ? I.brickLo : I.brickHi)); }
+    for (let x = -7; x <= 7; x++) put(mx + x, base, I.mortar);
+    if (stage === 0) { ell(put, mx, base - 1, 2, 1, I.brickHi); put(mx - 1, base - 2, I.white); return; }
+    const sx = y => mx + Math.round(sway * (base - y) / Math.max(1, h) * 1.6);
+    for (let y = base - 1; y > base - h; y--) { put(sx(y), y, I.pineHi); put(sx(y) - 1, y, I.leaf); }
+    const leaf = (y, r) => { ell(put, sx(y) - 1 - r, y, r, Math.max(1, Math.round(r * .5)), I.leaf, .32, I.pineHi); ell(put, sx(y) + 1 + r, y, r, Math.max(1, Math.round(r * .5)), I.leaf, -.32, I.pineHi);
+      put(sx(y) - r - 2, y - 1 - Math.round(r * .3), I.white); };
+    leaf(base - Math.round(h * .42), 5);
+    if (stage >= 2) leaf(base - Math.round(h * .74), 3);
+    const top = base - h, tx = sx(top);
+    if (stage === 3) { ell(put, tx, top - 3, 3, 4, I.red); put(tx - 1, top - 5, I.orange); put(tx - 2, top - 4, I.orange); put(tx - 2, top - 3, I.orange); put(tx - 3, top + 1, I.leaf); put(tx + 3, top + 1, I.leaf); }
+    if (stage === 4) {
+      for (let k = 0; k < 6; k++) { const a = -Math.PI / 2 + k * Math.PI / 3; ell(put, tx + Math.cos(a) * 4.6, top - 4 + Math.sin(a) * 4.6, 3, 3, I.red); }
+      for (let k = 0; k < 6; k++) { const a = -Math.PI / 2 + k * Math.PI / 3 - .35; put(tx + Math.cos(a) * 5.6, top - 4 + Math.sin(a) * 5.6, I.orange); put(tx + Math.cos(a) * 4.6, top - 4 + Math.sin(a) * 4.6, I.orange); }
+      ell(put, tx, top - 4, 2, 2, I.gold); put(tx - 1, top - 5, I.white);
+    }
+  });
+  return (sproutCache[key] = sp);
+}
+const flowerTop = (stage, sy) => sy + 44 - STEM[stage] - 4;
+
+/* ━━ T3 视差场景 ━━ */
+let G = {};                                // 场景几何（随画布尺寸重算）
+function layoutScene() {
+  const gy = P ? ih - 122 : ih - 72;
+  G = { gy, skyB: gy - (P ? 70 : 34), mtnBase: gy - (P ? 26 : 22), sproutWX: 70 + Math.round(iw * (P ? .5 : .56)) - 17 };
+}
+function drawSky(skyB) {
+  for (let y = 0; y < skyB; y++) {
+    const f = y / skyB * 4, band = Math.floor(f), fr = clamp((f - band - .55) / .45);
+    for (let x = 0; x < iw; x++) buf[y * iw + x] = I.sky + Math.min(4, band + (fr > bay(x, y) ? 1 : 0));
+  }
+  for (let y = skyB; y < ih; y++) buf.fill(I.sky + 4, y * iw, y * iw + iw);
+  // 星星：只放在最上面一段实色天里，白天和天同色，夜里亮
+  const top = Math.floor(skyB / 4 * .55);
+  for (let k = 0; k < iw * top / 70; k++) { const x = Math.floor(hash(k, 3) * iw), y = Math.floor(hash(k, 7) * top); pset(x, y, I.star);
+    if (hash(k, 9) > .85) { pset(x - 1, y, I.star); pset(x + 1, y, I.star); pset(x, y - 1, I.star); pset(x, y + 1, I.star); } }
+}
+function drawSunMoon(phase, t) {           // phase 0 = 上午，1 = 黄昏，2 = 夜（月牙）
+  const night = phase >= 1.5, x = night ? Math.round(iw * .2) : Math.round(lerp(iw * .76, iw * .62, clamp(phase))),
+    y = night ? Math.round(G.skyB * .22) : Math.round(lerp(G.skyB * .22, G.skyB * .82, clamp(phase))), r = night ? 7 : 8 + Math.round(phase * 3);
+  if (!night) for (let j = -r - 6; j <= r + 6; j++) for (let i = -r - 6; i <= r + 6; i++) { const d = Math.hypot(i, j);
+    if (d > r && d < r + 6 && (1 - (d - r) / 6) * .7 > bay(x + i, y + j)) pset(x + i, y + j, I.sun); }
+  for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) if (i * i + j * j <= r * r + r) pset(x + i, y + j, I.sun);
+  if (night) for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) if ((i - 4) * (i - 4) + (j + 2) * (j + 2) <= r * r) pset(x + i, y + j, I.sky);
+}
+function drawClouds(scroll, t) {
+  const n = Math.ceil(iw / 90) + (P ? 5 : 2);
+  for (let k = 0; k < n; k++) {
+    const w = 28 + Math.floor(hash(k, 1) * 30), span = iw + 160;
+    let x = Math.round(((k * 97 + t * 2.5 - scroll * .15) % span + span) % span) - 60, y = 18 + Math.floor(hash(k, 2) * G.skyB * (P ? .62 : .45));
+    for (let j = -10; j <= 0; j++) for (let i = 0; i < w; i++) {
+      const bumps = Math.max(Math.sin((i / w) * Math.PI) * 5, 9 - Math.abs(i - w * .38) * .55, 7 - Math.abs(i - w * .68) * .6);
+      if (-j <= bumps) pset(x + i, y + j, j >= -1 ? I.cloudLo : (j <= -bumps + 1 && i < w * .6 ? I.white : I.cloudHi));
+    }
+  }
+}
+function drawMountains(scroll) {
+  const off = Math.round(scroll * .25), base = G.mtnBase, H0 = P ? 112 : 58;
+  for (let x = 0; x < iw; x++) {
+    const wx = x + off; let best = -1, side = 0;
+    for (let k = Math.floor(wx / 46) - 2; k <= Math.floor(wx / 46) + 2; k++) {
+      const px0 = k * 46 + hash(k, 5) * 20, ph = H0 * (.55 + .45 * hash(k, 6)), h = ph - Math.abs(wx - px0) * .95;
+      if (h > best) { best = h; side = wx < px0 ? 0 : 1; G.__pk = ph - h; G.__dx = Math.abs(wx - px0); }
+    }
+    const snowD = G.__pk;
+    for (let y = Math.max(0, Math.round(base - best)); y < base; y++) {
+      const fromTop = y - (base - best);
+      const ridge = G.__dx;                 // 离山脊的横向距离：亮面靠近山脊的 3 点做抖动过渡
+      let c = side ? I.mtnLo : (ridge < 3 && bay(x, y) < (3 - ridge) / 4 ? I.mtnLo : I.mtnHi);
+      if (!side && hash(x * 3, y) > .965) c = I.mtnLo;
+      pset(x, y, best > H0 * .62 && fromTop < 5 + (hash(x, 1) * 3 | 0) ? I.snow : c);
+    }
+  }
+}
+function drawFarRange(scroll) {            // 最远一层：用天色画的淡山影（空气透视）
+  const off = scroll * .12, base = G.mtnBase - 6, H0 = P ? 104 : 78;
+  for (let x = 0; x < iw; x++) { const wx = x + off; let h = 0;
+    for (let k = Math.floor(wx / 34) - 2; k <= Math.floor(wx / 34) + 2; k++) h = Math.max(h, H0 * (.5 + .5 * hash(k, 41)) - Math.abs(wx - (k * 34 + hash(k, 42) * 14)) * .8);
+    for (let y = Math.max(0, Math.round(base - h)); y < base; y++) pset(x, y, y < base - h + 2 && bay(x, y) > .5 ? I.sky + 2 : I.sky + 3); }
+}
+function drawBushes(scroll) {              // 地面前的一排灌木（视差 0.85）
+  const off = scroll * .85;
+  for (let k = -1; k < iw / 20 + 2; k++) { const wk = k + Math.floor(off / 20), r = 5 + Math.floor(hash(wk, 31) * 5), x0 = Math.round(k * 20 - (off % 20) + hash(wk, 32) * 8);
+    for (let j = -r; j <= 0; j++) for (let i = -r - 2; i <= r + 2; i++) if ((i * i) / ((r + 2) * (r + 2)) + (j * j) / (r * r) <= 1)
+      pset(x0 + i, G.gy - 1 + j, j < -r + 2 && i < 0 ? I.grassHi : (bay(x0 + i, j) > .7 && i < r * .3 ? I.hillHi : I.hillLo)); }
+}
+function drawHills(scroll) {
+  const off = scroll * .4, top = G.gy - (P ? 40 : 34);
+  for (let x = 0; x < iw; x++) {
+    const wx = x + off, h = Math.round(10 + 6 * Math.sin(wx * .045) + 4 * Math.sin(wx * .11 + 1));
+    for (let y = top - h + 14; y < G.gy; y++) pset(x, y, y < top - h + 16 ? I.hillHi : ((x + y) % 7 === 0 && hash(x, y) > .5 ? I.hillHi : I.hillLo));
+  }
+}
+function drawCanopy(scroll) {              // 松林后面一条密林：凹凸的树冠顶 + 抖动亮点
+  const off = scroll * .5;
+  for (let x = 0; x < iw; x++) { const wx = x + off, top = G.gy - 20 - Math.round(3 * Math.abs(Math.sin(wx * .32)) + 2 * Math.sin(wx * .11));
+    for (let y = top; y < G.gy; y++) pset(x, y, (y < top + 3 && bay(x, y) > .45) || (bay(x * 2, y) > .93 && y < G.gy - 6) ? I.pineHi : I.pineLo); }
+}
+function drawPines(scroll) {
+  const off = Math.round(scroll * .6), n = Math.ceil(iw / 9) + 4;
+  for (let k = -2; k < n; k++) {
+    const wk = k + Math.floor(off / 9), x = k * 9 - (off % 9) + Math.round(hash(wk, 2) * 4), h = 14 + Math.floor(hash(wk, 3) * 14), by = G.gy;
+    for (let j = 0; j < h; j++) { const tier = j % 5, wHalf = Math.max(0, Math.round((j / h) * 5 + (tier < 2 ? 0 : 1) - 1));
+      for (let i = -wHalf; i <= wHalf; i++) pset(x + i, by - h + j - 2, i < 0 ? I.pineHi : I.pineLo); }
+    pset(x, by - 2, I.brickLo); pset(x, by - 1, I.brickLo);
+  }
+}
+function drawGround(scroll, phase) {
+  const off = Math.round(scroll), gy = G.gy;
+  for (let y = gy; y < ih; y++) for (let x = 0; x < iw; x++) {
+    const wx = x + off, ry = y - gy - 3;
+    let c;
+    if (y < gy + 2) c = I.grassHi; else if (y < gy + 4) c = (hash(wx, y) > .55 ? I.grassLo : I.grassHi);
+    else { const row = Math.floor(ry / 7), bx = (wx + (row & 1) * 7) % 14, by = ry % 7;
+      c = by === 6 || bx === 13 ? I.mortar : (by === 5 || bx === 12 ? I.brickLo : (hash(Math.floor((wx + (row & 1) * 7) / 14), row) > .8 && by < 2 ? I.brickLo : I.brickHi));
+      if (c === I.brickHi && hash(wx, y) > .93) c = I.mortar; }
+    buf[y * iw + x] = c;
+  }
+  for (let x = 0; x < iw; x++) { const wx = x + off; if (hash(wx, 11) > .7) pset(x, gy - 1, I.grassHi); if (hash(wx, 12) > .9) { pset(x, gy - 1, I.grassLo); pset(x, gy - 2, I.grassHi); } }
+  // 悬崖 + 瀑布 + 水塘（水的编号按位置排，颜色靠轮换）
+  const cx0 = (P ? 18 : 96) - off, top = gy - 34;
+  for (let y = top; y < gy; y++) for (let x = cx0; x < cx0 + 26; x++) {
+    const by = (y - top) % 6, bx = (x - cx0 + (Math.floor((y - top) / 6) & 1) * 6) % 12;
+    pset(x, y, y < top + 2 ? I.grassHi : by === 5 || bx === 11 ? I.mortar : bx === 10 || by === 4 ? I.brickLo : I.brickHi);
+  }
+  for (let y = top + 2; y < gy + 2; y++) for (let x = cx0 + 9; x < cx0 + 17; x++) pset(x, y, I.water + ((y + (x & 1) * 2 + (x % 3)) & 3));
+  for (let y = gy; y < gy + 11; y++) for (let x = cx0 + 17; x < cx0 + 72; x++) {
+    const edge = y === gy || x === cx0 + 17 || x === cx0 + 71; pset(x, y, edge && y > gy ? I.mortar : I.water + (((x >> 2) + y * 3 + (hash(x >> 3, y) > .6 ? 1 : 0)) & 3));
+  }
+  // 水塘上的小木桥
+  for (let x = cx0 + 30; x < cx0 + 60; x++) { pset(x, gy - 3, I.brickHi); pset(x, gy - 2, (x - cx0) % 4 === 0 ? I.mortar : I.brickLo); if ((x - cx0) % 10 === 0) for (let y = gy - 8; y < gy - 3; y++) pset(x, y, I.brickLo); }
+  for (let x = cx0 + 30; x < cx0 + 60; x++) pset(x, gy - 8, I.brickHi);
+}
+
+function birds(t, scroll, night) {
+  if (night) return;
+  for (let k = 0; k < 3; k++) { const x = Math.round(((t * 9 + k * 23 - scroll * .3) % (iw + 40) + iw + 40) % (iw + 40)) - 20, y = Math.round(G.skyB * (P ? .38 : .3) + k * 5 + Math.sin(t * 2 + k) * 2), up = (Math.floor(t * 6) + k) % 2;
+    pset(x, y, I.ink); pset(x - 1, y - up, I.ink); pset(x + 1, y - up, I.ink); pset(x - 2, y - 1 + up, I.ink); pset(x + 2, y - 1 + up, I.ink); }
+}
+/* ━━ T7 光束：按角度分 8 条，强度过抖动阈值才点亮 ━━ */
+function drawBeam(x0, y0, R, rot, e) {
+  for (let j = -R; j <= R; j++) for (let i = -R; i <= R; i++) {
+    const d = Math.hypot(i, j); if (d > R || d < 3) continue;
+    const a = Math.atan2(j, i), ray = Math.pow(Math.abs(Math.cos(4 * (a - rot))), 3) * (j > 0 ? .35 : 1), v = ray * Math.pow(1 - d / R, 1.3) * 1.5 * e + (d < 16 ? (1 - d / 16) * .9 * e : 0);
+    if (v > bay(x0 + i, y0 + j)) pset(x0 + i, y0 + j, v > .8 ? I.white : I.gold);
+  }
+}
+function twinkle(x, y, k) { if (k === 0) { pset(x, y, I.white); return; } for (let i = -k; i <= k; i++) { pset(x + i, y, I.white); pset(x, y + i, I.white); } }
+
+/* ━━ T6 标题：放大点阵字 + 渐变 + 高光 + 描边 + 投影 ━━ */
+function bigTitle(str, cxm, y, k, shine) {
+  const w = str.length * 6 * k - k, x0 = Math.round(cxm - w / 2), h = 7 * k, M = new Uint8Array((w + 12) * (h + 12)), W2 = w + 12;
+  let gx = 0;
+  for (const ch of str) { const g = F5[ch] || F5[' ']; for (let r = 0; r < 7; r++) for (let b = 0; b < 5; b++) if (g[r] >> (4 - b) & 1)
+    for (let yy = 0; yy < k; yy++) for (let xx = 0; xx < k; xx++) M[(r * k + yy + 3) * W2 + gx + b * k + xx + 3] = 1 + (r > 0 && (g[r - 1] >> (4 - b) & 1) ? 0 : (yy === 0 ? 1 : 0));
+    gx += 6 * k; }
+  const at = (x, yy) => x >= 0 && yy >= 0 && x < W2 && yy < h + 12 ? M[yy * W2 + x] : 0;
+  for (let yy = 0; yy < h + 12; yy++) for (let x = 0; x < W2; x++) {
+    const sx = x0 + x - 3, sy = y + yy - 3;
+    if (at(x, yy)) continue;
+    let o = 0; for (let dy = -2; dy <= 4 && !o; dy++) for (let dx = -2; dx <= 3 && !o; dx++) if (at(x - dx, yy - dy) && (Math.abs(dx) + Math.abs(dy) <= 3 || (dx > 0 && dy > 0))) o = 1;   // 描边 + 右下投影
+    if (o) pset(sx, sy, I.ink);
+  }
+  for (let yy = 0; yy < h + 12; yy++) for (let x = 0; x < W2; x++) { const v = at(x, yy); if (!v) continue;
+    const ry = (yy - 3) / h, sx = x0 + x - 3, sy = y + yy - 3, band = ry < .38 ? 0 : ry < .62 ? (bay(sx, sy) < (ry - .38) / .24 ? 1 : 0) : 1;
+    let c = v === 2 ? I.white : band ? I.orange : I.gold;
+    if (shine >= 0 && Math.abs((x - 3) - shine * (w + 40) + 20 + (yy - 3) * .6) < 2.5) c = I.white;              // 斜着扫过的一道闪
+    pset(sx, sy, c); }
+  return { x0, w, h };
+}
+function ribbon(cxm, y, label) {
+  const tw = cjkMask(label, 12).w, w = tw + 26, x0 = Math.round(cxm - w / 2), h = 16;
+  for (const s of [-1, 1]) { const ex = s < 0 ? x0 - 9 : x0 + w + 1; rect(ex, y + 4, 8, h - 2, I.red);
+    for (let j = 0; j < h - 2; j++) { pset(s < 0 ? ex - 1 : ex + 8, y + 4 + j, I.ink); }
+    for (let j = 0; j < 4; j++) for (let i = 0; i <= j; i++) pset(s < 0 ? ex + i : ex + 7 - i, y + 4 + (h - 2) / 2 - 2 + j - (j > 1 ? 0 : 0), I.ink);
+    rect(s < 0 ? ex + 6 : ex, y + h, 2, 2, I.ink); }
+  rect(x0 - 1, y - 1, w + 2, h + 2, I.ink); rect(x0, y, w, h, I.red); rect(x0, y, w, 1, I.orange); rect(x0, y + h - 2, w, 1, I.brickLo);
+  cjk(label, x0 + 13, y + 1, I.white, 12, I.ink);
+}
+
+/* ━━ T9 HUD：场景时间、色板读数 ━━ */
+function hud(time, colors, palNow) {
+  const y = P ? 5 : 4;
+  let w = text5('TIME', 5, y, I.gold, 1, I.ink); text5(time, 5 + w + 5, y, I.white, 1, I.ink);
+  const lab = 'COLORS ' + colors, lw = lab.length * 6 - 1, rx = iw - 5 - lw;
+  text5(lab, rx, y, I.white, 1, I.ink);
+  [0, 2, 4, 5, 9, 14, 17, 21].forEach((c, k) => { const sx = rx + k * 5 + (lw - 40) ; rect(sx - 1, y + 9, 5, 5, I.ink); rect(sx, y + 10, 3, 3, c); });
+}
+/* ━━ 一帧：按镜头参数画整张图 ━━ */
+function scene(o) {
+  drawSky(G.skyB); drawSunMoon(o.sun, o.t); drawClouds(o.scroll, o.t); birds(o.t, o.scroll, o.sun >= 1.5); drawFarRange(o.scroll); drawMountains(o.scroll); drawHills(o.scroll); drawCanopy(o.scroll); drawPines(o.scroll); drawBushes(o.scroll);
+  drawGround(o.scroll, o.sun);
+  const sx = G.sproutWX - Math.round(o.scroll), sy = G.gy - 56;
+  if (o.beam > 0) drawBeam(sx + 17, flowerTop(o.stage, sy), Math.round((P ? 96 : 80) * ease.out(o.beam)), o.rot, o.beam);
+  blit(sprout(o.stage, o.sway), sx, sy);
+  return { sx, sy };
+}
+const hour = h => String(Math.floor(h)).padStart(2, '0') + ':00';
+function frameUI(S, i, t, o) {
+  hud(o.time, 32);
+}
+function wipeLabels(wx) {
+  if (wx <= 2 || wx >= iw - 2) return;
+  for (let y = 18; y < G.gy; y += 2) pset(wx, y, I.white);
+  text5('NIGHT', wx - 34, 22, I.white, 1, I.ink); text5('DUSK', wx + 5, 22, I.white, 1, I.ink);
+}
+function callout(sx, sy, stage, t) {       // 引线标注：芽苗外的四角括号 + 点线 + 标签框
+  const top = flowerTop(stage, sy) - 6, x0 = sx + 4, x1 = sx + 30, y1 = G.gy + 1, on = Math.floor(t * 4) % 2 === 0;
+  if (on) [[x0, top, 1, 1], [x1, top, -1, 1], [x0, y1, 1, -1], [x1, y1, -1, -1]].forEach(([x, y, dx, dy]) => { for (let i = 0; i < 3; i++) { pset(x + i * dx, y, I.white); pset(x, y + i * dy, I.white); } });
+  const lx = x1 + 8, ly = top - (P ? 26 : 18), label = 'GROW ' + stage + '/4', lw = label.length * 6 + 5;
+  for (let y = ly + 10; y <= top; y++) pset(lx, y, (y & 1) ? I.white : I.ink);
+  for (let x = x1 + 1; x <= lx; x++) pset(x, top, (x & 1) ? I.white : I.ink);
+  const bx = Math.min(iw - lw - 4, lx - 2); rect(bx - 1, ly - 1, lw + 2, 11, I.ink); rect(bx, ly, lw, 9, I.navy); rect(bx, ly, lw, 1, I.frame);
+  text5(label, bx + 3, ly + 1, I.white);
+  pset(x1 + 1, top, on ? I.gold : I.white);
+}
+
+/* ━━ 镜头 ━━ */
+const SHOTS = [
+  // 开场 · 一个点一个点摆出来：低分辨率画布，整数倍放大。
+  { dur: 6.0,
+    draw(t, p, S) {
+      const q = tq(t), o = { t: q, sun: .1, scroll: Math.floor(q * 3), stage: 2, sway: Math.floor(q * 2) % 2, beam: 0, time: '06:00' };
+      scene(o);
+      const ty = P ? 54 : 24, k = iw >= 300 ? 5 : 4, bob = Math.floor(q * 2) % 2;
+      const T = bigTitle('SPROUT', iw / 2, ty + bob, k, (q * .45) % 1.6 < 1 ? (q * .45) % 1.6 : -1);
+      ribbon(iw / 2, ty + T.h + 9, '像素的一天');
+      // PRESS START 慢闪；最后一秒像被按下，快闪
+      if (Math.floor(q * (t > 5 ? 8 : 1.6)) % 2 === 0) { const s = 'PRESS START', w = s.length * 6 - 1; text5(s, Math.round(iw / 2 - w / 2), ty + T.h + 34, I.white, 1, I.ink); }
+      twinkle(Math.round(iw / 2 + T.w / 2 + 2), ty + 2, Math.floor(q * 4) % 3);
+      frameUI(S, 0, t, o);
+      present(cycleWater(PAL.day, Math.floor(q * 8) & 3), null, iw + 1);
+    } },
+  // 换色 · 同一张画，换一套颜色：调色板一换，白天就到了黄昏。
+  { dur: 6.4,
+    draw(t, p, S) {
+      const q = tq(t), e = ease.inOut(seg(t, .3, 4.8)), dayE = seg(t, 1.2, 5.2);
+      const stage = 1 + Math.min(3, Math.floor(seg(t, .8, 5.0) * 4)), o = { t: q, sun: dayE, scroll: 18 + Math.round(e * 52), stage: Math.min(4, stage), sway: Math.floor(q * 2) % 2, beam: 0,
+        time: hour(6 + Math.floor(dayE * 12)) };
+      const pos = scene(o); callout(pos.sx, pos.sy, o.stage, q);
+      frameUI(S, 1, t, o);
+      present(cycleWater(mixPal(PAL.day, PAL.dusk, dayE), Math.floor(q * 8) & 3), null, iw + 1);
+    } },
+  // 入夜 · 夜里不重画，只换调色板：星星早就画在天上，白天和天同色。
+  { dur: 6.9,
+    draw(t, p, S) {
+      const q = tq(t), wipe = ease.inOut(seg(t, .4, 2.4)), wx = Math.round(wipe * iw), night = wipe >= 1;
+      const o = { t: q, sun: night ? 2 : 1, scroll: 70, stage: 4, sway: Math.floor(q * 2) % 2, beam: seg(t, 2.7, 3.6), rot: Math.floor(q * 3) * .08, time: hour(18 + Math.floor(seg(t, .4, 2.4) * 3)) };
+      const pos = scene(o);
+      // 夜里的萤火虫和闪光（只在分界左边的夜里画）
+      for (let k = 0; k < 14; k++) { const x = Math.round((hash(k, 21) * iw + Math.sin(q * 1.3 + k) * 6)), y = Math.round(G.gy - 8 - hash(k, 22) * (P ? 60 : 40) + Math.cos(q * 1.7 + k * 2) * 3);
+        if (x < wx && Math.floor(q * 3 + k) % 4) pset(x, y, I.fly); }
+      if (o.beam > 0) for (let k = 0; k < 5; k++) twinkle(pos.sx + 13 + Math.round(Math.cos(k * 1.3 + q) * (14 + k * 4)), pos.sy + 10 - Math.round(Math.sin(k * 1.9 + q) * (10 + k * 3)), Math.floor(q * 6 + k) % 3);
+      wipeLabels(wx);
+      frameUI(S, 2, t, o);
+      const dusk = cycleWater(PAL.dusk, Math.floor(q * 8) & 3), nightP = cycleWater(PAL.night, Math.floor(q * 8) & 3);
+      present(nightP, dusk, wx);
+    } },
+];
+
+setupCanvas(); layoutScene();
+makePlayer(SHOTS, {
+  onResize() { setupCanvas(); layoutScene(); Object.keys(sproutCache).forEach(k => delete sproutCache[k]); },
+});
+</script>
+</body>
+</html>

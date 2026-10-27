@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>液态流动样张</title>
+<!--
+风格：液态流动 LIQUID MOTION
+一句话：画面里的一切都是会粘、会拉丝、会融回去的果冻；光能透进去，边缘发深，表面挂着两道高光，脚下有一块会反光的地面。
+擅长表现：溶解、扩散、融合和分裂——一样东西怎么粘上、拉开、化进另一样里，「一点点」怎么引起一串连锁变化。
+招牌细节：
+  材质｜果冻：厚处颜色浓、薄边透亮（厚度吸收）；边缘发深（菲涅耳）；体内有缓慢流动的色斑和小气泡。
+  光　｜一条贴着上缘的弧形长高光 + 一个小硬光点；下缘有透过来的光（内部透光）；透过水滴看到后面被挤歪的光柱（折射）。
+  主体｜水滴不是圆：先拉长再断开、落下时被拉长、落地压扁成水洼、溅出小滴、小滴之间先长出桥再融回去（smooth-min 融球）。
+  现场｜一面墙 + 斜光柱 + 会反光的地面：倒影越远越淡越糊，贴地一层雾，落点起水波纹。
+  字　｜显示字就是果冻字：和水滴共用一张距离场、一套光，所以水滴能长成字、字下缘能挂滴垂。
+  动效｜预备（拉长）→ 动作 → 挤压回弹；溅出的小滴错峰落地、错峰被拉回；镜头切换的节拍上背景闪一下强调色。
+  角落小字｜VISC. / IOR / k 这类参数。
+色彩结构（换题保留）：
+  底　｜一个色相的墙（上下两档明度）+ 地面（再压一档）+ 同色相更亮的斜光柱和贴地雾；低饱和，只当舞台。
+        暗底不是这种做法离不开的：透光、折射、倒影在亮底上照样成立，底亮底暗由现场的光定。亮底时三处跟着换：
+        外溢的光改成透过果冻落下的有色影子，阴影和暗角用底色相的深色（不用灰黑），字和底带改成深字 + 浅色半透明带。
+  主角｜果冻三色：三个相邻色相排成左→右渐变，全片饱和度最高的只有它；受光不平涂——厚处同色自乘变浓、边缘压成同色深一档、下缘透出同色亮光。
+  线　｜高光、气泡、引线、水波纹：接近白、带一点光源色。字按底的明暗取反。
+  强调｜主角中间色的浅色：只用在切镜和落地那一下的闪光，和读数的大数字。
+本例配色（从本例主体「一滴会变色的果冻」和它的现场「夜里一间梅紫色小屋，顶上斜进几束光」推出来，换题就换）：
+  wallTop #120416 · wallLow #300b33 · floor #130416 · beam #a82b85 · fog #9e3385 · jelly #ff752b → #ff3d8a → #a34dff
+  spec #fff0f7 · lip #ff8ccc · flash #ff61ad · ink #fff3fb（全表见下方 PALETTES.main）
+换题示例（?pal=alt）：假设主角是「一滴蜂蜜」、现场是「清晨窗边的白瓷台面」→ 晨光暖、瓷面偏冷白，底取暖白墙 + 冷白瓷台，
+  光柱是更亮的暖光；蜂蜜自己的蜜黄 → 琥珀 → 深琥珀当主角渐变，暗边自乘成深琥珀；亮底，所以影子和暗角用暖棕、字用深棕：
+  wallTop #dccfbd · wallLow #f5ede2 · floor #d9dcdc · beam #4d3a1f（亮底上加光要少）· jelly #f7b52c → #e3851c → #b9531a
+  shadow #8c5a26 · flash #ffe2a0 · ink #2b1a0b
+字：显示字用 Canvas 2D 按系统粗黑体画出 → CPU 上做精确距离变换（Felzenszwalb）→ RG16F 距离场纹理（锐利 + 糊过两个通道）→ 着色器里加粗、晃动、和水滴 smooth-min、上果冻光。
+    系统没有粗体也不怕：加粗靠距离场减一个常数。
+    取舍：SVG 滤镜（feGaussianBlur + feSpecularLighting）也能做果冻字，但做动画在手机 Safari 上掉帧、光像塑料，也没法和水滴真正融合；
+    距离场纹理开场算一次（约 30–80ms），每帧只采样，手机上更稳。
+    正文黑体栈；参数、读数用等宽栈。
+动效：落体用真实重力（y = y0 − g·t²/2），速度越快拉得越长；落地压扁有过冲和两三下回弹（e^-t·sin）；
+      小滴按离中心远近错峰 0.26s 被拉回；切镜时背景闪粉 0.15s；整片 60fps 连续（所有动画都是镜头时间的函数）。
+做粗了 → 做精：
+  · 两个 CSS 圆角色块叠在一起 → 距离场 smooth-min，靠近时先长出桥（第三镜左右对比）
+  · 一层径向渐变当水滴 → 圆顶法线 + 折射 + 厚度吸收 + 边缘深 + 两道高光 + 下缘透光 + 气泡
+  · 水滴匀速落下、落地就停 → 预备拉长、按重力加速、压扁过冲、回弹、溅出小滴
+  · 地面一条线 → 镜像倒影（越远越淡越糊）+ 贴地雾 + 落点水波推动倒影
+手机竖屏：相机改成按宽度取景，字和地面放到上方 60% 处，倒影在中段；
+      对比镜的两个标签上下错开；读数挪到画面右上。
+技法目录（颜色一律从顶部 PALETTES 传入：CSS 变量 + 着色器 uniform）：
+  T1 距离场字（Canvas 画字 → 精确距离变换 → 滴垂锚点和气泡位置）
+  T2 融球场（椭圆 / 锥形胶囊 / 字 → smooth-min，k 参数化，带混色；k<0 走硬 min 平涂）
+  T3 果冻光（圆顶法线 → 折射、厚度吸收、边缘深、内部透光、体内色流、弧形高光、点高光、底边反光、气泡）
+  T4 现场（墙、光柱、地面倒影、水波、贴地雾、闪粉）
+  T5 后期（光晕外溢、暗角、颗粒）
+  T6 编排（悬垂断开、重力落体、压扁回弹、溅射、拉回融合、分裂、长成字）
+  T7 引线标注与跳动读数（世界坐标 → 屏幕坐标）
+  T9 WebGL 外壳（全屏三角形、只在变化时重画、按帧时降分辨率）
+  T10 退路（拿不到 WebGL2 时 Canvas 2D 静态画面）
+-->
+<script>
+/* ━━ 配色：全片颜色只在这一处。换题只换这张表；网址带 ?pal=alt 切到换题示例 ━━
+   着色器颜色走 uniform、页面走 CSS 变量、退路画面走 JS，三处都从这里取。 */
+/* ━━ 示范配色：必须换 ━━
+   下面两组颜色只属于这份样张自己的主体，不是这种风格的颜色。搬技法进你的成品时，
+   这组颜色、报头、角标文字、示例文案一律换成从你的主角、现场的光、题目的情绪推出来的；
+   颜色只改这一处，技法代码按角色名取色。按文件头「色彩结构」那一段保留结构。 */
+const PALETTES = {
+  main: {  // 主体「一滴会变色的果冻」· 现场「夜里一间梅紫色小屋，顶上斜进几束光」
+    wallTop: '#120416', wallLow: '#300b33', floor: '#130416', halo: '#57124d', beam: '#a82b85', fog: '#9e3385',
+    jelly: ['#ff752b', '#ff3d8a', '#a34dff'], spec: '#fff0f7', lip: '#ff8ccc', edgeTint: '#ffffff', edgeDepth: .46,
+    flash: '#ff61ad', shadow: '#000000', vignette: '#000000', vigAmt: .95, lift: '#000000', grain: .035,
+    glow: .11, wallTex: .2, floorTex: .24,
+    ink: '#fff3fb', panelHi: '#ffd7f0', line: '#ffaae1', accent: '#ffb6da',
+    drop: '#08000a', tag: '#1e0622', sigShadow: '#140014', jellyDeep: '#540a3c',
+    num: ['#ffffff', '#ffb0d6', '#ff4f97'], ring: '#ffc6e4', lead: '#ffd2ea', anchor: '#ffffff',
+  },
+  alt: {  // 主体「一滴蜂蜜」· 现场「清晨窗边的白瓷台面」
+    wallTop: '#dccfbd', wallLow: '#f5ede2', floor: '#d9dcdc', halo: '#1a1206', beam: '#4d3a1f', fog: '#3a2c18',
+    jelly: ['#f7b52c', '#e3851c', '#b9531a'], spec: '#fffaf0', lip: '#ffd47a', edgeTint: '#ffe8cc', edgeDepth: .5,
+    flash: '#ffe2a0', shadow: '#8c5a26', vignette: '#b8a07e', vigAmt: .5, lift: '#000000', grain: .022,
+    glow: .07, wallTex: .07, floorTex: .08,
+    ink: '#2b1a0b', panelHi: '#ffffff', line: '#b07a3a', accent: '#a4500e',
+    drop: '#5a3712', tag: '#fffaf3', sigShadow: '#ffffff', jellyDeep: '#6e3506',
+    num: ['#a4500e', '#d07418', '#f2a826'], ring: '#b9792f', lead: '#8a4a12', anchor: '#6e3506',
+  },
+};
+const PALETTE = PALETTES[new URLSearchParams(location.search).get('pal')] || PALETTES.main;
+const hex01 = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
+const rgba = (h, a) => `rgba(${hex01(h).map(v => Math.round(v * 255)).join(',')},${a})`;
+const lum = h => { const [r, g, b] = hex01(h); return .3 * r + .59 * g + .11 * b; };
+(function applyPalette(P) {  // 页面用的 CSS 变量：透明度这类结构值写在这里，色相全来自 P
+  const v = { '--bg': P.wallTop, '--ink': P.ink, '--dim': rgba(P.ink, .72), '--faint': rgba(P.ink, .5), '--line': rgba(P.line, .22),
+    '--accent': P.accent, '--bandHi': rgba(P.panelHi, .24),
+    '--drop': rgba(P.drop, .5), '--tagBg': rgba(P.tag, .78), '--tagLine': rgba(P.line, .32),
+    '--numGlow': rgba(P.jelly[1], .45), '--sigShadow': rgba(P.sigShadow, .9),
+    '--ring': P.ring, '--lead': P.lead, '--anchor': P.anchor,
+    '--stageBg': `radial-gradient(60% 45% at 50% 38%,${rgba(P.beam, .3)} 0%,${rgba(P.beam, 0)} 70%),linear-gradient(180deg,${P.wallTop} 0%,${P.wallLow} 66%,${P.floor} 66.5%,${P.floor} 100%)` };
+  P.num.forEach((c, i) => v['--n' + i] = c);
+  for (const k in v) document.documentElement.style.setProperty(k, v[k]);
+})(PALETTE);
+</script>
+<style>
+  :root { /* 颜色变量由顶部 applyPalette 写入；这里只放字体 */
+    --sans:-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    --mono:"SF Mono",Menlo,Consolas,monospace; }
+  * { box-sizing:border-box; margin:0; }
+  html,body { height:100%; background:var(--bg); color:var(--ink); font-family:var(--sans); }
+  body { overflow:hidden; -webkit-font-smoothing:antialiased; }
+  #stage { position:fixed; inset:0;    /* 画布出第一帧之前先垫一张同色的 CSS 底，不会黑一下 */
+    background:var(--stageBg); }
+  #stage canvas { position:absolute; inset:0; width:100%; height:100%; display:block; opacity:0; transition:opacity .3s; }
+  #stage canvas.on { opacity:1; }
+  #ov { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+  .fl { position:absolute; left:0; top:0; pointer-events:none; opacity:0; will-change:transform,opacity; }
+  #meta { position:fixed; right:40px; top:30px; text-align:right; font:500 12px/1.75 var(--mono); letter-spacing:.14em;
+    color:var(--faint); pointer-events:none; }
+  #meta b { color:var(--accent); font-weight:600; } #meta span { display:block; }
+  .tag { padding:9px 14px 10px; border-radius:16px; background:var(--tagBg); border:1px solid var(--tagLine);
+    box-shadow:inset 0 1px 0 var(--bandHi), 0 10px 24px var(--drop); white-space:nowrap; }
+  .tag b { display:block; font-size:17px; font-weight:800; }
+  .tag code { display:block; margin-top:3px; font:500 13px/1.2 var(--mono); color:var(--accent); letter-spacing:.05em; }
+  #cnt { text-align:right; }
+  #cnt small { display:block; font:600 12px/1 var(--mono); letter-spacing:.26em; color:var(--dim); }
+  #cnt b { display:block; margin-top:6px; font:800 66px/1 var(--mono); letter-spacing:-.02em;
+    background:linear-gradient(180deg,var(--n0) 10%,var(--n1) 55%,var(--n2)); -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 6px 16px var(--numGlow)); transform-origin:100% 80%; }
+  #sig { text-align:center; text-shadow:0 1px 10px var(--sigShadow); }
+  #sig b { display:block; font-size:16px; font-weight:700; letter-spacing:.42em; margin-right:-.42em; }
+  #sig small { display:block; margin-top:6px; font:600 12px/1 var(--mono); letter-spacing:.32em; color:var(--faint); }
+  @media (orientation:portrait) {
+    #meta { right:auto; left:16px; top:50px; text-align:left; font-size:12px; line-height:1.5; letter-spacing:.08em; }
+    #meta span { display:inline; margin-right:.8em; } #cnt b { font-size:50px; }
+  }
+</style>
+</head>
+<body>
+<main id="stage">
+  <canvas id="gl"></canvas>
+  <svg id="ov" aria-hidden="true">
+    <g id="rings" fill="none" style="stroke:var(--ring)"></g>
+    <path id="ld" fill="none" style="stroke:var(--lead)" stroke-width="1.5" opacity="0"/>
+    <circle id="la" r="5" style="fill:var(--anchor)" opacity="0"/><circle id="la2" r="11" fill="none" style="stroke:var(--anchor)" stroke-width="1" opacity="0"/>
+  </svg>
+  <div id="tag" class="fl tag"><b>拉丝桥</b><code>smin · k 0.08</code></div>
+  <div id="cnt" class="fl"><small>颗数 BODIES</small><b>×1</b></div>
+  <div id="cmpL" class="fl tag"><b>两个圆叠在一起</b><code>min(a, b)</code></div>
+  <div id="cmpR" class="fl tag"><b>先拉出桥，再融成一个</b><code>smin(a, b, k)</code></div>
+  <div id="sig" class="fl"><b>果冻字 · 距离场融球</b><small>JELLY TYPE · SDF METABALLS</small></div>
+</main>
+<aside id="meta"><span>VISC. 0.82 · IOR 1.33</span><span>k <b id="kv">0.08</b> · B 0.12</span></aside>
+
+<script>
+/* ━━ 样张自己的播放代码：只为把这份样张播起来，不是成品该用的结构，不要照抄。成品页面上要有哪些东西见 形式.md「页面上要有的东西」，长什么样、怎么排按你的风格自己做 ━━ */
+function makePlayer(SHOTS, hooks = {}) {
+  const S = { i: 0, t: 0, playing: true, reduce: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    w: innerWidth, h: innerHeight, portrait: innerHeight > innerWidth };
+  function enter(i) {
+    S.i = (i + SHOTS.length) % SHOTS.length; S.t = 0;
+    const s = SHOTS[S.i];
+    s.enter && s.enter(S);
+    hooks.onShot && hooks.onShot(S.i, s, S);
+    if (S.reduce) s.draw(s.dur, 1, S);
+  }
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    if (S.playing) {
+      S.t += dt;
+      if (S.t >= SHOTS[S.i].dur) enter(S.i + 1);
+    }
+    const s = SHOTS[S.i];
+    if (!S.reduce) s.draw(Math.min(S.t, s.dur), Math.min(1, S.t / s.dur), S);
+    requestAnimationFrame(frame);
+  }
+  document.addEventListener('visibilitychange', () => { S.playing = !document.hidden; last = performance.now(); });
+  addEventListener('resize', () => {
+    S.w = innerWidth; S.h = innerHeight; S.portrait = S.h > S.w;
+    hooks.onResize && hooks.onResize(S);
+    if (S.reduce) SHOTS[S.i].draw(SHOTS[S.i].dur, 1, S);
+  });
+  hooks.onResize && hooks.onResize(S);
+  enter(0);
+  requestAnimationFrame(frame);
+  return S;
+}
+
+/* ━━ 缓动：动作要有预备、过冲、回落 ━━ */
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const seg = (p, a, b) => clamp((p - a) / (b - a));
+const ease = {
+  out: x => 1 - Math.pow(1 - x, 3),
+  inOut: x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2,
+  back: x => 1 + 2.7 * Math.pow(x - 1, 3) + 1.7 * Math.pow(x - 1, 2),
+  spring: x => 1 - Math.exp(-6 * x) * Math.cos(12 * x),
+  step: (x, n) => Math.floor(x * n) / n,
+};
+const mix = (a, b, t) => a + (b - a) * t;
+const mix3 = (a, b, t) => [mix(a[0], b[0], t), mix(a[1], b[1], t), mix(a[2], b[2], t)];
+
+/* ━━ T1 距离场字：Canvas 画字 → 精确距离变换（Felzenszwalb）→ 世界单位的距离 ━━ */
+// 一维平方距离变换（下包络抛物线），先按列、再按行各跑一遍就是二维精确欧氏距离
+function edt1d(g, off, step, n, f, v, z) {
+  for (let q = 0; q < n; q++) f[q] = g[off + q * step];
+  v[0] = 0; z[0] = -1e20; z[1] = 1e20;
+  for (let q = 1, k = 0, s = 0; q < n; q++) {
+    do { const r = v[k]; s = (f[q] - f[r] + q * q - r * r) / (q - r) / 2; } while (s <= z[k] && --k > -1);
+    k++; v[k] = q; z[k] = s; z[k + 1] = 1e20;
+  }
+  for (let q = 0, k = 0; q < n; q++) { while (z[k + 1] < q) k++; const r = v[k]; g[off + q * step] = f[r] + (q - r) * (q - r); }
+}
+function edt(g, W, H) {
+  const n = Math.max(W, H), f = new Float64Array(n), v = new Int32Array(n), z = new Float64Array(n + 1);
+  for (let x = 0; x < W; x++) edt1d(g, x, W, H, f, v, z);
+  for (let y = 0; y < H; y++) edt1d(g, y * W, 1, W, f, v, z);
+}
+function blur3(src, W, H, r) {  // 三遍横 + 三遍竖的滑动平均
+  let a = Float32Array.from(src), b = new Float32Array(src.length);
+  const pass = (s, d, n, m, st, ln) => { for (let j = 0; j < m; j++) { const o = j * ln; let acc = 0;
+    for (let k = -r; k <= r; k++) acc += s[o + clamp(k, 0, n - 1) * st];
+    for (let q = 0; q < n; q++) { d[o + q * st] = acc / (2 * r + 1); acc += s[o + Math.min(q + r + 1, n - 1) * st] - s[o + Math.max(q - r, 0) * st]; } } };
+  for (let it = 0; it < 3; it++) { pass(a, b, W, H, 1, W); [a, b] = [b, a]; }
+  for (let it = 0; it < 3; it++) { pass(a, b, H, W, W, 1); [a, b] = [b, a]; }
+  return a;
+}
+// 参数：text 字、worldW 字框在世界里的宽、W×H 纹理大小（宽高比 2:1）
+function makeWordSDF(text, worldW, W = 1024, H = 512) {
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d', { willReadFrequently: true });
+  const fam = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif';
+  let fs = H * .76; g.font = `900 ${fs}px ${fam}`;
+  const mw = g.measureText(text).width; if (mw > W * .86) { fs *= W * .86 / mw; g.font = `900 ${fs}px ${fam}`; }
+  g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#fff';
+  g.fillText(text, W / 2, H / 2 + fs * .02);
+  const a = g.getImageData(0, 0, W, H).data, N = W * H, o = new Float64Array(N), n = new Float64Array(N);
+  for (let i = 0; i < N; i++) {  // 半透明边缘按覆盖率给亚像素初值，字边才不起锯齿
+    const v = a[i * 4 + 3] / 255;
+    if (v > .999) { o[i] = 0; n[i] = 1e20; } else if (v < .001) { o[i] = 1e20; n[i] = 0; }
+    else { const d = .5 - v; o[i] = d > 0 ? d * d : 0; n[i] = d < 0 ? d * d : 0; }
+  }
+  edt(o, W, H); edt(n, W, H);
+  const px = worldW / W, sharp = new Float32Array(N), inner = new Float32Array(N);
+  for (let i = 0; i < N; i++) { const so = Math.sqrt(o[i]), si = Math.sqrt(n[i]); inner[i] = si; sharp[i] = clamp((so - si) * px, -.12, .12); }
+  // 第二通道：把距离场糊一下（三次盒式模糊≈高斯）。只拿它算法线，笔画中线那条棱就圆了，像吹起来的管子
+  const soft = blur3(sharp, W, H, 8), data = new Float32Array(N * 2);
+  for (let i = 0; i < N; i++) { data[i * 2] = sharp[i]; data[i * 2 + 1] = soft[i]; }
+  const toW = (x, y) => ({ x: (x / W - .5) * worldW, y: (.5 - y / H) * worldW * H / W });
+  // 滴垂锚点：每列最低的实心像素里取局部最低点（笔画的下端）
+  const yb = new Int32Array(W).fill(-1);
+  for (let x = 0; x < W; x++) for (let y = H - 1; y >= 0; y--) if (a[(y * W + x) * 4 + 3] > 128) { yb[x] = y; break; }
+  const cand = [];
+  for (let x = 4; x < W - 4; x++) {
+    const y = yb[x]; if (y < H * .5) continue;
+    let ok = true; for (let k = -28; k <= 28 && ok; k++) { const yy = yb[x + k] ?? -1; if (yy > y || (yy === y && k < 0)) ok = false; }
+    if (ok && inner[(y - 10) * W + x] > 4) cand.push({ x, y });
+  }
+  cand.sort((p, q) => q.y - p.y);
+  const drips = [];
+  for (const c of cand) if (drips.length < 3 && drips.every(d => Math.abs(d.x - c.x) > W * .13)) drips.push(c);
+  // 气泡：随机撒点，只留在够粗的笔画里，彼此不挤
+  const bub = []; let seed = 11; const rnd = () => (seed = seed * 16807 % 2147483647) / 2147483647;
+  for (let k = 0; k < 6000 && bub.length < 15; k++) {
+    const x = rnd() * W | 0, y = rnd() * H | 0, si = inner[y * W + x];
+    if (si < 11) continue;
+    const r = Math.min(si * .4, 4 + rnd() * 7);
+    if (bub.some(b => Math.hypot(b.x - x, b.y - y) < b.r + r + 16)) continue;
+    bub.push({ x, y, r });
+  }
+  return { data, W, H,
+    drips: drips.map(d => toW(d.x, d.y - 6)),
+    bubbles: bub.map(b => Object.assign(toW(b.x, b.y), { r: b.r * px })) };
+}
+
+/* ━━ T9 WebGL 外壳：一张全屏三角形；着色器分段见下 ━━ */
+const VS = `#version 300 es
+void main(){ vec2 p = vec2(float((gl_VertexID<<1)&2), float(gl_VertexID&2)); gl_Position = vec4(p*2.-1., 0., 1.); }`;
+const FS = `#version 300 es
+precision highp float;
+out vec4 O;
+uniform vec2 uRes;  // 缓冲尺寸（像素）
+uniform vec3 uCam;  // xy 画面中心（世界），z 每个缓冲像素多少世界单位
+uniform float uT, uFloor, uFlash, uGrain;
+uniform sampler2D uTex;  // 字的距离场（世界单位，内负外正）
+uniform vec4 uTR;  // 字框：中心 xy、半宽、半高
+uniform vec4 uTF;  // x 加粗量  y 晃动幅度  z 字可见  w 揭开边缘柔度
+uniform vec4 uRv[4];  // 揭开：从这几个圆心长出来（xy 圆心，z 半径）
+uniform vec4 uB[24];  // 椭圆：xy 圆心，zw 半径
+uniform vec4 uBC[24];  // 椭圆：rgb 颜色，w = smooth-min 的 k；k<=0 走硬 min 平涂组
+uniform int uNB;
+uniform vec4 uC[4];  // 锥形胶囊（滴垂）：xy 上端，zw 下端
+uniform vec4 uCR[4];  // x 上端半径  y 下端半径  z k
+uniform int uNC;
+uniform vec4 uBub[20];  // 气泡：xy、半径、强度
+uniform int uNBub;
+uniform vec4 uRip[6];  // 水波：x 落点、y 已过秒数、z 强度
+uniform vec4 uLook;  // x 折射  y 吸收  z 圆顶半径 B  w 内部透光
+uniform vec3 uK0, uK1, uK2; // 果冻三色（左→右）
+// 配色（全部来自顶部 PALETTES）：墙上/墙下、地面、主体背后的光、光柱、雾、闪光、阴影、暗角、提亮、高光、下缘透光、暗边色
+uniform vec3 uWallTop, uWallLow, uFloorC, uHalo, uBeam, uFog, uFlashC, uShadowC, uVigC, uLift, uSpec, uLip, uEdgeT;
+uniform vec4 uLook2;  // x 暗边深度  y 外溢强度  z 外溢方式（0 暗底加光 / 1 亮底有色影子）  w 暗角强度
+uniform vec2 uTexA;  // x 墙面斑驳幅度  y 地面斑驳幅度
+
+float hash(vec2 p){ p = fract(p*vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x*p.y); }
+float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3. - 2.*f);
+  return mix(mix(hash(i), hash(i + vec2(1,0)), f.x), mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), f.x), f.y); }
+
+// ━━ T4 现场：墙 + 斜光柱 + 字后一团光 + 贴地雾 + 闪粉 ━━
+vec3 wall(vec2 p){
+  float y = p.y - uFloor;
+  vec3 c = mix(uWallLow, uWallTop, smoothstep(0., 1.5, y));  // 墙：近地一档、往上一档
+  vec2 q = (p - vec2(0., .18))*vec2(.8, 1.);
+  c += uHalo*exp(-dot(q, q)*1.5)*.6;  // 主体背后一团光
+  for(int i = 0; i < 3; i++){  // 三条斜光柱，亮度随噪声呼吸
+    float f = float(i);
+    float xc = -1.2 + f*1.15 + (p.y - 1.)*(-.45 + f*.2) + sin(uT*.17 + f*2.)*.07;
+    float w = .12 + .07*f;
+    float b = exp(-pow((p.x - xc)/w, 2.))*smoothstep(-.05, 1.2, y);
+    b *= .5 + .5*noise(vec2(p.y*1.4 - uT*.22, f*5.3));
+    c += uBeam*b*.26;
+  }
+  c *= 1. - uTexA.x*.5 + uTexA.x*noise(p*vec2(2.2, 3.4) + vec2(uT*.04, 0.));  // 墙面一点云状斑驳
+  c += uFog*exp(-max(y, 0.)/.09)*.17;  // 贴地的雾
+  return mix(c, uFlashC, uFlash);  // 切镜节拍：整面闪一下强调色
+}
+
+// ━━ T2 融球场：椭圆、锥形胶囊、距离场字，用 smooth-min 粘起来 ━━
+float sdEll(vec2 p, vec2 r){ float k0 = length(p/r), k1 = length(p/(r*r)); return k0*(k0 - 1.)/max(k1, 1e-6); }
+float sdCap(vec2 p, vec2 a, vec2 b, float ra, float rb){
+  vec2 pa = p - a, ba = b - a; float h = clamp(dot(pa, ba)/max(dot(ba, ba), 1e-8), 0., 1.);
+  return length(pa - ba*h) - mix(ra, rb, h); }
+// 多项式 smooth-min：k 是「桥」的宽度（两形距离小于 k 就开始粘）；y 返回混色系数
+vec2 smin(float a, float b, float k){ float h = clamp(.5 + .5*(b - a)/k, 0., 1.); return vec2(mix(b, a, h) - k*h*(1. - h), h); }
+vec3 wordCol(float x){ float u = clamp((x - uTR.x)/(uTR.z*1.5) + .5, 0., 1.);
+  return u < .5 ? mix(uK0, uK1, u*2.) : mix(uK1, uK2, u*2. - 1.); }
+float wordSD(vec2 p, float soft){
+  vec2 q = (p - uTR.xy)/uTR.zw;
+  q.x += sin(q.y*4.5 + uT*2.4)*uTF.y;  // 果冻晃：横向正弦剪切
+  q.y += sin(q.x*3.7 - uT*1.9)*uTF.y*.5;
+  vec2 dd = texture(uTex, vec2(q.x*.5 + .5, .5 - q.y*.5)).rg;
+  float d = mix(dd.r, dd.g, soft);  // r 锐利（轮廓用），g 糊过（法线用）
+  d += length(max(abs(q) - 1., 0.)*uTR.zw);
+  d -= uTF.x;  // 加粗：距离场减常数，比系统粗体更胖更圆
+  float r = 1e3;
+  for(int i = 0; i < 4; i++) r = min(r, length(p - uRv[i].xy) - uRv[i].z);
+  float k = uTF.w, h = clamp(.5 + .5*(d - r)/k, 0., 1.);
+  return mix(r, d, h) + k*h*(1. - h);  // smooth-max：字只在揭开圆里出现，边缘也是软的
+}
+float field(vec2 p, out vec3 col, float soft){
+  float d = 1e3; col = uK1;
+  if(uTF.z > .5){ d = wordSD(p, soft); col = wordCol(p.x); }
+  for(int i = 0; i < 4; i++){ if(i >= uNC) break;
+    float c = sdCap(p, uC[i].xy, uC[i].zw, uCR[i].x, uCR[i].y);
+    vec2 s = smin(d, c, uCR[i].z); d = s.x; col = mix(wordCol(uC[i].x), col, s.y); }
+  for(int i = 0; i < 24; i++){ if(i >= uNB) break;
+    if(uBC[i].w <= 0.) continue;
+    vec2 s = smin(d, sdEll(p - uB[i].xy, uB[i].zw), uBC[i].w); d = s.x; col = mix(uBC[i].rgb, col, s.y); }
+  return d;
+}
+float flatField(vec2 p, out vec3 col){  // 对照组：硬 min，平涂
+  float d = 1e3; col = vec3(0);
+  for(int i = 0; i < 24; i++){ if(i >= uNB) break;
+    if(uBC[i].w > 0.) continue;
+    float b = sdEll(p - uB[i].xy, uB[i].zw); if(b < d){ d = b; col = uBC[i].rgb; } }
+  return d;
+}
+
+// ━━ T3 果冻光：一张距离场 → 圆顶法线 → 九项 ━━
+vec3 bubbles(vec2 p, vec3 c, float d){
+  for(int i = 0; i < 20; i++){ if(i >= uNBub) break;
+    vec4 b = uBub[i]; vec2 q = p - b.xy; float l = length(q), r = b.z;
+    if(l > r*1.5) continue;
+    float m = b.w*smoothstep(0., -r, d + r*.3);  // 只在果冻里面
+    float rim = smoothstep(r*.3, 0., abs(l - r));  // 一圈亮的细边
+    float spot = smoothstep(r*.38, 0., length(q - vec2(-.38, .42)*r)); // 左上一个小反光
+    c = mix(c, c*1.25 + .04, smoothstep(r, r*.5, l)*.45*m);
+    c += uSpec*(rim*.4 + spot*.75)*m;
+  }
+  return c;
+}
+vec3 jelly(vec2 p, float d, vec3 base, vec2 g, float rough){  // g：糊过的场的梯度，不归一化，中线处趋于 0
+  float B = uLook.z;
+  float s = clamp(-d, 0., B);
+  float h = sqrt(max(s*(2.*B - s), 0.));  // 圆顶：贴边是四分之一圆，往里是平台
+  float dh = clamp((B - s)/max(h, 1e-4), 0., 7.); // 坡度：边上陡，中间平
+  vec3 n = normalize(vec3(g*dh, 1.));  // 法线（z 朝镜头）
+  float T = h/B;  // 厚度 0–1
+  float rim = 1. - n.z;  // 0 正对，1 掠射
+  // ① 折射：后面的墙按法线被挤开，水滴像一块透镜
+  vec3 behind = wall(p - n.xy*uLook.x*(.35 + T));
+  // ② 体内色流：厚处慢慢流动的色斑，让一滴里不止一个颜色
+  float fl = noise(p*4.2 + vec2(uT*.35, -uT*.2)) + .5*noise(p*9. - uT*.3);
+  vec3 tint = mix(base, base.gbr*.55 + base*.6, smoothstep(.75, 1.35, fl)*T*.8);
+  // ③ 厚度吸收（Beer–Lambert）：颜色当作每单位的透过率，越厚越浓
+  vec3 c = pow(tint, vec3(1. + T*uLook.y))*(.6 + .55*behind);
+  c += tint*.3*T*(1. - .3*T);  // 体内散射：中间更亮、像糖一样半透
+  // ④ 边缘深：掠射处光在里面走得更远，压成更深的同色
+  c = mix(c, tint*tint*uLook2.x*uEdgeT, smoothstep(.28, .98, rim));
+  // ⑤ 内部透光：光从上面进去，在下缘聚起来发亮
+  float down = clamp(-n.y, 0., 1.);
+  c += tint*uLook.w*pow(down, 1.4)*(1. - smoothstep(.7, 1., rim))*.85;
+  // ⑥ 大高光：一盏环形柔光在上缘反射成一条贴边的弧
+  float nl = length(n.xy); vec2 nd = n.xy/max(nl, 1e-4);
+  float arc = smoothstep(.45, .93, dot(nd, normalize(vec2(-.5, 1.))))*smoothstep(.2, .42, nl)*smoothstep(.82, .58, nl);
+  // ⑦ 小高光：右上方一盏点光的硬光点
+  vec3 H = normalize(normalize(vec3(.45, .55, 1.)) + vec3(0, 0, 1));
+  float pt = pow(max(dot(n, H), 0.), mix(240., 40., rough));
+  // ⑧ 底边反光：地雾在下缘映出一条细亮线
+  float lip = smoothstep(.88, .99, nl)*smoothstep(.2, .9, -nd.y);
+  c += uSpec*(arc*.6*(1. - rough*.7) + pt*(1.15 - rough*.85)) + uLip*lip*.32;
+  // ⑨ 气泡
+  return bubbles(p, c, d);
+}
+vec3 scene(vec2 p, float aa, float rough){
+  vec3 c = wall(p), cj, cf, tmp;
+  // 软阴影：光从左上来，往右下错开一点取（糊过的）场，墙上落一块深色
+  float sd = field(p + vec2(-.03, .05), tmp, 1.);
+  c = mix(c, c*uShadowC, .38*(1. - smoothstep(-.05, .09, sd)));  // 影子用底色相的深色，不用灰黑
+  float dj = field(p, cj, 0.);
+  // T5 光晕外溢：暗底上是一圈同色的光（便宜的辉光），亮底上是透过果冻落下的有色影子
+  float w = exp(-max(dj, 0.)/.06)*uLook2.y*(1. - rough*.5);
+  c = mix(c + cj*w, c*mix(vec3(1.), cj, min(1., w*4.)), uLook2.z);
+  if(dj < aa*2.){
+    const float e = .003;
+    float ds = field(p, tmp, 1.);
+    vec2 g = vec2(field(p + vec2(e, 0.), tmp, 1.) - ds, field(p + vec2(0., e), tmp, 1.) - ds)/e;
+    g /= max(1., length(g));
+    c = mix(c, jelly(p, dj, cj, g, rough), smoothstep(aa, -aa, dj));
+  }
+  float df = flatField(p, cf);
+  if(df < aa*2.) c = mix(c, cf, smoothstep(aa, -aa, df));
+  return c;
+}
+void main(){
+  vec2 p = uCam.xy + (gl_FragCoord.xy - uRes*.5)*uCam.z;
+  float aa = uCam.z*1.1;
+  vec3 c;
+  if(p.y >= uFloor){
+    c = scene(p, aa, 0.);
+  } else {
+    // ━━ T4 地面：镜像倒影，越远越淡越糊；落点的水波推动倒影 ━━
+    float depth = uFloor - p.y;
+    vec2 q = vec2(p.x, 2.*uFloor - p.y);
+    float rip = 0.;
+    for(int i = 0; i < 6; i++){ vec4 r = uRip[i]; if(r.z <= 0.) continue;
+      float dist = length(vec2(p.x - r.x, depth*5.)), ph = dist - r.y*.6;
+      rip += sin(ph*75.)*r.z*exp(-abs(ph)*12.)*exp(-r.y*1.4); }
+    q.x += rip*.018 + sin(p.y*90. + uT*1.6)*.0016*depth;
+    q.y += rip*.008;
+    vec3 refl = scene(q, aa + depth*.09, clamp(depth*2.2, 0., 1.));
+    vec3 base = uFloorC*(1. - clamp(depth*.35, 0., .6));
+    base *= 1. - uTexA.y*.5 + uTexA.y*noise(vec2(p.x*2.6, depth*14.));  // 抛光地面上一点不均匀
+    c = mix(base, refl, .58*exp(-depth*1.5));
+  }
+  c += uFog*exp(-abs(p.y - uFloor)/.045)*.11;  // 地平线上一线雾
+  // ━━ T5 后期：暗角 + 颗粒 ━━
+  vec2 sp = gl_FragCoord.xy/uRes - .5;
+  c = mix(c, c*uVigC, clamp(dot(sp*vec2(.85, 1.1), sp*vec2(.85, 1.1))*uLook2.w, 0., 1.));  // 暗角压向底色相
+  c += uLift;
+  c += (hash(gl_FragCoord.xy + fract(uT*7.)*91.) - .5)*uGrain;
+  O = vec4(c, 1.);
+}`;
+
+function makeGL(canvas) {
+  const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, powerPreference: 'high-performance' });
+  if (!gl) return null;
+  const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.error(gl.getShaderInfoLog(s)); return null; } return s; };
+  const v = sh(gl.VERTEX_SHADER, VS), f = sh(gl.FRAGMENT_SHADER, FS);
+  if (!v || !f) return null;
+  const pr = gl.createProgram(); gl.attachShader(pr, v); gl.attachShader(pr, f); gl.linkProgram(pr);
+  if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) { console.error(gl.getProgramInfoLog(pr)); return null; }
+  gl.useProgram(pr);
+  const U = new Proxy({}, { get: (o, k) => k in o ? o[k] : (o[k] = gl.getUniformLocation(pr, k)) });
+  return { gl, U };
+}
+
+/* ━━ 场景常量（世界单位：横屏画面高 2.0） ━━ */
+const FLOOR = -.44, WORD = { x: 0, y: .15, w: .84, h: .42 }, G = 4.2;
+const PAL = { o: hex01(PALETTE.jelly[0]), p: hex01(PALETTE.jelly[1]), v: hex01(PALETTE.jelly[2]) };  // 果冻三色，来自顶部配色表
+const LOOK = [.05, 1.0, .12, .6];  // 折射、吸收、圆顶半径、内部透光
+const wcol = x => { const u = clamp((x - WORD.x) / (WORD.w * 1.5) + .5); return u < .5 ? mix3(PAL.o, PAL.p, u * 2) : mix3(PAL.p, PAL.v, u * 2 - 1); };
+const SDF = makeWordSDF('液态', WORD.w * 2);
+
+/* ━━ T6 编排：每镜都是「镜头时间 → 一组图元」的纯函数，可随意跳、暂停、倒回 ━━ */
+let st;
+function reset() { st = { b: [], c: [], bub: [], rip: [], word: null, rv: null, flash: 0, zoom: 1, dy: 0, ov: {} }; }
+const ball = (x, y, rx, ry, c, k) => st.b.push([x, y, rx, ry, c, k]);
+const cap = (ax, ay, bx, by, ra, rb, k) => st.c.push([ax, ay, bx, by, ra, rb, k]);
+const rip = (x, age, amp) => { if (age >= 0 && age < 2.2) st.rip.push([x, age, amp]); };
+function wordOn(dy, wob, sq = 0) {
+  const hh = WORD.h * (1 - sq), hw = WORD.w * (1 + sq * .45);
+  st.word = { x: WORD.x, y: WORD.y + dy - (WORD.h - hh) * .9, w: hw, h: hh, wob };
+  SDF.bubbles.forEach((b, i) => st.bub.push([WORD.x + b.x * hw / WORD.w + Math.sin(i * 2.1 + st.T * 1.3) * .004,
+    st.word.y + b.y * hh / WORD.h + Math.sin(i * 1.3 + st.T * 1.7) * .004, b.r, .9]));
+}
+// 滴垂：g 是长出来的程度（0–1），t 是第一镜的时间（主滴在 2.6s 断开落地）
+function drips(t, dy, g) {
+  SDF.drips.forEach((a, i) => {
+    const ax = WORD.x + a.x, ay = WORD.y + a.y + dy + .012, c = wcol(ax);
+    if (i === 0 && t > 2.6) {
+      const u = t - 2.6, r = .031, L0 = .15;
+      cap(ax, ay, ax, ay - Math.max(.012, .03 + (L0 - .03) * Math.exp(-u * 6) * Math.cos(u * 11)), .022, .008, .05);
+      const y0 = ay - L0 - r * .6, uL = Math.sqrt(2 * Math.max(.01, y0 - r - FLOOR) / G);
+      if (u < uL) { const s = 1 + Math.min(G * u * .16, .4); ball(ax, y0 - .5 * G * u * u, r / Math.sqrt(s), r * Math.sqrt(s), c, .05); }
+      else {
+        const w = u - uL, rx = r * (1 + 1.5 * (1 - Math.exp(-w * 8))), ry = r * (.42 + .32 * Math.exp(-w * 5) * Math.cos(w * 18));
+        ball(ax, FLOOR + ry * .85, rx, ry, c, .04); rip(ax, w, .9); st.ov.ring = [ax, w];
+        [[-.3, .8], [.26, .95], [.05, 1.2]].forEach(([vx, vy]) => { if (w < 2 * vy / G) ball(ax + vx * w, FLOOR + .012 + vy * w - .5 * G * w * w, .009, .011, c, .02); });
+      }
+      return;
+    }
+    const grow = i === 0 ? ease.inOut(clamp(t / 2.6)) : clamp(t / 6.4);
+    const L = (i === 0 ? .05 + .1 * grow : .024 + .014 * i + .02 * grow) * g, r = (i === 0 ? .031 : .022 - .002 * i) * (.35 + .65 * g);
+    cap(ax, ay, ax, ay - L, .02 * g + .004, (i === 0 ? .012 - .005 * grow : .011) * g + .003, .05);
+    ball(ax, ay - L - r * .6, r * (.92 + .1 * grow), r * (1.05 + (i === 0 ? .25 * grow : 0)), c, .05);
+  });
+}
+// 第一镜 海报：果冻字悬在地面上，主滴垂拉长、断开、落地起波
+function shot1(t) {
+  const bob = Math.sin(t * 1.3) * .008;
+  wordOn(bob, .005); drips(t, bob, 1);
+  st.flash = .5 * Math.exp(-t * 9); st.zoom = 1 - .035 * t / 6.4; st.ov.sig = 1;
+}
+// 第二镜 讲解：一大滴落地压扁、溅开、再一颗颗拉回
+const SPL = [-.84, -.62, -.42, -.28, .3, .46, .6, .74, .86].map((xl, i) => ({
+  xl, vy: 1.05 + ((i * 7) % 5) * .2, r: .022 + ((i * 5) % 4) * .006 }));
+SPL.slice().sort((a, b) => Math.abs(a.xl) - Math.abs(b.xl)).forEach((s, k) => s.m = 2.95 + k * .26);
+function shot2(t, view) {
+  const R = .17, X = 0, c0 = PAL.p, top = view.top;
+  const tDet = .75, yHang = top - .1, yDet = top - .3;
+  const ti = tDet + Math.sqrt(2 * (yDet - (FLOOR + R * .95)) / G);
+  ball(X, top + .2 + .4 * ease.out(seg(t, tDet, tDet + .8)), .36, .26, mix3(c0, PAL.v, .4), .16);  // 画面上缘的「水源」
+  let y, rx, ry, pr = R;
+  if (t < tDet) { const e = ease.inOut(t / tDet); y = mix(yHang, yDet, e); rx = R * (1 - .1 * e); ry = R * (1 + .22 * e); }  // 预备：被拉长
+  else if (t < ti) { const u = t - tDet, s = 1 + Math.min(G * u * .1, .3); y = yDet - .5 * G * u * u; rx = R * .9 / Math.sqrt(s); ry = R * 1.22 * Math.sqrt(s); }
+  else {
+    const w = t - ti, spread = 1 - Math.exp(-w * 9), wob = Math.exp(-w * 3.2) * Math.sin(w * 15);
+    rx = R * (.9 + 1.3 * spread + .18 * wob); ry = R * (1.2 - .8 * spread - .1 * wob);
+    const back = ease.inOut(seg(t, 5.3, 6.5));  // 收回成一颗圆滴
+    rx = mix(rx, R * 1.02, back); ry = mix(ry, R * .9, back) + .025 * Math.sin((t - 5.3) * 13) * Math.exp(-(t - 5.3) * 3) * back;
+    ry = Math.max(ry, .03); y = FLOOR + ry * .92; pr = rx;
+    rip(X, w, 1.1); st.ov.ring = [X, w];
+    st.flash = .16 * Math.exp(-w * 10); st.dy = .007 * Math.exp(-w * 12) * Math.sin(w * 60);
+  }
+  ball(X, y, rx, ry, c0, .12);
+  [[-.4, .3, .085], [.42, -.2, .06], [.05, .55, .045]].forEach(([bx, by, br]) => st.bub.push([X + bx * rx, y + by * ry, br * Math.min(rx, ry) * 1.6, .8]));
+  if (t > tDet + .1) { const u = t - tDet - .1, ys = yDet + R * 1.3 - .5 * G * u * u; if (ys > FLOOR + .06) ball(X, ys, .024, .03, c0, .08); }  // 断开时的卫星小滴
+  let count = 1, act = null;
+  if (t >= ti) SPL.forEach(s => {
+    const xl = s.xl * view.sx, w = t - ti, tf = 2 * s.vy / G, x0 = Math.sign(xl) * R * .9;
+    if (w < tf) {  // 抛物线飞出，速度越快拉得越长
+      const x = mix(x0, xl, w / tf), yy = FLOOR + .03 + s.vy * w - .5 * G * w * w, v = Math.hypot((xl - x0) / tf, s.vy - G * w), k = 1 + Math.min(v * .1, .35);
+      ball(x, yy, s.r / Math.sqrt(k), s.r * Math.sqrt(k), c0, .06); count++;
+    } else {  // 落地成扁珠，按远近错峰被拉回水洼
+      const e = ease.inOut(seg(t, s.m, s.m + .8)), edge = Math.sign(xl) * pr * .9, x = mix(xl, edge, e);
+      const rr = s.r * (1 - seg(t, s.m + .6, s.m + .95));
+      if (rr > .002) { ball(x, FLOOR + rr * .68, rr * (1.35 + .3 * e), rr * .72, c0, .085); count++; }
+      rip(xl, w - tf, .35);
+      if (t >= s.m && t < s.m + .8 && !act) act = { x: (x + edge) / 2, y: FLOOR + .035, side: Math.sign(xl) };
+    }
+  });
+  if (act) lastAct = act;
+  st.ov.count = count; st.ov.lead = t > 2.9 ? (act || lastAct) : null;
+  st.flash = Math.max(st.flash, .5 * Math.exp(-t * 9)); st.zoom = 1 - .05 * ease.inOut(seg(t, 1, 6.7));
+}
+let lastAct = null;
+// 第三镜 对比 + 答案：左硬 min，右 smin；右边那团分成四滴，长成字
+const XS = [-.46, -.17, .17, .46];
+const CMP = P => P ? { xL: 0, yL: .68, xR: 0, yR: .02 } : { xL: -.62, yL: .16, xR: .62, yR: .16 };  // 竖屏上下摆
+function shot3(t, view) {
+  const { xL, yL, xR, yR: yP } = CMP(view.P), sep = mix(.62, .15, ease.inOut(seg(t, .35, 2.5)));
+  const pop = seg(t, 2.95, 3.4), sL = (1 + .14 * Math.sin(Math.min(pop / .35, 1) * Math.PI * .5)) * (1 - ease.inOut(seg(pop, .35, 1)));
+  if (sL > .04) { ball(xL - sep / 2, yL, .15 * sL, .15 * sL, PAL.o, -1); ball(xL + sep / 2, yL, .13 * sL, .13 * sL, PAL.p, -1); }
+  const gather = ease.inOut(seg(t, 3.1, 3.9)), split = seg(t, 3.9, 4.8), bloom = seg(t, 4.8, 5.7);
+  if (t < 3.9) {
+    const cx = mix(xR, WORD.x, gather), cy = mix(yP, WORD.y, gather), s2 = sep * (1 - gather), sx = 1 + .5 * gather;
+    ball(cx - s2 / 2, cy, .15 * sx, .15 / Math.sqrt(sx), PAL.o, .1); ball(cx + s2 / 2, cy, .13 * sx, .13 / Math.sqrt(sx), PAL.v, .1);
+  } else if (bloom < 1) {
+    const e = ease.spring(split) , shrink = 1 - ease.out(bloom);
+    XS.forEach((x, i) => {
+      const xx = mix(WORD.x + (i - 1.5) * .07, x, Math.min(e, 1.08)), r = .11 * shrink * (1 - .18 * split);
+      if (r > .002) ball(xx, WORD.y + .02 * Math.sin(i * 2 + t * 9) * (1 - split), r * (1 + .15 * (1 - split)), r, mix3(mix3(PAL.o, PAL.v, .5), wcol(x), clamp(split * 2.2)), .12);
+    });
+  }
+  if (t >= 4.8) {
+    const w = t - 4.8, sq = .08 * Math.sin(w * 10) * Math.exp(-w * 3.2);
+    wordOn(0, .005 + .03 * Math.exp(-w * 2.5), sq);
+    st.rv = XS.map(x => [x, WORD.y, 1.2 * ease.out(bloom) + .001]);
+    for (let k = 0; k < 10; k++) {  // 长成字时溅出的小滴
+      const a = k * 2.4 + .6, sp = .55 + (k % 3) * .2, o = XS[k % 4], vx = Math.cos(a) * sp, vy = Math.abs(Math.sin(a)) * sp + .25;
+      const r = .016 * (1 - seg(w, .25, .8)); if (r > .002) ball(o + vx * w, WORD.y + vy * w - .5 * G * .6 * w * w, r, r, wcol(o), .03);
+    }
+    st.flash = .55 * Math.exp(-w * 7);
+    if (t > 5.5) drips(0, 0, ease.out(seg(t, 5.5, 6.85)));
+  }
+  st.zoom = 1 - .04 * ease.inOut(seg(t, 4.8, 6.85));
+  st.ov.cmp = t > .3 && t < 3.05 ? Math.min(1, (t - .3) / .35, (3.05 - t) / .3) : 0;
+  st.flash = Math.max(st.flash, .5 * Math.exp(-t * 9));
+}
+
+/* ━━ T9 渲染：打包统一变量；只在状态变了才重画；按帧时降分辨率 ━━ */
+const cv = document.getElementById('gl'), G2 = makeGL(cv);
+const view = { W: 1, H: 1, u: .002, cx: 0, cy: 0, top: 1, scale: 1, cam: { x: 0, y: 0, u: .002 } };
+let tex = null, lastKey = '', ema = 16, lastR = 0;
+if (G2) {
+  const { gl } = G2; tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RG16F, SDF.W, SDF.H, 0, gl.RG, gl.FLOAT, SDF.data);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+}
+function layout(S) {
+  view.W = innerWidth; view.H = innerHeight;
+  view.P = view.H > view.W;
+  if (view.P) { view.u = 1.62 / view.W; view.cy = WORD.y - .19 * view.H * view.u; }  // 竖屏：按宽取景，字放在上方三成处
+  else { view.u = 2.0 / view.H; view.cy = -.12; if (view.W * view.u < 2.1) view.u = 2.1 / view.W; }
+  view.cx = 0; view.top = view.cy + view.H * view.u / 2; view.sx = Math.min(1, view.W * view.u / 2 * .9 / .86);
+  view.scale = Math.min(devicePixelRatio || 1, view.H > view.W ? 1.6 : 1.5);
+  sizeCanvas(); lastKey = '';
+}
+function sizeCanvas() { cv.width = Math.round(view.W * view.scale); cv.height = Math.round(view.H * view.scale); }
+const P4 = n => new Float32Array(n * 4);
+const bufB = P4(24), bufBC = P4(24), bufC = P4(4), bufCR = P4(4), bufBub = P4(20), bufRip = P4(6), bufRv = P4(4);
+function render(T) {
+  const { gl, U } = G2, cam = view.cam;
+  // 连续播放时帧间隔太长，就先把缓冲缩小 15%（最低 0.5 倍），再画这一帧；CSS 把它拉伸回去
+  const now = performance.now(), gap = now - lastR; lastR = now;
+  if (gap < 120) ema = ema * .9 + gap * .1;
+  if (ema > 30 && view.scale > .5) { view.scale = Math.max(.5, view.scale * .85); sizeCanvas(); ema = 16; }
+  bufB.fill(0); bufBC.fill(0); bufC.fill(0); bufCR.fill(0); bufBub.fill(0); bufRip.fill(0);
+  st.b.slice(0, 24).forEach((b, i) => { bufB.set([b[0], b[1], Math.max(b[2], 1e-3), Math.max(b[3], 1e-3)], i * 4); bufBC.set([...b[4], b[5]], i * 4); });
+  st.c.slice(0, 4).forEach((c, i) => { bufC.set(c.slice(0, 4), i * 4); bufCR.set([c[4], c[5], c[6], 0], i * 4); });
+  st.bub.slice(0, 20).forEach((b, i) => bufBub.set(b, i * 4));
+  st.rip.sort((a, b) => b[2] - a[2]).slice(0, 6).forEach((r, i) => bufRip.set([r[0], r[1], r[2], 0], i * 4));
+  for (let i = 0; i < 4; i++) bufRv.set(st.rv ? [...st.rv[i], 0] : [0, 0, 1e3, 0], i * 4);
+  const w = st.word || WORD;
+  gl.viewport(0, 0, cv.width, cv.height);
+  gl.uniform2f(U.uRes, cv.width, cv.height);
+  gl.uniform3f(U.uCam, cam.x, cam.y, cam.u * view.W / cv.width);
+  gl.uniform1f(U.uT, T); gl.uniform1f(U.uFloor, FLOOR); gl.uniform1f(U.uFlash, st.flash); gl.uniform1f(U.uGrain, PALETTE.grain);
+  gl.uniform4f(U.uTR, w.x, w.y, w.w, w.h); gl.uniform4f(U.uTF, .016, st.word ? st.word.wob : 0, st.word ? 1 : 0, .07);
+  gl.uniform4fv(U.uRv, bufRv); gl.uniform4fv(U.uB, bufB); gl.uniform4fv(U.uBC, bufBC); gl.uniform1i(U.uNB, Math.min(st.b.length, 24));
+  gl.uniform4fv(U.uC, bufC); gl.uniform4fv(U.uCR, bufCR); gl.uniform1i(U.uNC, Math.min(st.c.length, 4));
+  gl.uniform4fv(U.uBub, bufBub); gl.uniform1i(U.uNBub, Math.min(st.bub.length, 20)); gl.uniform4fv(U.uRip, bufRip);
+  gl.uniform4f(U.uLook, ...LOOK); gl.uniform3f(U.uK0, ...PAL.o); gl.uniform3f(U.uK1, ...PAL.p); gl.uniform3f(U.uK2, ...PAL.v);
+  const P = PALETTE;
+  [['uWallTop', P.wallTop], ['uWallLow', P.wallLow], ['uFloorC', P.floor], ['uHalo', P.halo], ['uBeam', P.beam], ['uFog', P.fog],
+   ['uFlashC', P.flash], ['uShadowC', P.shadow], ['uVigC', P.vignette], ['uLift', P.lift], ['uSpec', P.spec], ['uLip', P.lip], ['uEdgeT', P.edgeTint]]
+    .forEach(([k, h]) => gl.uniform3f(U[k], ...hex01(h)));
+  gl.uniform4f(U.uLook2, P.edgeDepth, P.glow, lum(P.wallLow) > .5 ? 1 : 0, P.vigAmt);  // 底够亮就把外溢换成有色影子
+  gl.uniform2f(U.uTexA, P.wallTex, P.floorTex);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex); gl.uniform1i(U.uTex, 0);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+
+/* ━━ T7 引线标注与跳动读数：世界坐标 → 屏幕坐标，跟着图元走 ━━ */
+const $ = id => document.getElementById(id);
+const toS = (x, y) => [view.W / 2 + (x - view.cam.x) / view.cam.u, view.H / 2 - (y - view.cam.y) / view.cam.u];
+const place = (el, x, y, o) => { el.style.transform = `translate(${x}px,${y}px)`; el.style.opacity = o; };
+let shownCount = 1, countAt = -9;
+function overlay(i, t) {
+  const P = view.H > view.W, ov = G2 ? st.ov : {};  // 退路画面是静态的：只留字标，不出跟随图元的标注
+  // 落点水波纹：两圈扁椭圆往外扩
+  const rings = $('rings'); let html = '';
+  if (ov.ring) { const [x, w] = ov.ring, [sx, sy] = toS(x, FLOOR);
+    for (let k = 0; k < 3; k++) { const a = w - k * .22; if (a < 0 || a > 1.6) continue;
+      const rx = (.05 + a * .5) / view.cam.u; html += `<ellipse cx="${sx}" cy="${sy}" rx="${rx}" ry="${rx * .14}" stroke-width="${1.4 - k * .3}" opacity="${(.55 * (1 - a / 1.6)).toFixed(3)}"/>`; } }
+  rings.innerHTML = html;
+  // 第一镜：字标下的小字
+  const [gx, gy] = toS(P ? 0 : .98, FLOOR - (P ? .36 : .3));
+  place($('sig'), gx - $('sig').offsetWidth / 2, gy, i === 0 || !G2 ? clamp(t / .5) * .95 : 0);
+  // 第二镜：颗数读数（变了就弹一下）+ 拉丝桥引线
+  const cnt = $('cnt'), cb = cnt.lastChild;
+  if (i === 1 && G2) {
+    if (ov.count !== shownCount) { shownCount = ov.count; countAt = t; cb.textContent = '×' + String(shownCount).padStart(2, '0'); }
+    const k = clamp((t - countAt) / .35), s = 1 + .22 * Math.exp(-k * 5) * Math.cos(k * 14) * (k < 1);
+    cb.style.transform = `scale(${s.toFixed(3)},${(2 - s).toFixed(3)})`;
+    const [cx, cy] = P ? [view.W - 16, view.H * .1] : [view.W - 64, view.H * .2];
+    place(cnt, cx - cnt.offsetWidth, cy, clamp((t - .3) / .4));
+  } else place(cnt, 0, 0, 0);
+  const tag = $('tag'), ld = $('ld'), la = $('la'), la2 = $('la2');
+  if (i === 1 && ov.lead) {
+    const [ax, ay] = toS(ov.lead.x, ov.lead.y), side = ov.lead.side || 1, o = clamp((t - 2.9) / .3) * clamp((6.05 - t) / .25);
+    const bx = ax + side * (P ? 34 : 70), by = ay - (P ? 120 : 150);
+    const tx = side > 0 ? bx : bx - tag.offsetWidth, ty = by - tag.offsetHeight / 2;
+    place(tag, clamp(tx, 12, view.W - tag.offsetWidth - 12), ty, o);
+    ld.setAttribute('d', `M${ax},${ay} L${ax + side * 16},${by + 18} L${bx},${by}`); ld.setAttribute('opacity', o);
+    la.setAttribute('cx', ax); la.setAttribute('cy', ay); la.setAttribute('opacity', o);
+    la2.setAttribute('cx', ax); la2.setAttribute('cy', ay); la2.setAttribute('r', 8 + 6 * ((t * 1.6) % 1)); la2.setAttribute('opacity', o * (1 - (t * 1.6) % 1));
+  } else { place(tag, 0, 0, 0); [ld, la, la2].forEach(e => e.setAttribute('opacity', 0)); }
+  // 第三镜：左右对比标签（竖屏上下错开）
+  const oc = i === 2 && G2 ? ov.cmp : 0, L = $('cmpL'), Rr = $('cmpR');
+  const C = CMP(P), dy = P ? -.2 : .25, [lx, ly] = toS(C.xL, C.yL + dy), [rx, ry] = toS(C.xR, C.yR + dy);  // 竖屏标签放在下方
+  place(L, clamp(lx - L.offsetWidth / 2, 12, view.W - L.offsetWidth - 12), P ? ly : ly - L.offsetHeight, oc);
+  place(Rr, clamp(rx - Rr.offsetWidth / 2, 12, view.W - Rr.offsetWidth - 12), P ? ry : ry - Rr.offsetHeight, oc);
+  $('kv').textContent = i === 2 ? '0.10' : '0.08';
+}
+
+/* ━━ T10 退路：拿不到 WebGL2 时画一张 Canvas 2D 静态近似（字照常） ━━ */
+function drawFallback() {
+  const W = view.W, H = view.H, d = Math.min(devicePixelRatio || 1, 2), x = cv.getContext('2d');
+  cv.width = W * d; cv.height = H * d; x.setTransform(d, 0, 0, d, 0, 0);
+  const [, fy] = toS(0, FLOOR), [wx, wy] = toS(0, WORD.y), u = view.cam.u, fs = .6 / u, P = PALETTE;
+  const mixc = (a, b, t) => '#' + hex01(a).map((v, i) => Math.round(mix(v, hex01(b)[i], t) * 255).toString(16).padStart(2, '0')).join('');
+  const deep = mixc(P.floor, P.shadow, .55);  // 地面远处：往底色相的深色走
+  let g = x.createLinearGradient(0, 0, 0, fy); g.addColorStop(0, P.wallTop); g.addColorStop(1, P.wallLow);
+  x.fillStyle = g; x.fillRect(0, 0, W, fy);
+  g = x.createLinearGradient(0, fy, 0, H); g.addColorStop(0, P.floor); g.addColorStop(1, deep);
+  x.fillStyle = g; x.fillRect(0, fy, W, H - fy);
+  g = x.createRadialGradient(wx, wy, 0, wx, wy, .9 / u); g.addColorStop(0, rgba(P.beam, .32)); g.addColorStop(1, rgba(P.beam, 0));
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  // 果冻字先画在离屏画布上：渐变填充 + 圆头描边加粗，再只在字里面叠上高光和下缘透光
+  const o = document.createElement('canvas'), ow = Math.ceil(fs * 2.6), oh = Math.ceil(fs * 1.5), c = o.getContext('2d');
+  o.width = ow; o.height = oh;
+  c.font = `900 ${fs}px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+  g = c.createLinearGradient(ow * .14, 0, ow * .86, 0); g.addColorStop(0, P.jelly[0]); g.addColorStop(.5, P.jelly[1]); g.addColorStop(1, P.jelly[2]);
+  c.lineJoin = 'round'; c.lineWidth = fs * .07; c.strokeStyle = c.fillStyle = g;
+  c.strokeText('液态', ow / 2, oh / 2); c.fillText('液态', ow / 2, oh / 2);
+  c.globalCompositeOperation = 'source-atop';
+  const h = c.createLinearGradient(0, oh / 2 - fs * .5, 0, oh / 2 + fs * .5);
+  h.addColorStop(0, rgba(P.spec, .5)); h.addColorStop(.3, rgba(P.spec, 0)); h.addColorStop(.72, rgba(P.jellyDeep, .18)); h.addColorStop(1, rgba(P.lip, .4));
+  c.fillStyle = h; c.fillRect(0, 0, ow, oh);
+  x.save(); x.globalAlpha = .26; x.translate(0, 2 * fy); x.scale(1, -1); x.drawImage(o, wx - ow / 2, wy - oh / 2); x.restore();
+  g = x.createLinearGradient(0, fy, 0, H); g.addColorStop(0, rgba(deep, 0)); g.addColorStop(.5, rgba(deep, .85)); x.fillStyle = g; x.fillRect(0, fy, W, H - fy);
+  x.save(); x.shadowColor = rgba(P.drop, .6); x.shadowBlur = 26; x.shadowOffsetX = 8; x.shadowOffsetY = 14;
+  x.drawImage(o, wx - ow / 2, wy - oh / 2); x.restore();
+  g = x.createLinearGradient(0, fy - 18, 0, fy + 18); g.addColorStop(0, rgba(P.fog, 0)); g.addColorStop(.5, rgba(P.fog, .22)); g.addColorStop(1, rgba(P.fog, 0));
+  x.fillStyle = g; x.fillRect(0, fy - 18, W, 36);
+}
+
+/* ━━ 镜头 ━━ */
+const SHOTS = [
+  // 01 · 果冻字 · JELLY TYPE · 果冻字悬在反光的地面上：厚处浓、边缘深、下缘透光
+  { dur: 6.4, still: 2.5 },
+  // 02 · 落地与融合 · SPLASH · MERGE · 落地压扁，溅开，再融回去：挨到 k 以内，先长出一座桥。
+  { dur: 6.7, still: 4.1 },
+  // 03 · 硬合并 vs 融球 · MIN vs SMIN · 硬合并只重叠，融球会拉丝：左边两圆叠着，右边拉出桥。
+  { dur: 6.85, still: 6.85 },
+];
+const BUILD = [shot1, shot2, shot3];
+SHOTS.forEach((s, i) => s.draw = (t, p, S) => {
+  if (S.reduce) t = s.still;  // 减弱动态：每镜只画一张代表帧
+  const T = SHOTS.slice(0, i).reduce((a, q) => a + q.dur, 0) + t;
+  const key = i + '|' + t.toFixed(4) + '|' + view.W + 'x' + view.H;
+  if (key === lastKey) return; lastKey = key;
+  reset(); st.T = T; BUILD[i](t, view);
+  const z = st.zoom, ay = WORD.y - .1;  // 推镜以主体为锚
+  view.cam = { x: view.cx, y: ay + (view.cy - ay) * z + st.dy, u: view.u * z };
+  if (G2) render(T); else if (!cv.dataset.fb) { cv.dataset.fb = 1; drawFallback(); }
+  cv.classList.add('on');
+  overlay(i, t);
+});
+makePlayer(SHOTS, {
+  onShot(i, s) {
+    lastKey = ''; shownCount = -1;
+  },
+  onResize(S) { layout(S); if (!G2) { delete cv.dataset.fb; } },
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>自然纪录片样张</title>
+<!--
+风格：自然纪录片 NATURAL HISTORY
+一句话：光只从画面里的光源来（太阳、月亮、星光），前中远三层被雾隔开，镜头慢到几乎察觉不到在动。
+擅长表现：光怎么移动、远近怎么分层、一个现场怎样从暗到亮——尺度、距离、慢慢发生的变化；也能给严肃题目一个安静的开场。
+招牌细节：
+  材质  片元着色器画天空、山脊、海面；35mm 颗粒（全分辨率噪点贴图，24fps 抖动）；暗角；桌面 2.20:1 宽银幕黑边。
+  光    逆光：太阳压在远山脊上，山脊一圈轮廓光（取光源色）；体积光（每个像素向太阳采样 20 次，被山和树挡住的地方变暗）。
+  光    夜里只有月亮：海面亮带 = 波浪法线反射月亮方向的高光；星光闪烁；近处礁石一道边光（取月光色）。
+  主体  四层山脊（远 ×0.08 / ×0.2 / 中 ×0.45 / 前 ×1.0 视差）+ 山谷雾 + 一棵程序生成的逆光树（光从枝叶缝里漏出来）。
+  字    英文小标字距 .3em。
+  动效  镜头每秒推 0.5%、平移极慢；太阳升起时光束变长、雾变薄；章节之间渐黑；标注读数随视差实时跳。
+  角落  黑边里放：样张号、画幅 2.20:1 · 24 FPS。
+色彩结构（换题保留）：颜色只从画面里的光源推——一个光源色（太阳 / 月亮 / 天光）管光源附近的天、轮廓光、光束、
+  海面亮带；远离光源的天和雾取环境色（和光源色一冷一暖拉开）；景物按远近从「接近天色」退到「接近黑」（大气透视，
+  四到五级明度）；树和前景剪影几乎是黑；后期把暗部推向环境色。字只用一种近白 + 一个强调色（读数），强调色取光源色淡一档。黑边、暗角、暗底是电影画面语言本身，不随题换。全部颜色在顶部 PALETTES：
+  ui 给字，gl 按名字传进着色器（uniform 数组，着色器里叫 C_名字），退路画法也读同一份。
+本例配色（从本例主体「山谷里的一棵树、一片海」和它的现场「日出逆光 + 月夜」推出来，换题就换）：
+  日出 skyTop [.015,.03,.09] / skyHor [.40,.30,.40] / sunBand [1,.5,.22] / sil0 [.17,.16,.30] / rim [1,.56,.26]
+  月夜 nTop→nHor [.012,.022,.06]→[.08,.12,.22] / moonGlow [.45,.56,.8] / water [.004,.009,.022]；--accent #e8c48a
+换题示例（?pal=alt）：假设主角是「雪原上的一棵树、一片冬天的海」、现场是「冬日下午低而白的太阳 + 冰雾；极夜里的
+  绿色天光」→ 光源色从暖金换成白，环境色换成冷钴蓝和冰雾青，远山被冰雾刷成蓝灰；夜里天色整片换成极夜的青绿天光，月光和海面亮带跟着偏青；
+  强调色取冰薄荷。
+  冬日 skyTop [.012,.045,.13] / skyHor [.50,.60,.72] / sunBand [.9,.8,.6] / sil0 [.26,.34,.48] / rim [1,.92,.75]
+  极夜 nTop→nHor [.003,.016,.022]→[.04,.125,.11] / band [.014,.1,.06] / moonGlow [.22,.36,.38]；--accent #9fe3c6
+字：标题 "Songti SC","STSong","Noto Serif CJK SC",SimSun,Georgia,serif 细体，字距拉开；
+    正文 -apple-system,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif 细体；读数 "SF Mono",Menlo,Consolas,monospace。
+动效：全部用 inOut 慢曲线；一镜 6–7 秒；同一场景内镜头连续，换场景渐黑。
+做粗了 → 做精：
+  渐变背景 + 几个三角形山 → 分形山脊、按距离混入天色（大气透视）、山谷雾随噪声漂。
+  画一个发光的圆当太阳 → 太阳在画面里，山脊轮廓光、体积光束、光晕压过山边（溢光）。
+  镜头不动或匀速平移 → 每层按视差系数移动，推拉每秒不到 1%，起止都缓。
+  颗粒用低分辨率着色器噪点被放大 → 全分辨率噪点贴图叠加，每 1/24 秒换位置。
+手机竖屏：去掉宽银幕黑边，画面铺满；构图收窄（太阳和树移到中线附近）；
+          着色器分辨率减半、光束采样减到 12 次，掉帧时自动再降。
+退路：拿不到 WebGL → Canvas 2D 画同一构图的静态近似（渐变天、山脊多边形、光晕、树、海面亮带），字照常。
+技法目录：
+  T1 宽银幕黑边 + 画面区计算
+  T2 程序生成的逆光树（Canvas 递归分枝 → 纹理）
+  T3 片元着色器：分形山脊 + 视差相机 + 大气透视 + 山谷雾
+  T4 体积光：向光源步进采样遮挡
+  T5 夜海：波浪法线反射月光 + 星光 + 礁石边光
+  T6 平涂 / 完整对比：同一个着色器按分割线切换
+  T7 后期：色调映射、调色、暗角；全分辨率胶片颗粒叠加
+  T8 视差标注：JS 镜像山脊函数，锚点贴在山脊上
+  T10 退路：Canvas 2D 静态近似；自动降分辨率
+-->
+<script>
+/* ━━ 配色：全片颜色只在这里。默认 = 本例；网址带 ?pal=alt = 换题示例。
+   ui 给画面上的字（CSS 变量），gl 给着色器（按 GL_KEYS 顺序传成 uniform 数组，着色器里叫 C_名字） ━━ */
+/* ━━ 示范配色：必须换 ━━
+   下面两组颜色只属于这份样张自己的主体，不是这种风格的颜色。搬技法进你的成品时，
+   这组颜色、报头、角标文字、示例文案一律换成从你的主角、现场的光、题目的情绪推出来的；
+   颜色只改这一处，技法代码按角色名取色。按文件头「色彩结构」那一段保留结构。 */
+const PALETTES = {
+  main: {
+    ui: { ink: 'rgba(255,250,240,.94)', dim: 'rgba(255,250,240,.62)', accent: '#e8c48a', bird: '#140f18' },
+    gl: { skyHor: [.40,.30,.40], skyMid: [.11,.14,.30], skyTop: [.015,.03,.09], sunBand: [1,.5,.22], sunGlow: [1,.6,.3], sunHalo: [1,.8,.55],
+      hazeFar: [.26,.24,.40], hazeSun: [1,.62,.38], cloud: [.38,.3,.42], cloudLit: [1,.66,.45], sunCore: [1,.95,.85],
+      sil0: [.17,.16,.30], sil1: [.08,.08,.17], sil2: [.03,.03,.07], sil3: [.006,.006,.012], rim: [1,.56,.26], tree: [.02,.018,.03],
+      mist: [.30,.28,.42], mistSun: [1,.72,.5], ray: [1,.68,.40], bloom: [1,.8,.55], bloomCore: [1,.9,.75],
+      nHor: [.08,.12,.22], nTop: [.012,.022,.06], moonGlow: [.45,.56,.8], moonHalo: [.7,.78,.95], star: [.85,.9,1], band: [.11,.13,.2],
+      nCloud: [.07,.09,.15], nCloudLit: [.6,.66,.82], moon: [.96,.97,1], headland: [.052,.072,.13], water: [.004,.009,.022],
+      glint: [.85,.9,1], seaHaze: [.07,.1,.17], shore: [.004,.006,.011], shoreRim: [.4,.5,.72], grade: [.86,1,1.14],
+      flatMoon: [.92,.92,.92], flatSea: [.05,.08,.15], flatLand: [.04,.05,.09], flatShore: [.02,.025,.04] } },
+  alt: {
+    ui: { ink: 'rgba(244,250,255,.95)', dim: 'rgba(226,240,248,.64)', accent: '#9fe3c6', bird: '#0b1220' },
+    gl: { skyHor: [.50,.60,.72], skyMid: [.13,.27,.47], skyTop: [.012,.045,.13], sunBand: [.9,.8,.6], sunGlow: [.85,.82,.74], sunHalo: [1,.96,.86],
+      hazeFar: [.36,.46,.6], hazeSun: [.96,.92,.82], cloud: [.32,.4,.54], cloudLit: [1,.94,.82], sunCore: [1,.99,.95],
+      sil0: [.26,.34,.48], sil1: [.13,.19,.31], sil2: [.05,.08,.15], sil3: [.008,.012,.022], rim: [1,.92,.75], tree: [.01,.014,.022],
+      mist: [.5,.6,.74], mistSun: [.98,.95,.88], ray: [.95,.93,.85], bloom: [1,.96,.88], bloomCore: [1,.99,.94],
+      nHor: [.04,.125,.11], nTop: [.003,.016,.022], moonGlow: [.22,.36,.38], moonHalo: [.66,.86,.84], star: [.85,1,.95], band: [.014,.1,.06],
+      nCloud: [.012,.02,.026], nCloudLit: [.36,.4,.43], moon: [.92,1,.96], headland: [.018,.045,.055], water: [.002,.009,.011],
+      glint: [.75,1,.9], seaHaze: [.035,.1,.09], shore: [.003,.007,.008], shoreRim: [.3,.75,.6], grade: [.93,1.03,1.02],
+      flatMoon: [.9,.92,.9], flatSea: [.04,.09,.1], flatLand: [.03,.06,.07], flatShore: [.015,.03,.03] } },
+};
+const PAL = PALETTES[/[?&]pal=alt\b/.test(location.search) ? 'alt' : 'main'];
+const GL_KEYS = Object.keys(PALETTES.main.gl);
+for (const k in PAL.ui) document.documentElement.style.setProperty('--' + k, PAL.ui[k]);
+</script>
+<style>
+  :root{
+    --serif:"Songti SC","STSong","Noto Serif CJK SC",SimSun,Georgia,serif;
+    --sans:-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    --mono:"SF Mono",Menlo,Consolas,monospace; }
+  *{box-sizing:border-box;margin:0}
+  html,body{height:100%;background:#000;color:var(--ink);font-family:var(--sans)}
+  body{overflow:hidden}
+  #stage{position:fixed;left:0;right:0;top:var(--iy);height:var(--ih);overflow:hidden;background:#05070d}
+  #gl,#c2{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #grain{position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;opacity:.22}
+  #birds{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  #ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+  #shade{position:absolute;left:0;right:0;bottom:0;height:42%;pointer-events:none;background:linear-gradient(transparent,rgba(0,0,0,.55))}
+  .bar{position:fixed;left:0;right:0;background:#000;display:flex;align-items:center;padding:0 var(--mx);gap:16px;
+    font:11px/1.4 var(--sans);letter-spacing:.3em;color:var(--dim)}
+  #top{top:0;height:var(--iy)}
+  #top .r{margin-left:auto;text-align:right}
+  .mono{font-family:var(--mono);letter-spacing:.08em}
+  /* 片名（第 1 镜海报） */
+  #title{position:fixed;left:var(--mx);top:calc(var(--iy) + var(--ih) * .2);pointer-events:none;text-shadow:0 2px 24px rgba(0,0,0,.35)}
+  #title .k{font:11px/1 var(--sans);letter-spacing:.42em;color:var(--dim);display:flex;align-items:center;gap:14px}
+  #title .k i{width:28px;height:1px;background:var(--dim)}
+  #title h1{margin-top:22px;font:300 var(--h1)/1 var(--serif);letter-spacing:.5em;margin-right:-.5em}
+  #title .e{margin-top:20px;font:300 13px/1 var(--sans);letter-spacing:.46em;color:var(--ink)}
+  /* 对比分割线 + 结尾卡 */
+  #split{position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,.75);pointer-events:none}
+  #split span{position:absolute;top:22px;font:12px/1 var(--sans);letter-spacing:.3em;white-space:nowrap;color:var(--ink);text-shadow:0 1px 8px rgba(0,0,0,.6)}
+  #split .l{right:14px} #split .r{left:14px}
+  #end{position:absolute;left:74%;top:20%;transform:translateX(-50%);display:flex;gap:min(7vw,72px);pointer-events:none;text-align:center}
+  #end div{display:flex;flex-direction:column;align-items:center}
+  #end b{font:300 var(--endF)/1 var(--serif);letter-spacing:0;color:var(--ink)}
+  #end span{margin-top:14px;font:300 13px/1.4 var(--sans);letter-spacing:.24em;color:var(--ink);white-space:nowrap;text-shadow:0 1px 10px rgba(0,0,0,.9)}
+  #end b{text-shadow:0 2px 24px rgba(0,0,0,.6)}
+  #end i{width:1px;align-self:stretch;background:rgba(255,255,255,.25)}
+  .lbl text{font-family:var(--sans)}
+  @media (orientation:portrait){
+    .bar#top{background:linear-gradient(rgba(0,0,0,.55),transparent);height:64px;align-items:flex-start;padding-top:16px;letter-spacing:.2em;font-size:12px}
+    #top .hide-p{display:none}
+    #shade{height:55%;background:linear-gradient(transparent,rgba(0,0,0,.7))}
+    #title{top:calc(var(--ih) * .14)} #title h1{letter-spacing:.36em;margin-right:-.36em} #title .k{font-size:12px}
+    #end{top:13%;left:50%;gap:22px} #end span{font-size:12px;letter-spacing:.14em}
+    #split span{top:78px}
+  }
+</style>
+</head>
+<body>
+<main id="stage">
+  <canvas id="gl" aria-hidden="true"></canvas>
+  <svg id="birds" aria-hidden="true"></svg>
+  <div id="grain" aria-hidden="true"></div>
+  <div id="shade" aria-hidden="true"></div>
+  <svg id="ov" aria-hidden="true"></svg>
+  <div id="split" aria-hidden="true"><span class="l">平涂 FLAT</span><span class="r">光 · 雾 · 颗粒</span></div>
+  <div id="end" aria-hidden="true"><div><b>光</b><span>光源在画面里</span></div><i></i><div><b>层</b><span>前 · 中 · 远</span></div><i></i><div><b>慢</b><span>每秒推 0.5%</span></div></div>
+</main>
+<header class="bar" id="top"><span>样张 18 <span class="hide-p">｜ 自然纪录片 NATURAL HISTORY</span></span><span class="r"><span class="hide-p mono">　2.20 : 1 · 24 FPS</span></span></header>
+<div id="title" aria-hidden="true"><div class="k"><i></i>第一章　CHAPTER ONE</div><h1>晨光</h1><div class="e">FIRST LIGHT OVER THE VALLEY</div></div>
+
+<script>
+/* ━━ 样张自己的播放代码：只为把这份样张播起来，不是成品该用的结构，不要照抄。成品页面上要有哪些东西见 形式.md「页面上要有的东西」，长什么样、怎么排按你的风格自己做 ━━ */
+function makePlayer(SHOTS, hooks = {}) {
+  const S = { i: 0, t: 0, playing: true, reduce: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    w: innerWidth, h: innerHeight, portrait: innerHeight > innerWidth };
+  function enter(i) {
+    S.i = (i + SHOTS.length) % SHOTS.length; S.t = 0;
+    const s = SHOTS[S.i];
+    s.enter && s.enter(S);
+    hooks.onShot && hooks.onShot(S.i, s, S);
+    if (S.reduce) s.draw(s.dur, 1, S);
+  }
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    if (S.playing) {
+      S.t += dt;
+      if (S.t >= SHOTS[S.i].dur) enter(S.i + 1);
+    }
+    const s = SHOTS[S.i];
+    if (!S.reduce) s.draw(Math.min(S.t, s.dur), Math.min(1, S.t / s.dur), S);
+    requestAnimationFrame(frame);
+  }
+  document.addEventListener('visibilitychange', () => { S.playing = !document.hidden; last = performance.now(); });
+  addEventListener('resize', () => {
+    S.w = innerWidth; S.h = innerHeight; S.portrait = S.h > S.w;
+    hooks.onResize && hooks.onResize(S);
+    if (S.reduce) SHOTS[S.i].draw(SHOTS[S.i].dur, 1, S);
+  });
+  hooks.onResize && hooks.onResize(S);
+  enter(0);
+  requestAnimationFrame(frame);
+  return S;
+}
+
+/* ━━ 缓动：动作要有预备、过冲、回落 ━━ */
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const seg = (p, a, b) => clamp((p - a) / (b - a));
+const ease = {
+  out: x => 1 - Math.pow(1 - x, 3),
+  inOut: x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2,
+  back: x => 1 + 2.7 * Math.pow(x - 1, 3) + 1.7 * Math.pow(x - 1, 2),
+  spring: x => 1 - Math.exp(-6 * x) * Math.cos(12 * x),
+  step: (x, n) => Math.floor(x * n) / n,
+};
+const lerp = (a, b, k) => a + (b - a) * k;
+const sine = x => .5 - .5 * Math.cos(Math.PI * clamp(x));   // 纪录片的慢起慢停
+function rng(s) { return () => { s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+/* ━━ T1 宽银幕：桌面 2.20:1 留黑边，竖屏铺满 ━━ */
+const root = document.documentElement, $ = id => document.getElementById(id);
+let F = {};
+function frameLayout() {
+  const W = innerWidth, H = innerHeight, P = H > W;
+  const ih = P ? H : Math.min(H, Math.round(W / 2.2)), iy = P ? 0 : Math.round((H - ih) / 2);
+  F = { W, H, P, ih, iy, mx: P ? 18 : Math.round(clamp(W * .04, 24, 64)) };
+  const v = { iy: iy, ih: ih, mx: F.mx,
+    h1: P ? 56 : Math.round(clamp(W * .062, 54, 96)), endF: P ? 50 : Math.round(clamp(W * .05, 48, 80)) };
+  for (const k in v) root.style.setProperty('--' + k, v[k] + 'px');
+}
+
+/* ━━ T8 山脊函数：和着色器里一模一样，标注锚点才能贴在山上 ━━ */
+const fr = x => x - Math.floor(x);
+function h11(p) { p = fr(p * .1031); p *= p + 33.33; p *= p + p; return fr(p); }
+function vn(x) { const i = Math.floor(x), f = x - i, u = f * f * (3 - 2 * f); return h11(i) * (1 - u) + h11(i + 1) * u; }
+function ridge(x, oct) { let s = 0, a = .55, w = 1; for (let k = 0; k < oct; k++) { let n = 1 - Math.abs(vn(x) * 2 - 1); n *= n; s += a * n * w; w = clamp(n * 1.6, .35, 1); x = x * 2.07 + 11.3; a *= .5; } return s; }
+function hillN(x, oct) { let s = 0, a = .5; for (let k = 0; k < oct; k++) { s += a * vn(x); x = x * 2.1 + 5.7; a *= .5; } return s; }
+const BASE = [-.03, -.11, -.19, -.31], AMP = [.17, .12, .10, .09], FREQ = [1.25, 2.1, 2.7, 1.0], SEED = [3.1, 21.7, 47.3, 8.9], PAR = [.08, .2, .45, 1];
+const layerH = (i, x, oct = 5) => BASE[i] + AMP[i] * (i < 3 ? ridge(x * FREQ[i] + SEED[i], oct) : hillN(x * FREQ[i] + SEED[i], oct));
+const toL = (p, f, cam) => { const z = 1 + (cam[2] - 1) * f; return [p[0] / z + cam[0] * f, p[1] / z + cam[1] * f]; };
+const fromL = (q, f, cam) => { const z = 1 + (cam[2] - 1) * f; return [(q[0] - cam[0] * f) * z, (q[1] - cam[1] * f) * z]; };
+
+/* ━━ T2 逆光树：递归分枝 + 叶团，画在离屏 Canvas 上当纹理 ━━ */
+function makeTree(size = 512, seed = 18) {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const x = c.getContext('2d'), R = rng(seed); x.fillStyle = x.strokeStyle = '#000'; x.lineCap = 'round';
+  function leaves(cx, cy, n) { for (let k = 0; k < n; k++) { const r = size * (.006 + R() * .012); x.beginPath();
+    x.ellipse(cx + (R() - .5) * size * .07, cy + (R() - .5) * size * .045, r, r * .7, R() * 3, 0, 7); x.fill(); } }
+  function br(px, py, ang, len, w, d) {
+    const ex = px + Math.cos(ang) * len, ey = py - Math.sin(ang) * len;
+    x.lineWidth = w; x.beginPath(); x.moveTo(px, py);
+    x.quadraticCurveTo((px + ex) / 2 + (R() - .5) * len * .3, (py + ey) / 2 + (R() - .5) * len * .2, ex, ey); x.stroke();
+    if (d === 0) { leaves(ex, ey, 9); return; }
+    const n = d > 6 ? 2 : 2 + (R() < .35 ? 1 : 0);
+    for (let k = 0; k < n; k++) {
+      const spread = d > 5 ? .62 : .5, a = ang + (k - (n - 1) / 2) * (spread + R() * .25) + (R() - .5) * .3;
+      br(ex, ey, a * .86 + Math.PI / 2 * .14, len * (.7 + R() * .14), w * .66, d - 1);
+    }
+    if (d < 3) leaves(ex, ey, 4);
+  }
+  br(size / 2, size, Math.PI / 2 + .05, size * .2, size * .036, 8);
+  return c;
+}
+
+/* ━━ T3–T7 着色器 ━━ */
+const VS = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
+const FS = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+uniform vec2 uRes, uSun, uTree; uniform vec3 uCam;
+uniform vec4 uA, uB;                         /* uA = 时间 / 场景 / 分割线 / 渐黑；uB = 雾 / 光束 / 步数 / 地平线 */
+#define uT uA.x
+#define uScene uA.y
+#define uFlat uA.z
+#define uFade uA.w
+#define uFog uB.x
+#define uRay uB.y
+#define uSteps uB.z
+#define uHor uB.w
+uniform vec3 uC[${GL_KEYS.length}];          /* 全部颜色：来自顶部 PALETTES，名字见 C_ 宏 */
+${GL_KEYS.map((k, i) => '#define C_' + k + ' uC[' + i + ']').join('\n')}
+uniform sampler2D uTex;
+float h11(float p){ p = fract(p*.1031); p *= p + 33.33; p *= p + p; return fract(p); }
+float h21(vec2 p){ vec3 q = fract(vec3(p.xyx)*.1031); q += dot(q, q.yzx + 33.33); return fract((q.x + q.y)*q.z); }
+float vn(float x){ float i = floor(x), f = fract(x); f = f*f*(3.-2.*f); return mix(h11(i), h11(i+1.), f); }
+float vn2(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f);
+  return mix(mix(h21(i), h21(i+vec2(1.,0.)), f.x), mix(h21(i+vec2(0.,1.)), h21(i+vec2(1.,1.)), f.x), f.y); }
+float fbm(vec2 p){ float s = 0., a = .5; for(int k=0;k<5;k++){ s += a*vn2(p); p = p*2.03 + vec2(13.1, 7.7); a *= .5; } return s; }
+float ridge(float x, float oct){ float s = 0., a = .55, w = 1.; for(int k=0;k<6;k++){ if(float(k) >= oct) break;
+  float n = 1. - abs(vn(x)*2. - 1.); n *= n; s += a*n*w; w = clamp(n*1.6, .35, 1.); x = x*2.07 + 11.3; a *= .5; } return s; }
+float hillN(float x, float oct){ float s = 0., a = .5; for(int k=0;k<6;k++){ if(float(k) >= oct) break; s += a*vn(x); x = x*2.1 + 5.7; a *= .5; } return s; }
+float par(int i){ return i==0 ? .08 : i==1 ? .2 : i==2 ? .45 : 1.; }
+float layerH(int i, float x, float oct){
+  if(i==0) return -.03 + .17*ridge(x*1.25 + 3.1, oct);
+  if(i==1) return -.11 + .12*ridge(x*2.1 + 21.7, oct);
+  if(i==2) return -.19 + .10*ridge(x*2.7 + 47.3, oct);
+  return -.31 + .09*hillN(x + 8.9, oct);
+}
+vec2 toL(vec2 p, float f){ float z = 1. + (uCam.z - 1.)*f; return p/z + uCam.xy*f; }
+float treeA(vec2 q){
+  float by = layerH(3, uTree.x, 4.) - .012;
+  vec2 uv = vec2((q.x - uTree.x)/uTree.y + .5, (q.y - by)/uTree.y);
+  if(uv.x < 0. || uv.x > 1. || uv.y < 0. || uv.y > 1.) return 0.;
+  return texture2D(uTex, uv).a;
+}
+/* 天：天顶 → 中天 → 地平线，太阳附近一条光带 + 两层光晕 */
+vec3 dawnSky(vec2 p){
+  float wk = uRes.y > uRes.x ? 2.2 : 1., dx = abs(p.x - uSun.x)*wk, d = length(p - uSun)*mix(1., wk, .6), hy = max(p.y - .02, 0.);
+  vec3 c = mix(C_skyHor, C_skyMid, smoothstep(-.04, .16, p.y));
+  c = mix(c, C_skyTop, smoothstep(.1, .46, p.y));
+  c += C_sunBand*exp(-dx*2.)*exp(-hy*8.)*.9;
+  c += C_sunGlow*exp(-d*5.)*.35 + C_sunHalo*exp(-d*16.)*.7;
+  return c;
+}
+vec3 haze(vec2 p){ float d = abs(p.x - uSun.x)*(uRes.y > uRes.x ? 2.4 : 1.); return mix(C_hazeFar, C_hazeSun, exp(-d*2.8)); }
+/* ━━ T4 体积光：从像素向太阳走 uSteps 步，统计没被山和树挡住的比例 ━━ */
+float occ(vec2 p){
+  for(int i=0;i<4;i++){ vec2 q = toL(p, par(i)); if(q.y < layerH(i, q.x, 2.)) return 0.; }
+  return 1. - treeA(toL(p, 1.));
+}
+vec3 dawn(vec2 p, bool fl){
+  vec3 col = dawnSky(p);
+  float d = length(p - uSun);
+  if(!fl){
+    float cl = fbm(vec2(p.x*2.2 + uT*.006, p.y*11. - 2.));
+    cl = smoothstep(.5, .78, cl)*smoothstep(.04, .14, p.y)*smoothstep(.42, .2, p.y);
+    col = mix(col, mix(C_cloud, C_cloudLit, exp(-d*3.)), cl*.65);
+  }
+  col += C_sunCore*2.6*smoothstep(.033, .029, d);
+  for(int i=0;i<4;i++){
+    vec2 q = toL(p, par(i));
+    float h = layerH(i, q.x, fl ? 3. : 5.), aa = 1.6/uRes.y, m = smoothstep(h + aa, h - aa, q.y);
+    if(m <= 0.) continue;
+    float fi = float(i);
+    vec3 sil = i==0 ? C_sil0 : i==1 ? C_sil1 : i==2 ? C_sil2 : C_sil3;
+    float aer = i==0 ? .58 : i==1 ? .36 : i==2 ? .17 : .02;
+    vec3 lc = fl ? sil : mix(sil, haze(p), aer);
+    if(!fl){
+      float dep = clamp((h - q.y)/.11, 0., 1.), fn = fbm(vec2(q.x*2.6 + uT*.012*(1. + fi), q.y*10.));
+      lc = mix(lc, haze(p)*.85, uFog*(.5 - fi*.12)*smoothstep(.3, 1., dep)*smoothstep(.4, .78, fn));
+      float sx = toL(uSun, par(i)).x;
+      lc += C_rim*exp(-(h - q.y)*560.)*exp(-abs(q.x - sx)*(uRes.y > uRes.x ? 9. : 4.))*(1. - aer)*(i == 0 ? 1.6 : i == 1 ? 1.1 : i == 2 ? .6 : .3);
+    }
+    col = mix(col, lc, m);
+  }
+  float tr = treeA(toL(p, 1.));
+  col = mix(col, fl ? C_sil3 : C_tree, tr);
+  if(!fl){
+    float mist = smoothstep(.42, .8, fbm(vec2(p.x*1.3 + uT*.02, p.y*6. + 3.))) * smoothstep(-.33, -.25, p.y) * smoothstep(-.1, -.2, p.y);
+    col = mix(col, mix(C_mist, C_mistSun, exp(-abs(p.x - uSun.x)*2.2)), mist*.5*uFog);
+    float acc = 0., w = 1., tw = 0., jit = h21(gl_FragCoord.xy + fract(uT)*61.);
+    vec2 dir = uSun - p;
+    for(int k=0;k<24;k++){ if(float(k) >= uSteps) break; float s = (float(k) + jit)/uSteps; acc += occ(p + dir*s)*w; tw += w; w *= .955; }
+    float sh = acc/tw;
+    float ld = length(dir);
+    col *= 1. - .38*(1. - sh)*exp(-ld*1.4)*uRay;
+    col += C_ray*pow(sh, 2.4)*exp(-ld*2.7)*uRay*.95*(1. - .4*tr);
+    col += C_bloom*exp(-d*9.)*.3 + C_bloomCore*exp(-d*40.)*.6;
+  }
+  return col;
+}
+/* ━━ T5 夜：月光、星、天光带、海面亮带 ━━ */
+vec3 nightSky(vec2 p, bool fl, float stars){
+  float h = p.y - uHor, d = length(p - uSun);
+  vec3 c = mix(C_nHor, C_nTop, smoothstep(-.01, .5, h));
+  if(fl) return mix(c, C_flatMoon, smoothstep(.028, .025, d));
+  c += C_moonGlow*exp(-d*4.5)*.4 + C_moonHalo*exp(-d*22.)*.6;
+  vec2 g = p*170., id = floor(g); float r = h21(id);
+  if(r > .982 && stars > 0.){ vec2 o = vec2(h21(id + 3.1), h21(id + 7.7))*.6 + .2;
+    float tw = .55 + .45*sin(uT*2.6 + r*91.);
+    c += C_star*smoothstep(.16, 0., length(fract(g) - o))*(r - .982)/.018*tw*smoothstep(0., .1, h)*1.4*stars; }
+  float band = exp(-pow((p.y - .2 - p.x*.4)*4.5, 2.));
+  c += C_band*band*smoothstep(.45, .8, fbm(p*5. + 3. + vec2(uT*.01, 0.)))*(stars > 0. ? 1. : .45);
+  float cl = fbm(vec2(p.x*2.6 + uT*.008, p.y*13.));
+  cl = smoothstep(.6, .85, cl)*smoothstep(.03, .12, h)*smoothstep(.4, .18, h);
+  c = mix(c, C_nCloud + C_nCloudLit*exp(-d*4.)*.9, cl*.5);
+  vec3 moon = C_moon*(.82 + .18*fbm((p - uSun)*70.))*1.7;
+  return mix(c, moon, smoothstep(.028, .025, d));
+}
+vec3 night(vec2 p, bool fl){
+  vec3 col;
+  if(p.y >= uHor){
+    col = nightSky(p, fl, 1.);
+    float hl = uHor + .05*hillN(p.x*3. + 2., 4.)*smoothstep(.02, .3, p.x - uTree.x);
+    if(p.y < hl) col = fl ? C_flatLand : C_headland;
+  } else {
+    if(fl) { col = C_flatSea; }
+    else {
+      vec3 V = normalize(vec3(p.x, p.y - uHor, 1.2));
+      float t = -1./V.y; vec2 w = vec2(V.x, V.z)*t;
+      vec2 g = vec2(0.);
+      g += .07*cos(dot(vec2(.8,.6), w)*1.3 + uT*1.1)*vec2(.8,.6);
+      g += .06*cos(dot(vec2(-.6,.8), w)*2.1 + uT*1.5)*vec2(-.6,.8);
+      g += .05*cos(dot(vec2(.2,1.), w)*3.7 + uT*2.)*vec2(.2,1.);
+      g += .045*cos(dot(vec2(-.9,.4), w)*6.3 + uT*2.6)*vec2(-.9,.4);
+      float att = exp(-t*.06);
+      g += (vec2(vn2(w*9. + uT*.6), vn2(w*9. + 31. - uT*.5)) - .5)*.22*att;
+      vec3 N = normalize(vec3(-g.x, 1., -g.y)), R = reflect(V, N);
+      vec3 Lm = normalize(vec3(uSun.x, uSun.y - uHor, 1.2));
+      float fres = .02 + .98*pow(1. - max(dot(N, -V), 0.), 5.);
+      vec2 rp = vec2(R.x, R.y)/max(R.z, .05) + vec2(0., uHor);
+      col = mix(C_water, nightSky(rp, false, 0.), fres);
+      col += C_glint*pow(max(dot(R, Lm), 0.), 700.)*22.*smoothstep(uHor - (uRes.y > uRes.x ? .3 : .46), uHor - (uRes.y > uRes.x ? .13 : .2), p.y);
+      col = mix(col, C_seaHaze, smoothstep(10., 70., t)*.85);
+    }
+  }
+  float rk = -.44 + .035*hillN(p.x*6. + 1.3, 5.) + .12*smoothstep(-.05, -.6, p.x)*(.5 + .5*hillN(p.x*3. + 7., 4.));
+  if(p.y < rk){ col = fl ? C_flatShore : C_shore + C_shoreRim*exp(-(rk - p.y)*260.)*.4*exp(-abs(p.x - uSun.x)*1.5); }
+  return col;
+}
+/* ━━ T7 后期：色调映射 → 暗部偏色（C_grade）→ 暗角；颗粒在 CSS 层叠 ━━ */
+void main(){
+  vec2 uv = gl_FragCoord.xy/uRes, p = (gl_FragCoord.xy - .5*uRes)/uRes.y;
+  bool fl = uv.x < uFlat;
+  vec3 c = uScene < .5 ? dawn(p, fl) : night(p, fl);
+  if(!fl){
+    c = (c*(2.51*c + .03))/(c*(2.43*c + .59) + .14);
+    float l = dot(c, vec3(.299,.587,.114));
+    c = mix(c, c*C_grade, (1. - l)*.5);
+    c = mix(vec3(l), c, 1.08);
+    vec2 v = uv - .5; v.x *= uRes.x/uRes.y*.55;
+    c *= mix(.38, 1., smoothstep(.9, .18, length(v)));
+  }
+  gl_FragColor = vec4(c*uFade, 1.);
+}`;
+
+/* ━━ WebGL 搭台 + 自动降分辨率 ━━ */
+const cv = $('gl'), stage = $('stage');
+let gl = null, prog = null, U = {}, Q = 1, frames = 0, slow = 0, tLast = 0;
+function initGL() {
+  if (/[?&]nogl/.test(location.search)) return false;
+  try { gl = cv.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'high-performance' }); } catch (e) { gl = null; }
+  if (!gl) return false;
+  const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null; };
+  const v = sh(gl.VERTEX_SHADER, VS), f = sh(gl.FRAGMENT_SHADER, FS);
+  if (!v || !f) { gl = null; return false; }
+  prog = gl.createProgram(); gl.attachShader(prog, v); gl.attachShader(prog, f); gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { gl = null; return false; }
+  gl.useProgram(prog);
+  const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(prog, 'a'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  for (const n of ['uRes', 'uSun', 'uTree', 'uCam', 'uA', 'uB', 'uTex']) U[n] = gl.getUniformLocation(prog, n);
+  gl.uniform3fv(gl.getUniformLocation(prog, 'uC'), new Float32Array(GL_KEYS.flatMap(k => PAL.gl[k])));
+  const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, TREE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.uniform1i(U.uTex, 0);
+  cv.addEventListener('webglcontextlost', e => { e.preventDefault(); gl = null; useFallback(); });
+  return true;
+}
+function sizeCanvas() {
+  const r = stage.getBoundingClientRect(), base = F.P ? 1 : Math.min(devicePixelRatio || 1, 2) * .62;
+  const k = base * Q, w = Math.max(2, Math.round(r.width * k)), h = Math.max(2, Math.round(r.height * k));
+  if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+}
+function render(st) {
+  if (!gl) return paint2D(st);
+  gl.viewport(0, 0, cv.width, cv.height);
+  gl.uniform2f(U.uRes, cv.width, cv.height); gl.uniform2f(U.uSun, st.sun[0], st.sun[1]); gl.uniform2f(U.uTree, st.tree[0], st.tree[1]);
+  gl.uniform3f(U.uCam, st.cam[0], st.cam[1], st.cam[2]);
+  gl.uniform4f(U.uA, st.time, st.scene, st.flat, st.fade); gl.uniform4f(U.uB, st.fog, st.ray, F.P ? 12 : 20, st.hor);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  /* 连续掉帧就降分辨率（最低到 0.5 倍） */
+  const now = performance.now(); if (tLast) { const dt = now - tLast; if (dt > 34) slow++; else slow = Math.max(0, slow - 1); }
+  tLast = now; if (slow > 20 && Q > .5) { Q *= .8; slow = 0; sizeCanvas(); }
+}
+
+/* ━━ T10 退路：Canvas 2D 画同一构图的静态近似 ━━ */
+let c2 = null;
+function useFallback() {
+  if (c2) return; const el = document.createElement('canvas'); el.id = 'c2'; cv.replaceWith(el); c2 = el.getContext('2d'); fitFallback();
+}
+function fitFallback() { if (!c2) return; const r = stage.getBoundingClientRect(); c2.canvas.width = r.width; c2.canvas.height = r.height; }
+function paint2D(st) {
+  if (!c2) return; const W = c2.canvas.width, H = c2.canvas.height, x = c2, toS = (px, py) => [W / 2 + px * H, H / 2 - py * H];
+  /* 颜色同样来自 PAL.gl：粗略模拟着色器的色调映射，再转成 CSS 色 */
+  const G = PAL.gl, tm = (c, a = 1) => `rgba(${c.map(v => Math.round(255 * (1 - Math.exp(-v * 1.7)))).join(',')},${a})`;
+  const mixC = (c1, c2_, k) => c1.map((v, i) => v + (c2_[i] - v) * k), flatW = st.flat * W;
+  if (st.scene < .5) {
+    let g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, tm(G.skyTop)); g.addColorStop(.36, tm(G.skyMid)); g.addColorStop(.52, tm(mixC(G.skyHor, G.sunBand, .6))); x.fillStyle = g; x.fillRect(0, 0, W, H);
+    const [sx, sy] = toS(st.sun[0], st.sun[1]); g = x.createRadialGradient(sx, sy, 0, sx, sy, H * .5);
+    g.addColorStop(0, tm(G.sunCore.map(v => v * 2))); g.addColorStop(.06, tm(G.sunHalo, .8)); g.addColorStop(1, tm(G.sunGlow, 0)); x.fillStyle = g; x.fillRect(0, 0, W, H);
+    [[G.sil0, .58], [G.sil1, .36], [G.sil2, .17], [G.sil3, .02]].forEach(([sil, aer], i) => {
+      x.beginPath(); x.moveTo(0, H);
+      for (let k = 0; k <= 120; k++) { const px = (k / 120 - .5) * W / H, q = toL([px, 0], PAR[i], st.cam), py = fromL([q[0], layerH(i, q[0], 4)], PAR[i], st.cam)[1]; x.lineTo(...toS(px, py)); }
+      x.lineTo(W, H); x.fillStyle = tm(mixC(sil, G.hazeFar, aer)); x.fill();
+    });
+    const bx = st.tree[0], by = layerH(3, bx, 4) - .012, sz = st.tree[1], [tx, ty] = toS(...fromL([bx - sz / 2, by + sz], 1, st.cam));
+    x.drawImage(TREE, tx, ty, sz * H * st.cam[2], sz * H * st.cam[2]);
+  } else {
+    const hz = .5 - st.hor; let g = x.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, tm(G.nTop)); g.addColorStop(hz, tm(G.nHor)); g.addColorStop(hz + .001, tm(G.seaHaze)); g.addColorStop(1, tm(G.water)); x.fillStyle = g; x.fillRect(0, 0, W, H);
+    const [mx, my] = toS(st.sun[0], st.sun[1]); g = x.createRadialGradient(mx, my, 0, mx, my, H * .3);
+    g.addColorStop(0, tm(G.moonHalo)); g.addColorStop(.09, tm(G.moonGlow, .35)); g.addColorStop(1, tm(G.moonGlow, 0)); x.fillStyle = g; x.fillRect(0, 0, W, H);
+    x.fillStyle = tm(G.moon.map(v => v * 2)); x.beginPath(); x.arc(mx, my, H * .027, 0, 7); x.fill();
+    const R = rng(7); x.fillStyle = tm(G.star); for (let k = 0; k < 160; k++) x.fillRect(R() * W, R() * H * hz, 1.2, 1.2);
+    const hy = H * hz; x.fillStyle = tm(G.glint, .55);
+    for (let k = 0; k < 90; k++) { const t = R(), y = hy + t * t * (H - hy), w = (4 + t * 40) * (.3 + R()); x.fillRect(mx - w / 2 + (R() - .5) * t * 60, y, w, 1 + t * 1.5); }
+  }
+  if (flatW > 0) { x.fillStyle = tm(G.flatSea, .6); x.fillRect(0, 0, flatW, H); }
+  x.fillStyle = `rgba(0,0,0,${1 - st.fade})`; x.fillRect(0, 0, W, H);
+}
+
+/* ━━ T7 胶片颗粒：全分辨率噪点贴图，每 1/24 秒换位置 ━━ */
+function grainTile(n = 256) {
+  const c = document.createElement('canvas'); c.width = c.height = n; const x = c.getContext('2d'), im = x.createImageData(n, n), R = rng(35);
+  for (let i = 0; i < n * n; i++) { const v = 128 + (R() + R() + R() - 1.5) * 70; im.data[i * 4] = im.data[i * 4 + 1] = im.data[i * 4 + 2] = v; im.data[i * 4 + 3] = 255; }
+  x.putImageData(im, 0, 0); return c.toDataURL();
+}
+const grain = $('grain'); grain.style.backgroundImage = `url(${grainTile()})`;
+let gTick = -1;
+function grainStep(time, clipL) {
+  const k = Math.floor(time * 24); if (k !== gTick) { gTick = k; const R = rng(k * 7 + 1); grain.style.backgroundPosition = `${Math.floor(R() * 256)}px ${Math.floor(R() * 256)}px`; }
+  grain.style.clipPath = clipL > 0 ? `inset(0 0 0 ${clipL * 100}%)` : 'none';
+}
+
+/* ━━ 构图：横竖屏各一套（竖屏把太阳和树收到中线附近） ━━ */
+const COMP = { L: { sx: .1, tree: [.43, .42], moon: [-.02, .22], hor: -.06, pan: .075 },
+               P: { sx: -.04, tree: [.13, .36], moon: [-.02, .15], hor: -.06, pan: .05 } };
+const C = () => F.P ? COMP.P : COMP.L;
+/* 太阳贴着山脊升：先用 JS 算出太阳所在 x 处最高的那层山脊 */
+function ridgeAt(px, cam) { let m = -1; for (let i = 0; i < 3; i++) { const q = toL([px, 0], PAR[i], cam); m = Math.max(m, fromL([q[0], layerH(i, q[0])], PAR[i], cam)[1]); } return m; }
+const sunAt = off => { const c = C(); return [c.sx, ridgeAt(c.sx, [0, 0, 1.03]) + off]; };
+
+/* ━━ T8 视差标注：锚点在层坐标里固定，跟着各自的视差走；读数 = 本层已移动的像素 ━━ */
+const ov = $('ov'), NSV = 'http://www.w3.org/2000/svg';
+let LB = [];
+function buildLabels() {
+  ov.innerHTML = '';
+  const cam0 = [0, 0, 1.03], defs = F.P ? [[3, -.16, .14, '前景', 'FOREGROUND'], [2, .05, .19, '中景', 'MIDDLE'], [0, -.12, .29, '远景', 'DISTANCE']]
+    : [[3, -.5, .17, '前景', 'FOREGROUND'], [2, -.14, .2, '中景', 'MIDDLE'], [0, -.38, .3, '远景', 'DISTANCE']];
+  LB = defs.map(([i, sx, rise, zh, en]) => {
+    let best = sx, bv = -1;
+    for (let k = -6; k <= 6; k++) { const px = sx + k * .012, q = toL([px, 0], PAR[i], cam0), h = layerH(i, q[0]);
+      let cover = -1; for (let j = i + 1; j < 4; j++) { const qj = toL([px, 0], PAR[j], cam0); cover = Math.max(cover, fromL([qj[0], layerH(j, qj[0])], PAR[j], cam0)[1]); }
+      const v = fromL([q[0], h], PAR[i], cam0)[1] - cover; if (v > bv) { bv = v; best = px; } }
+    const qx = toL([best, 0], PAR[i], cam0)[0], g = document.createElementNS(NSV, 'g'); g.setAttribute('class', 'lbl'); ov.appendChild(g);
+    g.innerHTML = `<line stroke="rgba(255,255,255,.7)" stroke-width="1"/><circle r="4.5" fill="none" stroke="#fff" stroke-width="1.2"/><circle r="1.6" fill="#fff"/>
+      <text class="en" font-size="${F.P ? 12 : 11}" letter-spacing="3.3" fill="${PAL.ui.dim}">${en}</text><text class="zh" font-size="${F.P ? 16 : 17}" font-weight="300" letter-spacing="3" fill="${PAL.ui.ink}">${zh}  ×${PAR[i].toFixed(2)}</text>
+      <text class="rd" font-size="${F.P ? 13 : 13}" fill="${PAL.ui.accent}" font-family="Menlo,Consolas,monospace"></text>`;
+    return { i, qx, rise, g, x0: null };
+  });
+}
+function placeLabels(cam, vis, camStart) {
+  LB.forEach((L, k) => {
+    const f = PAR[L.i], q = [L.qx, layerH(L.i, L.qx) - .012], [px, py] = fromL(q, f, cam), sx = F.W / 2 + px * F.ih, sy = F.ih / 2 - py * F.ih;
+    const p0 = fromL(q, f, camStart), moved = (px - p0[0]) * F.ih, ty = sy - L.rise * F.ih, a = clamp(vis * 3 - k * .5);
+    const [ln, c1, c2_, en, zh, rd] = L.g.children;
+    ln.setAttribute('x1', sx); ln.setAttribute('y1', sy - 6); ln.setAttribute('x2', sx); ln.setAttribute('y2', lerp(sy - 6, ty + 8, ease.out(clamp(vis * 3 - k * .5))));
+    [c1, c2_].forEach(c => { c.setAttribute('cx', sx); c.setAttribute('cy', sy); });
+    en.setAttribute('x', sx + 10); en.setAttribute('y', ty - 30); zh.setAttribute('x', sx + 10); zh.setAttribute('y', ty - 8);
+    rd.setAttribute('x', sx + 10); rd.setAttribute('y', ty + 12); rd.textContent = '← ' + Math.abs(moved).toFixed(0).padStart(3, '0') + ' px';
+    L.g.style.opacity = a;
+  });
+}
+
+/* 远处一小群鸟：剪影，翅膀按各自相位扇动，极慢地横穿 */
+const birdsEl = $('birds'), BIRDS = Array.from({ length: 6 }, (_, k) => ({ dx: k * .034 + (k % 2) * .012, y: .2 + ((k * 37) % 7) * .009, s: .75 + (k % 3) * .17, ph: k * 1.7 }));
+birdsEl.innerHTML = BIRDS.map(() => '<path fill="none" stroke="${PAL.ui.bird}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>').join('');
+function drawBirds(time, vis) {
+  birdsEl.style.opacity = vis; if (!vis) return;
+  const x0 = F.P ? .2 : .32, u = F.ih / 650;
+  [...birdsEl.children].forEach((el, k) => {
+    const b = BIRDS[k], px = x0 + b.dx - time * .016, py = b.y + Math.sin(time * .6 + k) * .005;
+    const sx = F.W / 2 + px * F.ih, sy = F.ih / 2 - py * F.ih, w = 7 * b.s * u, f = Math.sin(time * 6.5 + b.ph) * 4.5 * b.s * u;
+    el.setAttribute('d', `M${sx - w} ${sy - f}Q${sx - w * .45} ${sy - 2 * u - f * .3} ${sx} ${sy}Q${sx + w * .45} ${sy - 2 * u - f * .3} ${sx + w} ${sy - f}`);
+  });
+}
+const TREE = makeTree();
+const state = { sun: [0, 0], tree: [0, 0], cam: [0, 0, 1], time: 0, scene: 0, flat: -1, fade: 1, fog: 1, ray: .5, hor: 0 };
+let clock = 0, lastNow = performance.now();
+function tick(S) { const now = performance.now(); if (S.playing && !S.reduce) clock += Math.min(.1, (now - lastNow) / 1000); lastNow = now; return clock; }
+const show = (el, v) => { el.style.opacity = v; el.style.visibility = v > 0 ? 'visible' : 'hidden'; };
+
+const SHOTS = [
+  // 第一章 · 晨 · 光从画面里的太阳来：逆光压在山脊上，山边亮起一圈。
+  { dur: 6,
+    draw(t, p, S) {
+      const c = C(), k = sine(t / 6);
+      Object.assign(state, { scene: 0, flat: -1, fog: 1, ray: lerp(.45, .6, k), hor: c.hor, fade: 1,
+        sun: sunAt(lerp(-.012, .018, k)), tree: c.tree, cam: [lerp(-.012, 0, k), 0, lerp(1, 1.03, k)], time: tick(S) });
+      render(state); grainStep(state.time, 0); drawBirds(state.time, 1);
+      show($('title'), S.reduce ? 1 : 1 - seg(t, 5.4, 6)); $('title').querySelector('h1').style.letterSpacing = (F.P ? .36 : .5) + .06 * k + 'em';
+      show(ov, 0); show($('split'), 0); show($('end'), 0);
+    } },
+  // 第二章 · 层 · 前中远三层，各走各的速度：近处移得多，远处几乎不动。
+  { dur: 7,
+    draw(t, p, S) {
+      const c = C(), k = sine(t / 7), camS = [0, 0, 1.03], cam = [c.pan * k, 0, lerp(1.03, 1.065, k)];
+      Object.assign(state, { scene: 0, flat: -1, fog: lerp(1, .55, k), ray: lerp(.6, 1.25, k), hor: c.hor, fade: S.reduce ? 1 : 1 - seg(t, 6.3, 7),
+        sun: sunAt(lerp(.018, .085, k)), tree: c.tree, cam, time: tick(S) });
+      render(state); grainStep(state.time, 0); drawBirds(state.time, state.fade);
+      show($('title'), 0); show($('split'), 0); show($('end'), 0);
+      show(ov, S.reduce ? 1 : seg(t, .6, 1.2) * (1 - seg(t, 6, 6.5))); placeLabels(cam, S.reduce ? 1 : seg(t, .6, 2.2), camS);
+    } },
+  // 第三章 · 夜 · 加上光、雾和颗粒：左边平涂，右边是整套做法。
+  { dur: 6.5,
+    draw(t, p, S) {
+      const c = C(), k = sine(t / 6.5);
+      const fl = S.reduce ? 0 : t < 1.9 ? lerp(1, .5, sine(seg(t, .5, 1.9))) : lerp(.5, 0, sine(seg(t, 3.1, 4.1)));
+      Object.assign(state, { scene: 1, flat: fl, fog: 1, ray: 0, hor: c.hor, fade: S.reduce ? 1 : Math.min(seg(t, 0, .6), 1 - seg(t, 6, 6.5)),
+        sun: c.moon, tree: c.tree, cam: [0, 0, lerp(1, 1.025, k)], time: tick(S) });
+      render(state); grainStep(state.time, fl); drawBirds(0, 0);
+      show($('title'), 0); show(ov, 0);
+      const sp = $('split'); sp.style.left = (fl * 100) + '%'; show(sp, fl > .01 && fl < .99 ? 1 : 0);
+      show($('end'), S.reduce ? 1 : seg(t, 4.2, 5) * (1 - seg(t, 6, 6.4)));
+    } },
+];
+
+function layoutAll() { frameLayout(); sizeCanvas(); fitFallback(); buildLabels(); }
+frameLayout();
+if (!initGL()) useFallback();
+const S = makePlayer(SHOTS, {
+  onResize() { layoutAll(); },
+});
+</script>
+</body>
+</html>

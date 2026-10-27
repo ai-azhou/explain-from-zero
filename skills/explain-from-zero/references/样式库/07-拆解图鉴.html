@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>拆解图鉴 · 样张</title>
+<!--
+风格：拆解图鉴 TEARDOWN GUIDE
+一句话：把物件画成有质感的「照片」，膨胀出一圈粗白边、垫一层柔投影，像贴在淡薄荷绿的切割垫上；
+        相机在一张超大画布上推拉平移，一路把东西拆开、标注、数清楚。
+擅长表现：一件东西拆开以后「由什么组成、各有多少」——零件沿一根竖轴一层层弹开、每层拉一根引线说清是什么，
+        再把每层的材质变成方块数一遍、按类别排成条；一个总数从 0 跳到答案。
+搬到讲解里：
+  ① 整只先立着、再沿竖轴一层层炸开 → 先给整体、再给结构：用在「这个东西由哪几层 / 几块组成」这类题
+  ② 每层拉一根引线，中文 + 英文 + 材质方块三层标签 → 逐件说明「这一块是什么、干什么」：用在每个部分都要交代的题
+  ③ 方块一个个亮、再按类别飞成横向条 → 给总数和占比：用在「一共有多少、哪类最多」的收尾
+招牌细节：
+  材质  淡薄荷绿切割垫 + 世界坐标里的刻线网格和刻度（相机动，刻线跟着动）+ 极淡噪点 + 四角十字套准标
+  光    窗光从左上来：一片斜光带在垫子上慢慢漂；物件统一顶光，顶边一条高光、底边压暗；白边外两层投影（贴地一层、柔一层）
+  主体  每层都有大形—中细节—微细节：网布孔眼的明暗、泡棉气孔的凹光、橡胶大底的菱纹、金属鞋眼的环、缝线
+  字    松针黑粗大标题（系统黑体 + 同色描边加粗）+ 钴蓝马克笔下划线（毛边多边形）
+  标注  引线三层：物件上白心圆点 → 折线 → 中文粗体 / 字距拉开的英文小字 / 钴蓝胶带条小标 + 条下中文小字
+  动效  零件错峰弹出（过冲回落）、方块逐个点亮 + 大数字逐个跳、方块按类别飞成横向条形图
+  相机  超大画布上推拉平移，快移加运动模糊；中途拉远露出整张画布
+  角落  ■ 钴蓝小方块、NO.07、FIG.01、切割垫刻度和坐标小字
+色彩结构（换题保留）：四个角色。
+  底 = 一种低饱和的垫子 / 纸色，上面一层同色系的刻线；和白边要拉开明度：浅底比白暗一档，暗底越深越好。
+  主角 = 物件自己的材质色，全部受光（顶光渐变 + 一条高光 + 底部压暗），是画面里唯一色彩丰富的东西；配色里只给底色，
+         明暗由「受光配方」ramp() 生成，所以换色不丢光。
+  线和字 = 一种和底反差最大的中性墨色。
+  强调 = 一种高饱和色，只用在：马克笔下划线、胶带条小标、■ 小标、答案数字变贴纸那一下。
+  白边永远是白（或暖白）；投影用底色的最暗一档。底亮底暗不写死，由现场的光定：白天桌面浅底，夜里台灯下深底。
+本例配色（从本例主体「橙色网布跑鞋，白泡棉中底，深灰橡胶大底」和它的现场「白天的薄荷绿切割垫」推出来，换题就换）：
+  paper #d3ebdf 薄荷切割垫 / ink #12332d 松针墨 / accent #2a4fd6 钴蓝（胶带条、下划线）
+  upper #f07a2e 橙网布 / foam #f4efe3 泡棉 / rubber #262c36 橡胶 / lace #f6f1e6 鞋带 / metal #aeb7c0 鞋眼
+换题示例（?pal=alt）：假设主角是「一顶黄色安全帽」、现场是「夜里台灯下的深蓝灰垫板」→ 底取垫板的深蓝灰、刻线取浅蓝；
+  帽壳 = 受光的黄、衬垫 = 米白泡棉、帽带 = 黑橡胶；台灯的琥珀色是唯一强调色；字和胶带条用暖白，投影加深。
+  paper #1f2b3a / ink #eef2f6 / accent #ffb020 / upper #f4c542 帽壳 / foam #e8dfcc 衬垫 / rubber #20242c 帽带
+字：标题 = 系统黑体 600 + 同色 stroke 加粗（paint-order:stroke）；大数字 = "Avenir Next" 800 退 "Arial Black"；
+    英文小标 = 同字体 600、letter-spacing .2em；正文 = 系统黑体；坐标 = 等宽
+动效：back 过冲 + inOut；错峰 0.1–0.3 秒；相机移动 1–1.6 秒；60 帧连续
+做粗了 → 做精：
+  扁平图标贴白边 → 物件每层先画出材质（渐变 + 孔眼 / 气孔 / 菱纹 + 高光），再贴白边
+  白边用 stroke 描 → feMorphology 膨胀整个剪影，任何形状一圈等宽，外加一道浅灰切边
+  标签只有一行中文 → 中文粗体 + 英文小字 + 胶带条小标三层，引线有锚点和折角
+  图表用默认柱子 → 柱子就是方块本身，从上一镜飞过来排队
+  画面切换用淡入 → 在同一张大画布上移动相机，快移有运动模糊
+手机竖屏：同一张画布换一套坐标：封面上字下物；拆解轴竖放，标签左右交替；网格 9 列、条形图标签在上
+技法目录：
+  T1 纸面：薄荷切割垫 + 世界刻线网格 + 十字套准 + 噪点暗角
+  T2 贴纸滤镜：feMorphology 膨胀白边 + 切边 + 两层投影
+  T3 写实物件：网布孔眼 / 泡棉气孔 / 橡胶菱纹 / 金属鞋眼 / 缝线的画法
+  T4 标题：粗黑字 + 马克笔下划线
+  T5 引线标注：锚点 → 折线 → 三层标签
+  T6 相机：超大画布推拉平移 + 运动模糊 + 拉远揭示
+  T7 方块计数：逐个点亮 + 大数字跳数 + 答案变钴蓝贴纸
+  T8 重排成条形图：方块按类别飞位
+  T0 配色：全片颜色只在下面 PALETTES 一处；?pal=alt 切换
+-->
+<script>
+/* ━━ T0 配色：全片颜色只在这里（main 本例；?pal=alt 换题示例）。角色见文件头「色彩结构」；
+   材质只给底色，明暗由下面的 ramp() 按顶光生成 ━━ */
+/* ━━ 示范配色：必须换 ━━
+   下面两组颜色只属于这份样张自己的主体（跑鞋），不是这种风格的颜色。搬技法进你的成品时，
+   这组颜色、报头、角标文字、示例文案一律换成从你的主角、现场的光、题目的情绪推出来的；
+   颜色只改这一处，技法代码按角色名取色。按文件头「色彩结构」那一段保留结构。 */
+const PALETTES = {
+  main: { paper: '#d3ebdf', dot: '#3f8b72', dotA: .26, ink: '#12332d', ink2: '#3c5e55', mute: '#6f9688', mute2: '#86aa9c', mark: '#5b8f7d', dash: '#7fb09e',
+    accent: '#2a4fd6', accentInk: '#ffffff', tag: '#2a4fd6', tagAlt: '#12332d', tagInk: '#ffffff', under: '#46695f', anchor: '#ffffff',
+    edge: '#ffffff', cut: '#b3cdc1', shadow: '#0f2b25', shadowK: 1, card: '#ffffff', cardInk: '#12332d', cardInk2: '#3c5e55', cardMute: '#6f9688',
+    slot: '#e8f5ee', slotLine: '#9cc2b2', grainBlend: 'multiply', vig: .12,
+    upper: '#f07a2e', trim: '#2b3340', foam: '#f4efe3', rubber: '#262c36', lace: '#f6f1e6', metal: '#aeb7c0', ins: '#8fb8c9', gel: '#6fd6e0', sun: '#ffffff' },
+  alt: { paper: '#1f2b3a', dot: '#9db8d6', dotA: .2, ink: '#eef2f6', ink2: '#bdc9d6', mute: '#7f93a8', mute2: '#5f7389', mark: '#8ba3bd', dash: '#4f6680',
+    accent: '#ffb020', accentInk: '#2a1a00', tag: '#ffb020', tagAlt: '#eef2f6', tagInk: '#2a1a00', under: '#9fb1c4', anchor: '#1f2b3a',
+    edge: '#fbf8f0', cut: '#cfc8b8', shadow: '#05080d', shadowK: 2.4, card: '#f4f6f9', cardInk: '#1f2b3a', cardInk2: '#4a5a6c', cardMute: '#8696a8',
+    slot: '#26354a', slotLine: '#3f5672', grainBlend: 'screen', vig: .45,
+    upper: '#f4c542', trim: '#3a4250', foam: '#e8dfcc', rubber: '#20242c', lace: '#e7e1d2', metal: '#9aa6b4', ins: '#7fa6c9', gel: '#ffb020', sun: '#cfe4ff' },
+};
+const C = PALETTES[/[?&]pal=alt\b/.test(location.search) ? 'alt' : 'main'];
+(() => {                                   // 把配色写进 CSS 变量，样式表里只引用变量
+  const st = document.documentElement.style, rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)).join(' ');
+  const v = { paper: C.paper, ink: C.ink, shadow: rgb(C.shadow),
+    'grain-blend': C.grainBlend, vig: C.vig };
+  for (const k in v) st.setProperty('--' + k, v[k]);
+})();
+</script>
+<style>
+  :root { --sans:-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    --disp:"Avenir Next","Helvetica Neue","Arial Black",Arial,sans-serif;
+    --mono:"SF Mono",Menlo,Consolas,monospace; }
+  * { box-sizing:border-box; margin:0; }
+  html,body { height:100%; background:var(--paper); color:var(--ink); font-family:var(--sans); }
+  body { overflow:hidden; -webkit-font-smoothing:antialiased; }
+  #stage { position:fixed; inset:0; }
+  #stage > svg { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  /* ━━ T1 纸面：噪点和暗角放在不动的图层上，只渲染一次 ━━ */
+  .grain, .vig { position:absolute; inset:0; pointer-events:none; will-change:transform; }
+  .grain { opacity:.5; mix-blend-mode:var(--grain-blend); background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .52  0 0 0 0 .55  0 0 0 .09 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+  .vig { background:radial-gradient(120% 90% at 50% 42%, transparent 55%, rgb(var(--shadow) / var(--vig)) 100%); }
+
+</style>
+</head>
+<body>
+<main id="stage"></main>
+<script>
+/* ━━ 样张自己的播放代码：只为把这份样张播起来，不是成品该用的结构，不要照抄。成品页面上要有哪些东西见 形式.md「页面上要有的东西」，长什么样、怎么排按你的风格自己做 ━━ */
+function makePlayer(SHOTS, hooks = {}) {
+  const S = { i: 0, t: 0, playing: true, reduce: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    w: innerWidth, h: innerHeight, portrait: innerHeight > innerWidth };
+  function enter(i) {
+    S.i = (i + SHOTS.length) % SHOTS.length; S.t = 0;
+    const s = SHOTS[S.i];
+    s.enter && s.enter(S);
+    hooks.onShot && hooks.onShot(S.i, s, S);
+    if (S.reduce) s.draw(s.dur, 1, S);
+  }
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    if (S.playing) {
+      S.t += dt;
+      if (S.t >= SHOTS[S.i].dur) enter(S.i + 1);
+    }
+    const s = SHOTS[S.i];
+    if (!S.reduce) s.draw(Math.min(S.t, s.dur), Math.min(1, S.t / s.dur), S);
+    requestAnimationFrame(frame);
+  }
+  document.addEventListener('visibilitychange', () => { S.playing = !document.hidden; last = performance.now(); });
+  addEventListener('resize', () => {
+    S.w = innerWidth; S.h = innerHeight; S.portrait = S.h > S.w;
+    hooks.onResize && hooks.onResize(S);
+    if (S.reduce) SHOTS[S.i].draw(SHOTS[S.i].dur, 1, S);
+  });
+  hooks.onResize && hooks.onResize(S);
+  enter(0);
+  requestAnimationFrame(frame);
+  return S;
+}
+
+/* ━━ 缓动 ━━ */
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const seg = (p, a, b) => clamp((p - a) / (b - a));
+const ease = {
+  out: x => 1 - Math.pow(1 - x, 3),
+  inOut: x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2,
+  back: x => 1 + 2.7 * Math.pow(x - 1, 3) + 1.7 * Math.pow(x - 1, 2),
+  spring: x => 1 - Math.exp(-6 * x) * Math.cos(12 * x),
+  step: (x, n) => Math.floor(x * n) / n,
+};
+const lerp = (a, b, e) => a + (b - a) * e;
+const $ = (id, r = document) => r.querySelector('#' + id);
+const set = (el, k, v) => { if (el && el.__c !== undefined && el.__c[k] === v) return; (el.__c = el.__c || {})[k] = v; el.setAttribute(k, v); };
+const tr = (el, x, y, r = 0, s = 1) => set(el, 'transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${r.toFixed(2)}) scale(${s.toFixed(4)})`);
+
+/* ━━ T2 贴纸滤镜：膨胀 SourceAlpha 出白边，外圈一道浅灰切边，下面两层投影 ━━
+   参数：r 白边宽（物件自己的坐标单位）、soft 柔投影、lift 投影下移。任何形状都能套。 */
+function stickerFilter(id, r = 8, soft = 14, lift = 12) {
+  return `<filter id="${id}" x="-25%" y="-35%" width="150%" height="180%" color-interpolation-filters="sRGB">
+    <feMorphology in="SourceAlpha" operator="dilate" radius="${r}" result="d"/>
+    <feMorphology in="SourceAlpha" operator="dilate" radius="${r + 1.4}" result="d2"/>
+    <feFlood flood-color="${C.cut}"/><feComposite in2="d2" operator="in" result="cut"/>
+    <feFlood flood-color="${C.edge}"/><feComposite in2="d" operator="in" result="edge"/>
+    <feGaussianBlur in="d2" stdDeviation="${soft}"/><feOffset dy="${lift}" result="b1"/>
+    <feFlood flood-color="${C.shadow}" flood-opacity="${Math.min(.8, .20 * C.shadowK)}"/><feComposite in2="b1" operator="in" result="sh1"/>
+    <feGaussianBlur in="d2" stdDeviation="${soft * .2}"/><feOffset dy="${lift * .25}" result="b2"/>
+    <feFlood flood-color="${C.shadow}" flood-opacity="${Math.min(.8, .22 * C.shadowK)}"/><feComposite in2="b2" operator="in" result="sh2"/>
+    <feMerge><feMergeNode in="sh1"/><feMergeNode in="sh2"/><feMergeNode in="cut"/><feMergeNode in="edge"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>`;
+}
+
+const stops = a => a.map(([o, c, op]) => `<stop offset="${o}" stop-color="${c}"${op != null ? ` stop-opacity="${op}"` : ''}/>`).join('');
+const lin = (id, a, v = 1) => `<linearGradient id="${id}" x1="0" y1="0" x2="${v ? 0 : 1}" y2="${v ? 1 : 0}">${stops(a)}</linearGradient>`;
+const rad = (id, a, fx = .5, fy = .5) => `<radialGradient id="${id}" fx="${fx}" fy="${fy}">${stops(a)}</radialGradient>`;
+/* 受光配方：只给一个底色，按顶光位置生成明暗（HSL 里只动亮度，色相、饱和度跟底色走）。f > 0 提亮，f < 0 压暗 */
+const hsl = h => { const [r, g, b] = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255), mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2;
+  if (mx === mn) return [0, 0, l]; const d = mx - mn, s2 = l > .5 ? d / (2 - mx - mn) : d / (mx + mn);
+  return [(mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4) / 6, s2, l]; };
+const hex = (h, s2, l) => '#' + [0, 8, 4].map(n => { const k = (n + h * 12) % 12, a = s2 * Math.min(l, 1 - l);
+  return Math.round((l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))) * 255).toString(16).padStart(2, '0'); }).join('');
+const tone = (c, f) => { const [h, s2, l] = hsl(c); return hex(h, s2, f >= 0 ? l + (1 - l) * f : l * (1 + f)); };
+const ramp = (c, a) => a.map(([o, f, op]) => [o, tone(c, f), op]);
+/* ━━ T3 写实物件：渐变配方 + 材质图案 + 气孔 ━━
+   跑鞋侧视，鞋头朝右，顶光。每一层先铺「受光渐变」，再叠一层材质图案（网布孔眼 / 菱纹 / 打孔），
+   泡棉的气孔是程序撒的随机椭圆（带凹光），最后才贴白边。 */
+/* 受光配方：只给一个底色，按顶光位置生成明暗（HSL 里只动亮度，色相、饱和度跟底色走）。f > 0 提亮，f < 0 压暗 */
+const SLAB = [[0, .3], [.08, .14], [.35, 0], [.8, -.2], [1, -.34]];            // 侧面厚片：顶边亮、底边压暗
+/* 形状（局部坐标，鞋头朝右，原点在鞋身中部） */
+const UP = 'M-372 20L-376 -88Q-374 -136 -330 -139L-282 -140Q-205 -134 -158 -104Q-116 -92 -76 -128Q-52 -150 -22 -148Q68 -112 150 -62Q250 -34 330 -22Q386 -14 388 8L386 20Z';
+const INS = 'M-352 14Q-362 -14 -300 -22L190 -30Q372 -30 376 8Q374 36 190 40L-296 42Q-350 42 -352 14Z';
+const MID = 'M-382 66Q-386 44 -348 42L330 36Q398 38 404 84Q406 120 372 128L-300 134Q-384 136 -382 66Z';
+const OUT = (() => { let d = 'M-382 140L376 132Q405 132 407 152L401 172', i = 0;
+  for (let x = 372; x >= -330; x -= 18, i++) d += `L${x} ${i % 2 ? 173 : 181}`;   // 大底下沿的锯齿抓地纹
+  return d + 'L-374 176Q-384 168 -382 140Z'; })();
+const HEEL = 'M-372 20L-376 -88Q-374 -136 -330 -139L-282 -140Q-296 -60 -290 20Z';
+const TOE = 'M298 -26Q350 -22 386 4Q390 20 386 20L292 20Q300 -4 298 -26Z';
+const clipOf = (id, d) => `<clipPath id="${id}"><path d="${d}"/></clipPath>`;
+/* 泡棉气孔：随机椭圆，一圈暗的凹 + 一道亮边，大小不一；seed 固定所以每次画面一样 */
+function pores(clip, x0, y0, x1, y1, n, seed, big = 1) {
+  let r = seed; const rnd = () => (r = (r * 9301 + 49297) % 233280) / 233280; let s = '';
+  for (let i = 0; i < n; i++) {
+    const cx = lerp(x0, x1, rnd()), cy = lerp(y0, y1, rnd()), rx = (1.1 + rnd() * rnd() * 4.2) * big, ry = rx * (.55 + rnd() * .3);
+    s += `<ellipse cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}" fill="#3b2f22" fill-opacity="${(.14 + rnd() * .16).toFixed(2)}"/>` +
+      `<ellipse cx="${(cx + rx * .3).toFixed(1)}" cy="${(cy + ry * .55).toFixed(1)}" rx="${(rx * .8).toFixed(1)}" ry="${(ry * .45).toFixed(1)}" fill="#fff" fill-opacity=".55"/>`;
+  }
+  return `<g clip-path="url(#${clip})">${s}</g>`;
+}
+const MATERIALS = [
+  lin('gUp', ramp(C.upper, SLAB)), lin('gTrim', ramp(C.trim, SLAB)), lin('gFoam', ramp(C.foam, [[0, .3], [.1, .1], [.4, 0], [.85, -.14], [1, -.28]])),
+  lin('gRub', ramp(C.rubber, [[0, .2], [.12, .1], [.4, 0], [1, -.3]])), lin('gIns', ramp(C.ins, [[0, .3], [.5, 0], [1, -.2]])),
+  lin('gGel', ramp(C.gel, [[0, .5, .9], [.5, 0, .85], [1, -.2, .9]])),
+  lin('gStreak', [[0, '#fff', 0], [.2, '#fff', .75], [.8, '#fff', .75], [1, '#fff', 0]], 0),
+  lin('gAOb', [[0, '#000', 0], [1, '#000', .34]]),
+  lin('gSun', [[0, C.sun, 0], [.5, C.sun, .3], [1, C.sun, 0]], 0),
+  rad('rEy', ramp(C.metal, [[0, .85], [.55, .1], [1, -.35]]), .35, .3),
+  /* 网布：错位两排小椭圆孔，孔里暗、孔下沿一弯亮，纱线是极淡的横线 */
+  `<pattern id="mesh" width="9" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(-12)">
+     <ellipse cx="2.3" cy="2" rx="2" ry="1.3" fill="#000" fill-opacity=".44"/><ellipse cx="2.3" cy="2.8" rx="1.8" ry=".6" fill="#fff" fill-opacity=".38"/>
+     <ellipse cx="6.8" cy="6" rx="2" ry="1.3" fill="#000" fill-opacity=".44"/><ellipse cx="6.8" cy="6.8" rx="1.8" ry=".6" fill="#fff" fill-opacity=".38"/>
+     <path d="M0 4H9" stroke="#fff" stroke-opacity=".12" stroke-width="1"/></pattern>`,
+  /* 橡胶：斜向菱形压纹，一条暗沟配一条亮边 */
+  `<pattern id="rub" width="11" height="11" patternUnits="userSpaceOnUse" patternTransform="rotate(38)">
+     <path d="M0 5H11" stroke="#fff" stroke-opacity=".16" stroke-width="1.5"/><path d="M0 6.4H11" stroke="#000" stroke-opacity=".4" stroke-width="1.3"/>
+     <path d="M5.5 0V11" stroke="#fff" stroke-opacity=".08" stroke-width="1.2"/><circle cx="5.5" cy="5.7" r="1" fill="#000" fill-opacity=".25"/></pattern>`,
+  /* 鞋垫打孔 */
+  `<pattern id="perf" width="13" height="11" patternUnits="userSpaceOnUse">
+     <circle cx="3.2" cy="3" r="2.1" fill="#000" fill-opacity=".34"/><circle cx="3.6" cy="3.5" r="1.4" fill="#fff" fill-opacity=".25"/>
+     <circle cx="9.7" cy="8.5" r="2.1" fill="#000" fill-opacity=".34"/><circle cx="10.1" cy="9" r="1.4" fill="#fff" fill-opacity=".25"/></pattern>`,
+  clipOf('cUp', UP), clipOf('cIns', INS), clipOf('cMid', MID), clipOf('cOut', OUT), clipOf('cHeel', HEEL), clipOf('cToe', TOE),
+].join('');
+const star = r => `M0 ${-r}Q${r * .12} ${-r * .12} ${r} 0Q${r * .12} ${r * .12} 0 ${r}Q${-r * .12} ${r * .12} ${-r} 0Q${-r * .12} ${-r * .12} 0 ${-r}Z`;
+const DISP = "'Avenir Next','Helvetica Neue','Arial Black',Arial,sans-serif", MONO = "'SF Mono',Menlo,Consolas,monospace";
+const hiLine = (d, w = 3, o = .6, dy = 2.5) => `<path d="${d}" fill="none" stroke="#fff" stroke-opacity="${o}" stroke-width="${w}" stroke-linecap="round" transform="translate(0 ${dy})"/>`;
+/* 零件表：[名字, 炸开位移(沿竖轴), 画法] —— 换物件只改这里 */
+const PARTS = [
+  ['outsole', 165, () => `<path d="${OUT}" fill="url(#gRub)" data-l="rb"/>
+    <path d="${OUT}" fill="url(#rub)" data-l="rb"/>
+    <path d="M-370 152L390 148" stroke="#000" stroke-opacity=".55" stroke-width="2.4" stroke-dasharray="40 10"/>
+    <g clip-path="url(#cOut)"><rect x="-390" y="136" width="800" height="52" fill="url(#gAOb)"/></g>${hiLine('M-378 141L376 133', 2.4, .3, 0)}`],
+  ['midsole', 55, () => `<path d="${MID}" fill="url(#gFoam)" data-l="fm"/>
+    ${pores('cMid', -384, 40, 406, 134, 230, 7)}
+    <path d="M-382 96Q-300 76 -200 98T0 94T200 88T404 100" fill="none" stroke="#000" stroke-opacity=".14" stroke-width="3"/>
+    <path d="M-382 98Q-300 78 -200 100T0 96T200 90T404 102" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="2"/>
+    <rect x="-296" y="68" width="124" height="38" rx="19" fill="url(#gGel)" data-l="fm"/>
+    <rect x="-286" y="73" width="104" height="9" rx="4.5" fill="#fff" fill-opacity=".5"/>
+    <path d="M-120 112V134M-70 110V135M-20 110V135M30 110V135" stroke="#000" stroke-opacity=".16" stroke-width="2.4" stroke-linecap="round"/>
+    <g clip-path="url(#cMid)"><rect x="-390" y="90" width="800" height="50" fill="url(#gAOb)"/></g>${hiLine('M-346 43L330 37', 3, .9, 1.5)}`],
+  ['insole', -48, () => `<path d="${INS}" fill="url(#gIns)" data-l="fm"/>
+    <g clip-path="url(#cIns)"><rect x="-360" y="-36" width="740" height="86" fill="url(#perf)" data-l="mh"/>
+      <ellipse cx="-22" cy="8" rx="130" ry="17" fill="#000" fill-opacity=".11"/>
+      <ellipse cx="-286" cy="6" rx="52" ry="19" fill="none" stroke="#000" stroke-opacity=".2" stroke-width="3.5"/>
+      <rect x="-360" y="18" width="740" height="26" fill="url(#gAOb)"/></g>
+    <path d="${INS}" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1.6" stroke-dasharray="6 5" transform="translate(0 2) scale(.97 .78)"/>
+    ${hiLine('M-330 -18Q0 -30 350 -14', 2.6, .6, 0)}`],
+  ['upper', -175, () => `<path d="${UP}" fill="url(#gUp)" data-l="mh"/>
+    <path d="${UP}" fill="url(#mesh)" data-l="mh"/>
+    <g clip-path="url(#cUp)"><rect x="-390" y="-20" width="790" height="44" fill="url(#gAOb)"/>
+      <path d="M-262 -26Q-80 -66 120 -14" fill="none" stroke="${C.lace}" stroke-opacity=".92" stroke-width="15" stroke-linecap="round"/>
+      <path d="M-262 -32Q-80 -72 120 -20" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/></g>
+    <path d="${HEEL}" fill="url(#gTrim)" data-l="fm"/>${pores('cHeel', -378, -142, -280, 22, 70, 21, .8)}
+    <path d="M-286 -138Q-296 -60 -290 18" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="2"/>
+    <path d="M-282 -140Q-205 -134 -158 -104Q-116 -92 -76 -128" fill="none" stroke="${tone(C.foam, -.05)}" stroke-width="16" stroke-linecap="round" data-l="fm"/>
+    <path d="M-282 -145Q-205 -139 -158 -109Q-116 -97 -76 -133" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="3.4" stroke-linecap="round"/>
+    <path d="${TOE}" fill="url(#gTrim)" data-l="rb"/><path d="${TOE}" fill="url(#rub)" opacity=".7"/>
+    <path d="M-280 12Q-40 -6 290 12" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.8" stroke-dasharray="7 5"/>
+    <path d="M-60 -118Q40 -98 150 -48" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="1.8" stroke-dasharray="7 5"/>
+    ${hiLine('M-330 -139L-282 -140Q-230 -138 -180 -118', 3.2, .7, 2)}${hiLine('M-20 -146Q70 -110 150 -62Q250 -34 320 -24', 3, .6, 2)}`],
+  ['laces', -272, () => { const ex = [0, 1, 2, 3, 4, 5, 6].map(i => -90 + 30 * i); let x1 = '', x2 = '';
+    for (let i = 0; i < 6; i++) { x1 += `M${ex[i]} -14L${ex[i + 1]} 14M${ex[i]} 14L${ex[i + 1]} -14`; }
+    return `<g transform="translate(35 -122) rotate(27)">
+      <rect x="-122" y="-24" width="244" height="48" rx="17" fill="url(#gUp)" data-l="mh"/><rect x="-122" y="-24" width="244" height="48" rx="17" fill="url(#mesh)"/>
+      <rect x="-118" y="-20" width="236" height="40" rx="14" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1.6" stroke-dasharray="7 5"/>
+      <path d="${x1}" transform="translate(0 3)" stroke="#000" stroke-opacity=".38" stroke-width="8" stroke-linecap="round" fill="none"/>
+      <path d="${x1}" stroke="${C.lace}" stroke-width="7" stroke-linecap="round" fill="none" data-l="mh"/>
+      <path d="${x1}" stroke="#fff" stroke-width="1.6" stroke-linecap="round" fill="none" transform="translate(0 -1.6)" opacity=".8"/>
+      <path d="M-92 0Q-130 -52 -170 -26Q-168 10 -96 4M-92 0Q-118 44 -150 34" fill="none" stroke="${C.lace}" stroke-width="7" stroke-linecap="round"/>
+      ${ex.map(x => `<g data-l="ey" transform="translate(${x} 0)"><circle r="10.5" fill="#000" fill-opacity=".3" cy="2"/><circle r="9.5" fill="url(#rEy)"/><circle r="4.8" fill="#0c1a16" fill-opacity=".85"/><circle r="9.5" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.3"/></g>`).join('')}
+      <path d="M-114 -21Q0 -26 114 -21" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="2.4" stroke-linecap="round"/></g>`; }],
+];
+const ZORDER = ['outsole', 'midsole', 'insole', 'upper', 'laces'];     // 下面的先画
+
+/* ━━ 分类：标签方块的代号 ━━ */
+const CATS = [
+  { k: 'mh', c: 'Mh', zh: '网布', en: 'MESH' }, { k: 'fm', c: 'Fm', zh: '泡棉', en: 'FOAM' },
+  { k: 'rb', c: 'Rb', zh: '橡胶', en: 'RUBBER' }, { k: 'ey', c: 'Ey', zh: '鞋眼', en: 'EYELET' },
+  { k: 'st', c: 'St', zh: '白边', en: 'DIE-CUT', red: 1 }];
+const CAT = Object.fromEntries(CATS.map(c => [c.k, c]));
+/* 引线标注：[零件, 锚点(组装坐标), 空位, 横屏标签在线左/右, 竖屏左/右, 中文, 英文, 方块] */
+const CALLOUTS = [
+  ['laces', 115, -81, 0, 'R', 'R', '鞋带', 'LACES', ['mh', 'ey']],
+  ['upper', -346, -60, 0, 'L', 'L', '鞋面', 'UPPER', ['mh', 'fm']],
+  ['insole', 350, 6, 0, 'R', 'R', '鞋垫', 'INSOLE', ['fm', 'mh']],
+  ['midsole', -352, 92, 0, 'L', 'L', '中底', 'MIDSOLE', ['fm']],
+  ['outsole', 362, 166, 0, 'R', 'R', '大底', 'OUTSOLE', ['rb', 'st']],
+];
+
+/* ━━ 布局：横屏、竖屏各一套世界坐标（单位 = 世界像素） ━━ */
+function layout(P) {
+  return P ? {
+    fw: 800, fh: 1230,
+    Pb: { cx: 400, cy: 615 }, Eb: { cx: 400, cy: 1950 }, Cb: { cx: 1300, cy: 1950 },
+    poster: { x: 400, y: 960, r: -26, s: .74 }, ex: { x: 400, y: 1883, r: 0, s: .6 }, ek: 1.2,
+    t: { x: 40, tag: 150, l1: 280, l2: 384, fs: 84, en: 446, enS: 25, rule: 478, sub: 530, subS: 33, slot: 570, slotS: 62, tiny: 25, fig: [760, 1150] },
+    lab: { zh: 35, en: 18, sp: 1, tag: 44, code: 21, tiny: 20, off: 268 },
+    cnt: { x: 40, y: 2380, fs: 150 },
+    grid: { cols: 9, pitch: 80, blk: 70, code: 28, x: 40, y: 430 },
+    bars: { x: 40, y: 450, row: 150, pitch: 33, blk: 29, code: 0, labS: 34, enS: 24, num: 42, labelAbove: 1 },
+    big: { x: 34, y: 312, fs: 250, unit: 74, sub: 372, subS: 32 },
+  } : {
+    fw: 1600, fh: 800,
+    Pb: { cx: 800, cy: 400 }, Eb: { cx: 2785, cy: 395 }, Cb: { cx: 2300, cy: 1520 },
+    poster: { x: 1120, y: 470, r: -18, s: .84 }, ex: { x: 2785, y: 505, r: 0, s: 1 }, ek: 1,
+    t: { x: 130, tag: 205, l1: 345, l2: 465, fs: 102, en: 532, enS: 18, rule: 566, sub: 614, subS: 24, slot: 650, slotS: 50, tiny: 14, fig: [1560, 760] },
+    lab: { zh: 40, en: 14, sp: 3.4, tag: 46, code: 21, tiny: 14, off: 470 },
+    cnt: { x: 1985, y: 850, fs: 100 },
+    grid: { cols: 12, pitch: 64, blk: 54, code: 20, x: 770, y: 110 },
+    bars: { x: 70, y: 470, row: 62, pitch: 50, blk: 42, code: 17, labS: 28, enS: 12, num: 30, labelAbove: 0 },
+    big: { x: 62, y: 300, fs: 236, unit: 66, sub: 372, subS: 26 },
+  };
+}
+
+/* ━━ 搭建：横竖屏切换时整张画布重搭 ━━ */
+const stage = document.getElementById('stage');
+let G = {}, LY, W, H, SAFE;
+function build(S) {
+  W = S.w; H = S.h; const P = S.portrait; LY = layout(P);
+  SAFE = P ? { x: 0, y: 0, w: W, h: H - 250 } : { x: 0, y: 0, w: W, h: H - 190 };
+  const { t, Pb, Eb, Cb, fw, fh } = LY;
+  const bbox = boardsBox();
+  // 零件
+  const flParts = ZORDER.map(n => `<g id="p-${n}" data-p="${n}">${PARTS.find(p => p[0] === n)[2]()}</g>`).join('');
+  // 标题（世界坐标里的字）
+  const heavy = (c, w) => `fill="${c}" stroke="${c}" stroke-width="${w}" stroke-linejoin="round" paint-order="stroke"`;
+  const slots = Array.from({ length: 5 }, (_, i) => {
+    const x = t.x + i * (t.slotS + 10), cat = CATS[i];
+    return `<rect x="${x}" y="${t.slot}" width="${t.slotS}" height="${t.slotS}" rx="${t.slotS * .18}" fill="none" stroke="${C.dash}" stroke-dasharray="4 4" stroke-width="1.5"/>
+      <g id="sl${i}">${tagSvg(x + t.slotS / 2, t.slot + t.slotS / 2, t.slotS, t.slotS * .42, cat, cat.zh, t.tiny)}</g>`;
+  }).join('');
+  const title = `<g id="title">
+    <rect x="${t.x}" y="${t.tag - t.enS * .9}" width="${t.enS * .75}" height="${t.enS * .75}" rx="2" fill="${C.accent}"/>
+    <text x="${t.x + t.enS * 1.3}" y="${t.tag}" font-size="${t.enS * 1.25}" font-weight="600" ${heavy(C.ink, .4)}>左脚 · 42 码</text>
+    <text x="${t.x + t.enS * 10.5}" y="${t.tag}" font-size="${t.enS * .95}" font-weight="600" letter-spacing="${t.enS * .2}" fill="${C.mute}" font-family="${DISP}">NO.07 · LEFT</text>
+    <g clip-path="url(#ulClip)"><path id="ul" fill="${C.accent}" opacity=".9"/></g>
+    <text x="${t.x}" y="${t.l1}" font-size="${t.fs}" font-weight="600" ${heavy(C.ink, t.fs * .035)}>一只跑鞋，</text>
+    <text id="tl2" x="${t.x}" y="${t.l2}" font-size="${t.fs}" font-weight="600" ${heavy(C.ink, t.fs * .035)}>拆开有几层？</text>
+    <text x="${t.x}" y="${t.en}" font-size="${t.enS}" font-weight="600" letter-spacing="${t.enS * .2}" fill="${C.mute}" font-family="${DISP}">HOW MANY LAYERS UNDER ONE SHOE?</text>
+    <rect x="${t.x}" y="${t.rule}" width="${t.fs * 5}" height="2" fill="${C.ink}" opacity=".8"/>
+    <text x="${t.x}" y="${t.sub}" font-size="${t.subS}" fill="${C.ink2}">网布、泡棉、橡胶，各数一数</text>
+    ${slots}
+    <g transform="translate(${t.fig[0]} ${t.fig[1]})" font-size="${t.tiny}" text-anchor="end">
+      <text font-family="${MONO}" fill="${C.mute}" letter-spacing="1.5">FIG.01 — 跑鞋 / 组装态 · 1 张贴纸</text>
+      <rect x="${-t.tiny * 1.2}" y="${-t.tiny * 2.2}" width="${t.tiny * 1.2}" height="3" fill="${C.accent}"/></g></g>`;
+  // 十字套准 + 刻度 + 坐标小字（拉远时才看得出这是一整张画布）
+  const marks = [Pb, Eb, Cb].map((b, bi) => {
+    const w2 = (bi === 1 && !P ? 1700 : fw) / 2, h2 = (bi === 1 && !P ? 940 : fh) / 2, fs = P ? 22 : 12;
+    let ruler = ''; for (let k = 0; k * 130 <= w2 * 2; k++) { const x = b.cx - w2 + k * 130;
+      ruler += `<path d="M${x} ${b.cy - h2 - 6}v-14" stroke="${C.mark}" stroke-width="1.5"/><text x="${x + 4}" y="${b.cy - h2 - 24}" font-size="${fs}" fill="${C.mute}" font-family="${MONO}">${k * 10}</text>`; }
+    return ruler + [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([sx, sy]) => {
+      const x = b.cx + sx * w2, y = b.cy + sy * h2;
+      return `<path d="M${x - 14} ${y}h28M${x} ${y - 14}v28" stroke="${C.mark}" stroke-width="1.5"/>
+        <text x="${x + 10}" y="${y - 10}" font-size="${fs}" fill="${C.mute}" font-family="${MONO}">${Math.round(x)}·${Math.round(y)}</text>`;
+    }).join('') + `<path d="M${b.cx - w2} ${b.cy + h2}l${P ? 180 : 140} ${P ? -180 : -140}" stroke="${C.mark}" stroke-dasharray="6 5" stroke-width="1.2"/><text x="${b.cx + w2 - 22}" y="${P ? b.cy - h2 + 34 : b.cy + h2 - 18}" text-anchor="end" font-size="${P ? 22 : 12}" letter-spacing="2" fill="${C.mute2}" font-family="${MONO}">MAT 0${bi + 1} / 03</text>`;
+  }).join('');
+  // 标注
+  const lb = LY.lab;
+  const callouts = CALLOUTS.map((c, i) => {
+    const tags = c[8].map((k, j) => `<g class="ctag" id="ct${i}_${j}">${tagSvg(0, 0, lb.tag, lb.code, CAT[k], k === 'st' ? '膨胀 8' : CAT[k].zh, lb.tiny)}</g>`).join('');
+    return `<g id="co${i}"><path id="cl${i}" fill="none" stroke="${C.ink}" stroke-width="${P ? 4 : 2.2}"/>
+      <g id="cd${i}"><circle r="${P ? 13 : 8}" fill="${C.anchor}" stroke="${C.ink}" stroke-width="${P ? 6 : 3.5}"/></g>
+      <g id="cb${i}"><text class="zh" font-size="${lb.zh}" font-weight="600" ${heavy(C.ink, lb.zh * .03)}>${c[6]}</text>
+      <text class="en" font-size="${lb.en}" font-weight="600" letter-spacing="${lb.sp}" fill="${C.mute}" font-family="${DISP}">${c[7]}</text>${tags}</g></g>`;
+  }).join('');
+  const cnt = LY.cnt;
+  const counter = `<g id="cnt" transform="translate(${cnt.x} ${cnt.y})">
+    <rect x="0" y="${-cnt.fs * 1.05}" width="${cnt.fs * .12}" height="${cnt.fs * .12}" rx="2" fill="${C.accent}"/>
+    <text x="${cnt.fs * .2}" y="${-cnt.fs * .95}" font-size="${cnt.fs * .2}" font-weight="600" fill="${C.ink}">02 拆开 <tspan fill="${C.mute}" font-family="${DISP}" letter-spacing="3" font-size="${cnt.fs * .14}">PIECES</tspan></text>
+    <text id="cntN" y="0" font-size="${cnt.fs}" font-weight="800" letter-spacing="-3" font-family="${DISP}" ${heavy(C.ink, 1.5)}>1</text>
+    <text id="cntU" x="${cnt.fs * .72}" y="0" font-size="${cnt.fs * .26}" font-weight="600" fill="${C.ink}">张贴纸</text>
+    <text id="cntE" x="${cnt.fs * .72}" y="${-cnt.fs * .3}" font-size="${cnt.fs * .13}" font-weight="600" letter-spacing="3" fill="${C.mute}" font-family="${DISP}">STICKERS</text></g>`;
+  const sunP = (dx, w) => `<path d="M${Pb.cx + dx} ${Pb.cy - 520}l${w} 0l-420 1100l${-w} 0z" fill="url(#gSun)"/>`;
+  stage.innerHTML = `<svg viewBox="0 0 ${W} ${H}" font-family="-apple-system,'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',sans-serif">
+    <defs>${MATERIALS}${stickerFilter('stk', 8, 14, 12)}${stickerFilter('stkN', 10, 16, 14)}
+      <pattern id="mat1" width="26" height="26" patternUnits="userSpaceOnUse"><path d="M26 0V26M0 26H26" stroke="${C.dot}" stroke-opacity="${C.dotA}" stroke-width="1"/></pattern>
+      <pattern id="mat5" width="130" height="130" patternUnits="userSpaceOnUse"><path d="M130 0V130M0 130H130" stroke="${C.dot}" stroke-opacity="${(C.dotA * 2.4).toFixed(2)}" stroke-width="2.2"/>
+        <path d="${[1, 2, 3, 4].map(k => `M${k * 26} 0v8M0 ${k * 26}h8`).join('')}" stroke="${C.dot}" stroke-opacity="${(C.dotA * 2.4).toFixed(2)}" stroke-width="1.6"/></pattern>
+      <clipPath id="ulClip"><rect id="ulR" x="0" y="0" width="0" height="2000"/></clipPath>
+      <clipPath id="ul2Clip"><rect id="ul2R" x="0" y="0" width="0" height="4000"/></clipPath>
+      <filter id="mb" filterUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><feGaussianBlur id="mbB" stdDeviation="0 0"/></filter>
+    </defs>
+    <rect width="${W}" height="${H}" fill="${C.paper}"/>
+    <g id="mbw"><g id="cam">
+      <rect x="${bbox.x - 2000}" y="${bbox.y - 2000}" width="${bbox.w + 4000}" height="${bbox.h + 4000}" fill="url(#mat1)"/>
+      <rect x="${bbox.x - 2000}" y="${bbox.y - 2000}" width="${bbox.w + 4000}" height="${bbox.h + 4000}" fill="url(#mat5)"/>
+      ${marks}${title}${counter}
+      <g id="board3">${board3(P)}</g>
+      <g id="fl"><path id="axis" d="M12 -560V440" stroke="${C.mute}" stroke-width="2" stroke-dasharray="26 8 4 8" fill="none" opacity="0"/>
+        <g id="flP" filter="url(#stk)">${flParts}</g>
+        <g id="gl0" opacity="0"><path d="${star(34)}" fill="#fff"/><circle r="9" fill="#fff"/></g>
+        <g id="gl1" opacity="0"><path d="${star(26)}" fill="#fff"/><circle r="6" fill="#fff"/></g></g>
+      <g id="sun" style="pointer-events:none">${sunP(-460, 170)}${sunP(-120, 90)}${sunP(120, 60)}</g>
+      ${callouts}
+    </g></g></svg><div class="grain"></div><div class="vig"></div>`;
+  // 引用
+  G = { gl0: $('gl0'), gl1: $('gl1'), axis: $('axis'), cam: $('cam'), mbw: $('mbw'), mbB: $('mbB'), fl: $('fl'), flP: $('flP'), sun: $('sun'), ulR: $('ulR'), ul2R: $('ul2R'),
+    parts: Object.fromEntries(PARTS.map(p => [p[0], $('p-' + p[0])])),
+    sl: [0, 1, 2, 3, 4].map(i => $('sl' + i)), cntN: $('cntN'), cnt: $('cnt'),
+    co: CALLOUTS.map((c, i) => ({ g: $('co' + i), l: $('cl' + i), d: $('cd' + i), b: $('cb' + i), tags: c[8].map((_, j) => $(`ct${i}_${j}`)) })) };
+  placeTitleMarker(t);
+  placeCalloutText(P);
+  collectLayers(P);
+}
+/* 标签方块：胶带条小标（两端锯齿边）+ 白字代号 + 方块下中文小字（可选）。白边类用深墨色 */
+function tagSvg(cx, cy, s, code, cat, under, tiny) {
+  const fill = cat.red ? C.tagAlt : C.tag, ink = cat.red ? C.paper : C.tagInk, h = s / 2, n = Math.max(3, Math.round(s / 12)), a = s * .05;
+  let d = `M${-h} ${-h}H${h}`;
+  for (let i = 1; i <= n; i++) d += `L${i % 2 ? h - a : h} ${-h + s * i / n}`;
+  d += `H${-h}`;
+  for (let i = n - 1; i >= 0; i--) d += `L${i % 2 ? -h + a : -h} ${-h + s * i / n}`;
+  return `<g transform="translate(${cx} ${cy})"><path d="${d}Z" fill="${fill}" fill-opacity=".92"/>
+    <rect x="${-h + a}" y="${-h + 2}" width="${s - a * 2}" height="${s * .38}" fill="#fff" opacity=".12"/>
+    ${code ? `<text y="${code * .36}" text-anchor="middle" font-size="${code}" font-weight="700" fill="${ink}" font-family="${DISP}">${cat.c}</text>` : ''}
+    ${under ? `<text y="${s / 2 + tiny * 1.35}" text-anchor="middle" font-size="${tiny}" fill="${C.under}">${under}</text>` : ''}</g>`;
+}
+/* ━━ T4 马克笔下划线：毛边多边形，压在字的下半截 ━━ */
+function marker(x0, x1, y, h, seed = 3) {
+  let r = seed; const rnd = () => (r = (r * 9301 + 49297) % 233280) / 233280;
+  const n = Math.max(6, Math.round((x1 - x0) / 30)), top = [], bot = [];
+  for (let i = 0; i <= n; i++) { const x = lerp(x0, x1, i / n); top.push(`${x.toFixed(1)} ${(y - h / 2 + (rnd() - .5) * h * .22 - i / n * h * .12).toFixed(1)}`); bot.push(`${(x - h * .25).toFixed(1)} ${(y + h / 2 + (rnd() - .5) * h * .25 - i / n * h * .12).toFixed(1)}`); }
+  return `M${x0 - h * .1} ${y - h * .2}L${top.join('L')}L${x1 + h * .15} ${y}L${bot.reverse().join('L')}Z`;
+}
+function placeTitleMarker(t) {
+  const tl = $('tl2'); if (!tl.getStartPositionOfChar) return;
+  const a = tl.getStartPositionOfChar(2).x, b = tl.getEndPositionOfChar(4).x;
+  $('ul').setAttribute('d', marker(a - 6, b + 6, t.l2 - t.fs * .06, t.fs * .26));
+  G.ulX = [a - 12, b + 30];
+}
+/* 标注文字的相对排版（中文 / 英文 / 方块 三层） */
+function placeCalloutText(P) {
+  const lb = LY.lab;
+  G.co.forEach((o, i) => {
+    const c = CALLOUTS[i], right = (P ? c[5] : c[4]) === 'R';
+    const zh = o.b.querySelector('.zh'), en = o.b.querySelector('.en');
+    const anchor = right ? 'start' : 'end';
+    [zh, en].forEach(e => e.setAttribute('text-anchor', anchor));
+    zh.setAttribute('y', lb.zh * .36); en.setAttribute('y', lb.zh * .36 + lb.en * 1.9);
+    o.tags.forEach((tg, j) => {
+      const dx = (lb.tag + lb.tag * .18) * j + lb.tag / 2, x = right ? dx : -dx - (c[8].length - 1 - 2 * j) * 0;
+      tg.__base = [right ? dx : -((lb.tag * 1.18) * (c[8].length - 1 - j) + lb.tag / 2), lb.zh * .36 + lb.en * 1.9 + lb.tag * .5 + lb.en * .9];
+    });
+  });
+}
+/* 世界里所有板子的外框，拉远揭示用 */
+function boardsBox() {
+  const { Pb, Eb, Cb, fw, fh } = LY, P = fw < fh, ew = P ? fw : 1700, eh = P ? fh : 940;
+  const xs = [Pb.cx - fw / 2, Pb.cx + fw / 2, Eb.cx - ew / 2, Eb.cx + ew / 2, Cb.cx - fw / 2, Cb.cx + fw / 2];
+  const ys = [Pb.cy - fh / 2, Pb.cy + fh / 2, Eb.cy - eh / 2, Eb.cy + eh / 2, Cb.cy - fh / 2, Cb.cy + fh / 2];
+  const x = Math.min(...xs) - 60, y = Math.min(...ys) - 60;
+  return { x, y, w: Math.max(...xs) + 60 - x, h: Math.max(...ys) + 60 - y };
+}
+/* 计数板：大数字 + 网格方块 + 条形图 */
+function board3(P) {
+  const { Cb, fw, fh, big, bars } = LY, x0 = Cb.cx - fw / 2, y0 = Cb.cy - fh / 2;
+  const heavy = (c, w) => `fill="${c}" stroke="${c}" stroke-width="${w}" stroke-linejoin="round" paint-order="stroke"`;
+  const rows = CATS.map((c, r) => {
+    const y = y0 + bars.y + r * bars.row;
+    return `<g id="bl${r}" opacity="0"><text x="${x0 + bars.x}" y="${y + (bars.labelAbove ? 0 : bars.blk * .3)}" font-size="${bars.labS}" font-weight="600" ${heavy(c.red ? C.accent : C.ink, .8)}>${c.zh}<tspan dx="${bars.labS * .4}" font-size="${bars.enS}" letter-spacing="2.5" fill="${C.mute}" stroke="none" font-family="${DISP}">${c.en}</tspan></text></g>
+      <text id="bn${r}" font-size="${bars.num}" font-weight="800" font-family="${DISP}" ${heavy(c.red ? C.accent : C.ink, .8)} opacity="0">0</text>`;
+  }).join('');
+  return `<g transform="translate(${x0} ${y0})">
+    <rect x="${big.x + 4}" y="${54 - 18}" width="18" height="18" rx="2" fill="${C.accent}"/>
+    <text x="${big.x + 34}" y="${54}" font-size="${P ? 30 : 24}" font-weight="600" fill="${C.ink}">03 数一数 <tspan font-family="${DISP}" fill="${C.mute}" letter-spacing="3" font-size="${P ? 22 : 13}">LAYER COUNT</tspan></text>
+    <g id="bigG" transform="translate(${big.x} ${big.y})"><g id="bigS"><text id="bigN" font-size="${big.fs}" font-weight="800" letter-spacing="${-big.fs * .04}" font-family="${DISP}" ${heavy(C.ink, big.fs * .012)}>0</text></g>
+      <text id="bigU" y="0" font-size="${big.unit}" font-weight="600" ${heavy(C.ink, 1)}>层</text></g>
+    <g clip-path="url(#ul2Clip)"><path id="ul2" fill="${C.accent}"/></g>
+    <text id="bigSub" x="${big.x}" y="${big.sub}" font-size="${big.subS}" fill="${C.ink2}">5 张贴纸，一共叠了 <tspan id="bigSubN" font-weight="600" fill="${C.ink}">0</tspan> 层</text>
+  </g><g id="slots"></g><g id="blks"></g>${rows}`;
+}
+/* 数出画面里真正画了多少层：每个带 data-l 的元素算一层，每张贴纸再算一层白边 */
+function collectLayers(P) {
+  const L = [];
+  PARTS.forEach(([n]) => { L.push('st'); G.parts[n].querySelectorAll('[data-l]').forEach(e => L.push(e.dataset.l)); });
+  const { Cb, fw, fh, grid, bars } = LY, x0 = Cb.cx - fw / 2, y0 = Cb.cy - fh / 2;
+  const count = Object.fromEntries(CATS.map(c => [c.k, 0])), order = CATS.map(c => c.k)
+    .sort((a, b) => L.filter(x => x === b).length - L.filter(x => x === a).length);
+  G.layers = L.map((k, i) => {
+    const gx = x0 + grid.x + (i % grid.cols) * grid.pitch + grid.blk / 2, gy = y0 + grid.y + Math.floor(i / grid.cols) * grid.pitch + grid.blk / 2;
+    const r = order.indexOf(k), j = count[k]++;
+    const bx = x0 + bars.x + (bars.labelAbove ? 0 : 290) + j * bars.pitch + bars.blk / 2;
+    const by = y0 + bars.y + r * bars.row + (bars.labelAbove ? bars.blk * .5 + 24 : 0);
+    return { k, gx, gy, bx, by, r, j, rot: ((i * 37) % 21 - 10) };
+  });
+  G.order = order; G.count = count; G.N = L.length;
+  $('slots').innerHTML = G.layers.map(o => `<rect x="${o.gx - grid.blk / 2}" y="${o.gy - grid.blk / 2}" width="${grid.blk}" height="${grid.blk}" rx="${grid.blk * .18}" fill="${C.slot}" stroke="${C.slotLine}" stroke-width="1.5"/>`).join('');
+  $('blks').innerHTML = G.layers.map((o, i) => `<g id="bk${i}">${tagSvg(0, 0, grid.blk, grid.code, CAT[o.k])}</g>`).join('');
+  G.blk = G.layers.map((_, i) => $('bk' + i)); G.blkT = G.blk.map(b => b.querySelector('text'));
+  G.barLab = CATS.map((_, r) => $('bl' + r)); G.barNum = CATS.map((_, r) => $('bn' + r));
+  // 条形图标签按数量排序后的行位置
+  order.forEach((k, r) => { const ci = CATS.findIndex(c => c.k === k), y = y0 + bars.y + r * bars.row;
+    G.barLab[ci].setAttribute('transform', `translate(0 ${y - (y0 + bars.y + ci * bars.row)})`);
+    G.barNum[ci].__pos = [x0 + bars.x + (bars.labelAbove ? 0 : 290) + count[k] * bars.pitch + 10, y + (bars.labelAbove ? bars.blk * .5 + 24 + bars.num * .36 : bars.num * .36)]; });
+  Object.assign(G, { bigN: $('bigN'), bigU: $('bigU'), bigS: $('bigS'), bigSubN: $('bigSubN'), slots: $('slots') });
+  // 大数字的单位跟在数字后面；答案下划线压在「N 层」下
+  G.bigN.textContent = G.N; const bw = G.bigN.getComputedTextLength ? G.bigN.getComputedTextLength() : LY.big.fs;
+  G.bigU.setAttribute('x', bw + LY.big.fs * .05);
+  const sub = $('bigSub'); G.bigSubN.textContent = G.N;
+  const n = sub.getNumberOfChars ? sub.getNumberOfChars() : 0;
+  if (n) { const a = sub.getStartPositionOfChar(n - 4).x, b = sub.getEndPositionOfChar(n - 1).x;
+    $('ul2').setAttribute('d', marker(a - 4, b + 6, LY.big.sub + LY.big.subS * .12, LY.big.subS * .5, 7)); G.ul2X = [a - 10, b + 20]; }
+}
+
+/* ━━ T6 相机：world → 屏幕。fit 把一块板塞进安全区，path 在两点间推拉（中途拉远一点） ━━ */
+function fit(b, w = LY.fw, h = LY.fh) { return { x: b.cx, y: b.cy, s: Math.min(SAFE.w / w, SAFE.h / h) }; }
+function frames() {
+  const P = LY.fw < LY.fh, bb = boardsBox();
+  return { P: fit(LY.Pb), E: P ? fit(LY.Eb) : fit(LY.Eb, 1700, 940), C: fit(LY.Cb),
+    ALL: fit({ cx: bb.x + bb.w / 2, cy: bb.y + bb.h / 2 }, bb.w, bb.h) };
+}
+function camPath(a, b, e, bump = .16) {
+  const s = Math.exp(lerp(Math.log(a.s), Math.log(b.s), e)) * (1 - bump * Math.sin(Math.PI * e));
+  return { x: lerp(a.x, b.x, e), y: lerp(a.y, b.y, e), s };
+}
+function applyCam(c, cPrev) {
+  const sx = SAFE.x + SAFE.w / 2, sy = SAFE.y + SAFE.h / 2;
+  set(G.cam, 'transform', `translate(${sx.toFixed(1)} ${sy.toFixed(1)}) scale(${c.s.toFixed(5)}) translate(${(-c.x).toFixed(1)} ${(-c.y).toFixed(1)})`);
+  // 运动模糊：按屏幕速度给横 / 纵向模糊，静止时整段滤镜拿掉
+  const vx = Math.abs((c.x - cPrev.x) * c.s), vy = Math.abs((c.y - cPrev.y) * c.s);
+  const on = !(S0 && S0.reduce) && (vx > 6 || vy > 6);
+  set(G.mbw, 'filter', on ? 'url(#mb)' : 'none');
+  if (on) set(G.mbB, 'stdDeviation', `${Math.min(26, vx * .5).toFixed(1)} ${Math.min(26, vy * .5).toFixed(1)}`);
+}
+
+/* ━━ 跑鞋的位姿和零件位移 ━━ */
+function flPose(e) {           // e: 0 = 封面姿势，1 = 拆解姿势
+  const a = LY.poster, b = LY.ex;
+  return { x: lerp(a.x, b.x, e), y: lerp(a.y, b.y, e), r: lerp(a.r, b.r, e), s: lerp(a.s, b.s, e) };
+}
+const EXPLODE_ORDER = { laces: 0, upper: .12, insole: .26, midsole: .4, outsole: .54 };
+function partOffset(n, t0, t) { // 零件沿竖轴弹开：back 过冲；返回 [位移, 进度]
+  const def = PARTS.find(p => p[0] === n); if (!def || !def[1]) return [0, 0];
+  const e = seg(t, t0 + EXPLODE_ORDER[n], t0 + EXPLODE_ORDER[n] + .8);
+  return [def[1] * LY.ek * ease.back(e), e];
+}
+let exploded = null;
+function drawShoe(pose, t0, t, floatT) {
+  tr(G.fl, pose.x, pose.y, pose.r, pose.s);
+  let any = false, moving = 0;
+  for (const n of ZORDER) {
+    const [dy, e] = partOffset(n, t0, t);
+    if (e > 0) any = true; if (e > .5) moving++;
+    const bob = floatT == null ? 0 : Math.sin(floatT * 1.6 + n.length * 1.3) * 4;
+    const lift = 1 + .04 * Math.sin(Math.PI * e);
+    tr(G.parts[n], 0, dy + bob - 8 * Math.sin(Math.PI * e), (e > 0 && e < 1 ? Math.sin(e * Math.PI * 2) * 1.6 : 0), lift);
+  }
+  // 组装时整只一张贴纸（一圈白边），一拆开每层各自一张
+  if (exploded !== any) {
+    exploded = any;
+    set(G.flP, 'filter', any ? 'none' : 'url(#stk)');
+    for (const n of ZORDER) set(G.parts[n], 'filter', any ? 'url(#stk)' : 'none');
+  }
+  return moving;
+}
+function anchorWorld(c, t0, t) {
+  const pose = flPose(1), [dy] = partOffset(c[0], t0, t);
+  const lx = c[1] * pose.s, ly = (c[2] + dy) * pose.s, a = pose.r * Math.PI / 180;
+  return [pose.x + lx * Math.cos(a) - ly * Math.sin(a), pose.y + lx * Math.sin(a) + ly * Math.cos(a)];
+}
+
+/* ━━ T5 引线标注：锚点弹出 → 折线画出 → 中文、英文、方块错峰 ━━ */
+function drawCallouts(t, t0, explodeT0) {
+  const P = LY.fw < LY.fh, lb = LY.lab;
+  G.co.forEach((o, i) => {
+    const c = CALLOUTS[i], k = t0 + i * .26, right = (P ? c[5] : c[4]) === 'R', dir = right ? 1 : -1;
+    const [ax, ay] = anchorWorld(c, explodeT0, t);
+    const eDot = seg(t, k, k + .3), eLine = ease.inOut(seg(t, k + .12, k + .55)), eLab = ease.out(seg(t, k + .4, k + .8));
+    set(o.g, 'opacity', eDot > 0 ? 1 : 0);
+    tr(o.d, ax, ay, 0, ease.back(eDot));
+    const ky = ay - (P ? 26 : 34), ex = LY.ex.x + dir * lb.off;
+    const pts = [[ax, ay], [ax + dir * (P ? 16 : 34), ky], [ex, ky]];
+    // 折线按长度画出来
+    const L1 = Math.hypot(pts[1][0] - pts[0][0], pts[1][1] - pts[0][1]), L2 = Math.hypot(pts[2][0] - pts[1][0], pts[2][1] - pts[1][1]);
+    let d = eLine * (L1 + L2), path = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+    if (d <= L1) { const f = d / L1 || 0; path += `L${lerp(pts[0][0], pts[1][0], f).toFixed(1)} ${lerp(pts[0][1], pts[1][1], f).toFixed(1)}`; }
+    else { const f = (d - L1) / L2; path += `L${pts[1][0].toFixed(1)} ${pts[1][1].toFixed(1)}L${lerp(pts[1][0], pts[2][0], f).toFixed(1)} ${pts[2][1].toFixed(1)}`; }
+    set(o.l, 'd', path);
+    const bx = pts[2][0] + dir * 10, by = pts[2][1] + lb.zh * .02;
+    set(o.b, 'opacity', eLab.toFixed(3));
+    tr(o.b, bx + dir * 16 * (1 - eLab), by);
+    o.tags.forEach((tg, j) => { const e = seg(t, k + .55 + j * .09, k + .95 + j * .09);
+      set(tg, 'opacity', e > 0 ? 1 : 0); tr(tg, tg.__base[0], tg.__base[1], (1 - e) * -12, ease.back(e)); });
+  });
+}
+
+/* ━━ T7 方块计数 + T8 重排成条形图 ━━ */
+function drawBoard3(t, fill0, fill1, fly0, final0) {
+  const n = G.N, per = (fill1 - fill0) / n;
+  let lit = 0; const arrived = {};
+  G.layers.forEach((o, i) => {
+    const el = G.blk[i], a = fill0 + i * per, e = seg(t, a, a + .32);
+    if (e > 0) lit = i + 1;
+    // 飞到条形图：先抬起一点，横向带过冲落位
+    const f0 = fly0 + o.r * .12 + o.j * .028, f = seg(t, f0, f0 + .62), fe = ease.inOut(f);
+    const x = lerp(o.gx, o.bx, ease.back(f)), y = lerp(o.gy, o.by, fe) - Math.sin(Math.PI * f) * 70;
+    if (f >= .85) arrived[o.k] = Math.max(arrived[o.k] || 0, o.j + 1);
+    const sc = f > 0 ? lerp(1, LY.bars.blk / LY.grid.blk, fe) : ease.back(e);
+    set(el, 'opacity', e > 0 ? 1 : 0);
+    if (!LY.bars.code && G.blkT[i]) set(G.blkT[i], 'opacity', (1 - fe).toFixed(2));
+    tr(el, x, y, f > 0 && f < 1 ? Math.sin(Math.PI * f) * o.rot : (1 - e) * o.rot, Math.max(.001, sc));
+  });
+  // 大数字逐个跳；每跳一下有一点弹
+  const shown = Math.min(n, lit);
+  if (G.bigN.textContent !== String(shown)) G.bigN.textContent = shown;
+  const tick = (t - fill0) / per - Math.floor((t - fill0) / per);
+  const fin = seg(t, final0, final0 + .5);
+  const bump = lit > 0 && lit < n ? 1 + .035 * (1 - tick) : 1;
+  tr(G.bigS, 0, 0, fin > 0 ? lerp(-7, -2.5, ease.back(fin)) : 0, fin > 0 ? lerp(1.22, 1, ease.back(fin)) : bump);
+  // 答案：数字变红色贴纸（套贴纸滤镜就有白边和投影）
+  const red = fin > 0;
+  set(G.bigN, 'fill', red ? C.accent : C.ink); set(G.bigN, 'stroke', red ? C.accent : C.ink);
+  set(G.bigS, 'filter', red ? 'url(#stkN)' : 'none');
+  set(G.slots, 'opacity', (LY.fw < LY.fh ? 1 - seg(t, fly0, fly0 + .6) : 1 - .55 * seg(t, fly0, fly0 + .6)).toFixed(3));
+  const lag = LY.fw < LY.fh ? .75 : -.1;   // 竖屏网格和条形图共用一块地方：等方块飞走再出标签
+  G.barLab.forEach((g, ci) => { const r = G.order.indexOf(CATS[ci].k), e = ease.out(seg(t, fly0 + lag + r * .12, fly0 + lag + .4 + r * .12));
+    set(g, 'opacity', e.toFixed(3)); const nm = G.barNum[ci], k = CATS[ci].k, c = G.count[k];
+    // 读数跟着落位的方块长：最后一块落到哪，数字就停在哪
+    const a = arrived[k] || 0; set(nm, 'opacity', a > 0 ? 1 : 0); const v = String(a); if (nm.textContent !== v) nm.textContent = v;
+    set(nm, 'x', nm.__pos[0] - (c - a) * LY.bars.pitch); set(nm, 'y', nm.__pos[1]); });
+  set(G.ul2R, 'x', G.ul2X[0]); set(G.ul2R, 'width', Math.max(0, (G.ul2X[1] - G.ul2X[0]) * ease.out(seg(t, final0 + .3, final0 + .8))));
+}
+
+/* ━━ 镜头 ━━ */
+let S0, F;
+const camState = { prev: null };
+function camShot(i, t) {
+  if (i === 0) { const a = F.P; return { x: a.x + t * 3, y: a.y, s: a.s * (1 + t * .006) }; }
+  if (i === 1) { const a0 = camShot(0, SHOTS[0].dur), e = ease.inOut(seg(t, 0, 1.25)), c = camPath(a0, F.E, e, .2);
+    return { x: c.x - Math.max(0, t - 1.25) * 4, y: c.y, s: c.s * (1 + Math.max(0, t - 1.25) * .004) }; }
+  const a0 = camShot(1, SHOTS[1].dur);
+  if (t < .75) return camPath(a0, F.ALL, ease.inOut(seg(t, 0, .75)), 0);
+  if (t < 1.15) return { ...F.ALL, s: F.ALL.s * (1 + (t - .75) * .03) };
+  const A = { ...F.ALL, s: F.ALL.s * 1.012 }, e = ease.inOut(seg(t, 1.15, 2.0)), c = camPath(A, F.C, e, 0);
+  return { x: c.x, y: c.y, s: c.s * (1 + Math.max(0, t - 2.0) * .005) };
+}
+function camAt(i, t) { const c = camShot(i, t), p = camShot(i, Math.max(0, t - 1 / 60)); applyCam(c, p); }
+
+const SHOTS = [
+  // 镜1 · 01 整只 / WHOLE · 粗白边一圈，就成了贴纸：物件画出质感，再垫一层柔投影。
+  { dur: 6.3,
+    draw(t) {
+      camAt(0, t);
+      const press = seg(t, .45, .62), click = press > 0 && press < 1 ? Math.sin(Math.PI * press) : 0;
+      const pose = flPose(0); pose.s *= 1 - .02 * click; pose.r += Math.sin(t * .9) * .8;
+      pose.y += Math.sin(t * 1.3) * 5;
+      drawShoe(pose, 99, 0, null);
+      set(G.sun, 'transform', `translate(${(Math.sin(t * .5) * 40).toFixed(1)} 0)`); set(G.axis, 'opacity', 0); set(G.gl1, 'opacity', 0);
+      glint(G.gl0, 'laces', 115, -81, t, .66);
+      set(G.ulR, 'x', G.ulX[0]); set(G.ulR, 'width', (G.ulX[1] - G.ulX[0]) * ease.out(seg(t, .1, .6)));
+      G.sl.forEach((s, i) => { const e = seg(t, 1.1 + i * .2, 1.5 + i * .2); set(s, 'opacity', e > 0 ? 1 : 0);
+        const tt = LY.t, cx = tt.x + i * (tt.slotS + 10) + tt.slotS / 2, cy = tt.slot + tt.slotS / 2;
+        set(s, 'transform', `translate(${cx} ${cy - 40 * (1 - ease.back(e))}) scale(${ease.back(e).toFixed(3)}) rotate(${((1 - e) * 15).toFixed(1)}) translate(${-cx} ${-cy})`); });
+      drawCallouts(-9, 0, 99); hideCount(); drawBoard3(-9, 0, 1, 50, 60);
+    } },
+  // 镜2 · 02 拆开 / TEAR-DOWN · 一层一根引线：标签分三层：中文、英文、胶带条。
+  { dur: 6.5,
+    draw(t) {
+      camAt(2 - 1, t);
+      const e = ease.inOut(seg(t, .1, 1.2)), pose = flPose(e);
+      const n = drawShoe(pose, 1.15, t, t > 2.3 ? t : null);
+      set(G.sun, 'transform', `translate(${(Math.sin(t * .5 + 1) * 40).toFixed(1)} 0)`);
+      drawCallouts(t, 2.35, 1.15); set(G.gl0, 'opacity', 0);
+      set(G.axis, 'opacity', (.6 * ease.out(seg(t, 1.2, 2.2))).toFixed(3)); glint(G.gl1, 'outsole', 330, 176, t, 2.15);
+      // 读数：一张贴纸 → 五张
+      set(G.cnt, 'opacity', ease.out(seg(t, .9, 1.3)).toFixed(3));
+      const v = String(1 + Math.min(4, n)); if (G.cntN.textContent !== v) { G.cntN.textContent = v; G.cntN.__bt = t; }
+      const bt = t - (G.cntN.__bt || 0); set(G.cntN, 'transform', `translate(0 ${(-8 * Math.max(0, 1 - bt * 6)).toFixed(1)})`);
+      drawBoard3(-9, 0, 1, 50, 60); posterFinal();
+    } },
+  // 镜3 · 03 数层 / COUNT · 方块逐个点亮，再排成条：计数跟着跳，换个排法就是图表。
+  { dur: 6.8,
+    draw(t) {
+      camAt(2, t);
+      drawShoe(flPose(1), -9, 0, t); posterFinal(); set(G.axis, 'opacity', .6); set(G.gl0, 'opacity', 0);
+      set(G.sun, 'transform', 'translate(0 0)');
+      drawCallouts(9, 0, -9);
+      set(G.cnt, 'opacity', 1); G.cntN.textContent = '5'; set(G.cntN, 'transform', '');
+      drawBoard3(t, 1.45, 3.25, 3.5, 5.0);
+      glint(G.gl1, 'outsole', 330, 176, t, 2.2);
+    } },
+];
+/* 闪光：四角星在零件边缘一闪（放在贴纸滤镜外面，不然会被膨胀出白边） */
+function glint(el, part, lx, ly, t, at) {
+  const def = PARTS.find(p => p[0] === part), dy = exploded ? def[1] * LY.ek : 0, e = seg(t, at, at + .55);
+  set(el, 'opacity', e > 0 && e < 1 ? 1 : 0);
+  if (e > 0 && e < 1) set(el, 'transform', `translate(${lx} ${ly + dy}) rotate(${(e * 70).toFixed(1)}) scale(${Math.sin(Math.PI * e).toFixed(3)})`);
+}
+function hideCount() { set(G.cnt, 'opacity', 0); }
+function posterFinal() { set(G.ulR, 'x', G.ulX[0]); set(G.ulR, 'width', G.ulX[1] - G.ulX[0]); G.sl.forEach(s => { set(s, 'opacity', 1); set(s, 'transform', ''); }); }
+
+S0 = makePlayer(SHOTS, {
+  onResize(S) { exploded = null; build(S); F = frames(); },
+});
+</script>
+</body>
+</html>

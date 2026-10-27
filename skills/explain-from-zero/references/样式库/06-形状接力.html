@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>形状接力 样张</title>
+<!--
+风格：形状接力 SHAPE RELAY
+一句话：整部片只有一块杏色的形状，它连续变成下一个东西，最后又变回第一个；镜头不切，观众的眼睛一直跟着同一块颜色走。
+擅长表现：A 变成 B——一样东西怎么一步步变成另一样（状态转化、循环、因果链），尤其是首尾相接的循环；
+    也擅长「同一条路径换个做法」的前后对照。
+搬到讲解里：
+  茶杯 → 蒸汽卷成云 → 云下撑开伞 → 伞尖滴雨 → 雨落回杯 → 讲「一个东西经过几种状态又回到原样」：用在循环、周期、往复这类题，每一步一个名字。
+  背景整块换色、形状不换色 → 讲「主角没变、环境 / 阶段变了」：色面就是阶段，角上的小圆环标出第几步。
+  点阵取点 + 起点错开 vs 对齐并排 → 讲「为什么这样做才顺」：对比题，左边拧成一团、右边一直是个形状。
+招牌细节：
+  材质｜深色色面上压一层细颗粒和纤维（Canvas 生成，multiply 叠在最上层，形状和字也吃到颗粒）+ 一层浅色纸屑（screen）；四角轻暗角。
+  光｜不打光；每个形状上有一道「折纸暗面」——同色压暗一档的楔形，像纸折过一下，形状一变它也跟着变；伞面再多一道亮折面。
+  主体｜茶杯 → 云 → 伞 → 雨滴 → 茶杯：每个形状都是同一条路径（120 个等距点）变来的；起跳拉长，落地压扁。
+  主体｜形状稳定后才长出配件（杯碟和蒸汽、云边的星、伞骨和雨丝、雨滴落杯溅起的水花），配件一出来形状就「认得出」了。
+  字｜显示字是超粗黑体（同色描边加粗、方角接头），只写这一步的名字；章节小标三档：等宽编号 01/04、粗中文、字距拉开的英文小字。
+  动效｜形变用 inOut 缓动，体积变化用带过冲的缩放；快速移动时沿运动方向加一点模糊。
+  动效｜背景整块换色：一个边缘模糊的大圆从形状中心扩开，或一条模糊边的色带从上往下推。
+  角落小字｜右上一个小圆环分四格，标出「循环第几步」；左上读数「N = 120」。
+色彩结构（换题保留）：三块深色色面（每个阶段一块，整块切换；一冷一更冷一灰紫，明度接近、色相拉开）；一个暖的主角色
+  （整部片唯一的形状，饱和度最高，落在任何一块色面上都压得住）；一个浅色（字、配件线、点阵，像粉笔）；一个近黑（点的描边、最深的影）。
+  全部平涂；立体只靠同色压暗 20% 的折纸暗面和提亮 22% 的亮面；主角色全片不换，只换色面——「东西没变，阶段变了」。
+本例配色（从本例主体「一块杏色陶土：茶杯、云、伞、雨滴」、现场「从午后到雨夜的三块色面」推出来，换题就换）：
+  fieldA #1F3B32 墨绿｜fieldB #1B2747 夜蓝｜fieldC #4B4058 雨灰紫｜hero #E7A06A 杏色陶土｜chalk #F2E6D6 粉笔白｜ink #0E1211 近黑
+换题示例（?pal=alt）：假设主角是「一粒种子 → 芽 → 花 → 果 → 又是种子」、现场是「土里、地面、晴空三个阶段」→
+  色面取深土褐、苔绿、晴蓝的暗调，主角取种子的麦黄，浅色取米白；结构不变（三块深色面 + 一个暖主角 + 粉笔白 + 近黑）
+  → fieldA #3E2C20｜fieldB #24392A｜fieldC #1D3550｜hero #E4C35A｜chalk #F1ECDC｜ink #0D0E0A
+字：显示字 SVG <text> + 同色 stroke、stroke-linejoin:miter 加粗成超粗黑体；正文黑体栈；英文小字 "Avenir Next",Futura,"Helvetica Neue"；编号等宽栈。
+动效：形变 0.6–1.2 秒 inOut；落地 0.12 秒压扁 sx·sy=1；配件错开 0.06 秒弹出；色面切换 0.6 秒，边缘高斯模糊 28。
+做粗了 → 做精：
+  两个形状交叉淡化 → 同一条路径插值，中间每一帧都是一个完整形状
+  点数不同直接插值，形状抽搐 → 先把两条路径各重采样成 N 个等距点，再统一绕向
+  起点没对齐，中间拧成麻花 → 把 B 的点序轮转到和 A 距离和最小的起点
+  循环最后一下硬跳回开头 → 最后一个形状就落成第一个形状，位置、大小、色面都对上，接缝看不出来
+  背景硬切换色 → 模糊边的大圆或色带推过去，色面也是在「形变」
+  平涂一块色 → 一道折面 + 纸纹颗粒 + 配件，层次就有了
+手机竖屏：形状放在上半屏中间放大，步骤名在形状上方；对比镜改上下分屏；收尾的四格缩成一排小格放在形状下面。
+技法目录：
+  T1 缓动与数学小工具（inOut、backK、颜色混合）
+  T2 路径重采样：任意 SVG 路径 → N 个等距点，统一顺时针
+  T3 起点对齐：轮转点序，距离和最小
+  T4 插值与出路径（点阵 → path d）
+  T5 折纸暗面：形状当 clipPath，楔形多边形跟着插值
+  T6 挤压拉伸 + 速度模糊
+  T7 色面切换：模糊圆扩开 / 模糊色带推入
+  T8 纸纹颗粒和暗角（Canvas 噪声 + 纤维，multiply；浅纸屑 screen）
+  T9 超粗显示字
+  （配色在 <head> 里的 PALETTES：CSS 变量和 JS 共用，技法函数只认角色名）
+-->
+<script>
+/* ━━ 配色：全片的颜色只在这里（CSS 变量和下面的 JS 共用）。默认 = 本例；网址带 ?pal=alt = 换题示例 ━━
+   角色：fieldA / fieldB / fieldC 三块阶段色面｜hero 唯一的形状｜chalk 浅色（字、配件、点）｜ink 近黑（描边、最深的影）
+   折面、亮面由技法代码按本色压暗 / 提亮算出来，不单列。 */
+/* ━━ 示范配色：必须换 ━━
+   下面两组颜色只属于这份样张自己的主体（一块杏色陶土在茶杯、云、伞、雨滴之间变），不是这种风格的颜色。搬技法进你的成品时，
+   这组颜色、报头、角标文字、示例文案一律换成从你的主角、现场的光、题目的情绪推出来的；
+   颜色只改这一处，技法代码按角色名取色。按文件头「色彩结构」那一段保留结构。 */
+const PALETTES = {
+  base: { fieldA: '#1F3B32', fieldB: '#1B2747', fieldC: '#4B4058', hero: '#E7A06A', chalk: '#F2E6D6', ink: '#0E1211' },
+  alt: { fieldA: '#3E2C20', fieldB: '#24392A', fieldC: '#1D3550', hero: '#E4C35A', chalk: '#F1ECDC', ink: '#0D0E0A' },
+};
+const C = PALETTES[new URLSearchParams(location.search).get('pal') === 'alt' ? 'alt' : 'base'];
+for (const k in C) document.documentElement.style.setProperty('--' + k, C[k]);
+</script>
+<style>
+  :root { --fg:var(--chalk);   /* 颜色变量由 <head> 里的 PALETTES 写入 */
+    --zh:-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    --lat:"Avenir Next","Futura","Helvetica Neue","Segoe UI",Arial,sans-serif;
+    --mono:"SF Mono",Menlo,Consolas,monospace; }
+  * { box-sizing:border-box; margin:0; }
+  html,body { height:100%; background:var(--fieldA); color:var(--fg); font-family:var(--zh); }
+  body { overflow:hidden; -webkit-font-smoothing:antialiased; }
+  #stage { position:fixed; inset:0; }
+  #stage svg { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .zh { font-family:var(--zh); font-weight:800; }
+  .lat { font-family:var(--lat); font-weight:600; }
+  .mono { font-family:var(--mono); font-weight:600; }
+  /* ━━ T8 纸纹和暗角：最上层，盖住画面和字 ━━ */
+  #grain { position:fixed; inset:0; pointer-events:none; mix-blend-mode:multiply; opacity:.7; background-size:320px 320px; }
+  #fleck { position:fixed; inset:0; pointer-events:none; mix-blend-mode:screen; opacity:.5; background-size:410px 410px; }
+  #vig { position:fixed; inset:0; pointer-events:none; mix-blend-mode:multiply;
+    background:radial-gradient(120% 95% at 50% 45%, transparent 55%, color-mix(in srgb, var(--ink) 45%, transparent) 100%); }
+  #corner { position:fixed; top:clamp(16px,3vw,34px); left:clamp(20px,4.4vw,64px); right:clamp(20px,4.4vw,64px); display:flex; justify-content:space-between; align-items:center;
+    font:600 12px/1 var(--lat); letter-spacing:.3em; color:var(--fg); pointer-events:none; }
+  #corner .l { opacity:.62; }
+  #loop { width:46px; height:46px; overflow:visible; }
+</style>
+</head>
+<body>
+<main id="stage"><svg id="sv" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg></main>
+<div id="corner"><span class="l" id="rd">N = 120 · 帧 000</span>
+  <svg id="loop" viewBox="-26 -26 52 52" aria-hidden="true">
+    <circle r="20" fill="none" stroke="var(--chalk)" stroke-width="1.5" opacity=".3"/>
+    <path id="loopArc" fill="none" stroke="var(--hero)" stroke-width="3.2" stroke-linecap="round"/>
+    <g id="loopTicks" stroke="var(--chalk)" stroke-width="1.6"><line x1="0" y1="-24" x2="0" y2="-16"/><line x1="24" y1="0" x2="16" y2="0"/><line x1="0" y1="24" x2="0" y2="16"/><line x1="-24" y1="0" x2="-16" y2="0"/></g>
+    <text id="loopN" x="0" y="4.5" text-anchor="middle" font-size="13" fill="var(--chalk)" style="font:700 13px var(--mono)">1</text>
+  </svg></div>
+<div id="grain"></div><div id="fleck"></div><div id="vig"></div>
+<script>
+/* ━━ 样张自己的播放代码：只为把这份样张播起来，不是成品该用的结构，不要照抄。成品页面上要有哪些东西见 形式.md「页面上要有的东西」，长什么样、怎么排按你的风格自己做 ━━ */
+function makePlayer(SHOTS, hooks = {}) {
+  const S = { i: 0, t: 0, playing: true, reduce: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    w: innerWidth, h: innerHeight, portrait: innerHeight > innerWidth };
+  function enter(i) {
+    S.i = (i + SHOTS.length) % SHOTS.length; S.t = 0;
+    const s = SHOTS[S.i];
+    s.enter && s.enter(S);
+    hooks.onShot && hooks.onShot(S.i, s, S);
+    if (S.reduce) s.draw(s.dur, 1, S);
+  }
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    if (S.playing) {
+      S.t += dt;
+      if (S.t >= SHOTS[S.i].dur) enter(S.i + 1);
+    }
+    const s = SHOTS[S.i];
+    if (!S.reduce) s.draw(Math.min(S.t, s.dur), Math.min(1, S.t / s.dur), S);
+    requestAnimationFrame(frame);
+  }
+  document.addEventListener('visibilitychange', () => { S.playing = !document.hidden; last = performance.now(); });
+  addEventListener('resize', () => {
+    S.w = innerWidth; S.h = innerHeight; S.portrait = S.h > S.w;
+    hooks.onResize && hooks.onResize(S);
+    if (S.reduce) SHOTS[S.i].draw(SHOTS[S.i].dur, 1, S);
+  });
+  hooks.onResize && hooks.onResize(S);
+  enter(0);
+  requestAnimationFrame(frame);
+  return S;
+}
+
+/* ━━ T1 缓动与小工具 ━━ */
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const seg = (p, a, b) => clamp((p - a) / (b - a));
+const lerp = (a, b, t) => a + (b - a) * t;
+const ease = {
+  out: x => 1 - Math.pow(1 - x, 3),
+  inOut: x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2,
+  back: x => 1 + 2.7 * Math.pow(x - 1, 3) + 1.7 * Math.pow(x - 1, 2),
+  backK: k => x => 1 + (k + 1) * Math.pow(x - 1, 3) + k * Math.pow(x - 1, 2),
+  spring: x => 1 - Math.exp(-6 * x) * Math.cos(12 * x),
+};
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const mixC = (a, b, t) => { const A = hex(a), B = hex(b); return '#' + A.map((v, i) => Math.round(lerp(v, B[i], t)).toString(16).padStart(2, '0')).join(''); };
+const NS = 'http://www.w3.org/2000/svg';
+function E(tag, at, parent) { const e = document.createElementNS(NS, tag); if (at) for (const k in at) e.setAttribute(k, at[k]); if (parent) parent.appendChild(e); return e; }
+function A(e, at) { for (const k in at) e.setAttribute(k, at[k]); return e; }
+function T(parent, str, x, y, size, at = {}) { const e = E('text', Object.assign({ x, y, 'font-size': size }, at), parent); e.textContent = str; return e; }
+// 颜色对象 C 在 <head> 的 PALETTES 里，这里只按角色取：C.fieldA C.fieldB C.fieldC C.hero C.chalk C.ink
+const shadeOf = c => mixC(c, C.ink, .2);
+const lightOf = c => mixC(c, '#ffffff', .22);
+/* ━━ T2 路径重采样：任意路径 → N 个等距点，统一成顺时针 ━━ */
+const N = 120;
+const probeSvg = E('svg', { width: 0, height: 0, style: 'position:absolute;width:0;height:0' }, document.body);
+const probe = E('path', null, probeSvg);
+function resample(d, n = N) {
+  probe.setAttribute('d', d);
+  const len = probe.getTotalLength(), pts = [];
+  for (let i = 0; i < n; i++) { const p = probe.getPointAtLength(len * i / n); pts.push([p.x, p.y]); }
+  let a = 0; for (let i = 0; i < n; i++) { const p = pts[i], q = pts[(i + 1) % n]; a += p[0] * q[1] - q[0] * p[1]; }
+  return a < 0 ? pts.reverse() : pts;
+}
+/* ━━ T3 起点对齐：把 B 的点序轮转到和 A 逐点距离和最小 ━━ */
+function align(Apts, Bpts) {
+  let best = 0, bd = Infinity;
+  for (let k = 0; k < N; k++) {
+    let d = 0;
+    for (let i = 0; i < N; i += 3) { const b = Bpts[(i + k) % N]; d += (Apts[i][0] - b[0]) ** 2 + (Apts[i][1] - b[1]) ** 2; }
+    if (d < bd) { bd = d; best = k; }
+  }
+  return Bpts.map((_, i) => Bpts[(i + best) % N]);
+}
+/* ━━ T4 插值：两组同样多的点逐点混合，再写回 path ━━ */
+const mixPts = (P, Q, t) => P.map((p, i) => [p[0] + (Q[i][0] - p[0]) * t, p[1] + (Q[i][1] - p[1]) * t]);
+const toD = P => 'M' + P.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L') + 'Z';
+
+/* ── 形状库：都在 ±120 的方框里，原点是形状重心附近；一圈循环：茶杯 → 云 → 伞 → 雨滴 → 茶杯 ── */
+const SH = {
+  cup: { d: 'M-84 -46L84 -46C86 -38 85 -31 84 -25C110 -31 126 -8 113 12C104 27 86 27 74 22C64 44 52 58 34 66L-34 66C-66 52 -84 10 -84 -46Z',
+    fa: [[28, -50], [130, -50], [130, 70], [16, 70]], fb: null, name: '茶杯', en: 'TEACUP' },
+  cloud: { d: 'M-96 40C-124 40 -126 0 -96 -6C-102 -46 -56 -62 -32 -36C-22 -80 38 -82 52 -34C82 -52 116 -20 100 10C124 18 114 44 90 40Z',
+    fa: [[-130, 14], [130, 14], [130, 50], [-130, 50]], fb: null, name: '云', en: 'CLOUD' },
+  umbrella: { d: 'M-112 0C-106 -66 -52 -102 0 -102C52 -102 106 -66 112 0C98 -12 72 -12 56 0C42 -12 20 -12 6 0L6 72C6 98 -34 98 -34 72L-24 72C-24 84 -4 84 -4 72L-4 0C-20 -12 -42 -12 -56 0C-72 -12 -98 -12 -112 0Z',
+    fa: [[0, -112], [124, -112], [124, 4], [0, 4]], fb: [[-74, -98], [-42, -104], [-8, 2], [-40, 2]], name: '伞', en: 'UMBRELLA' },
+  drop: { d: 'M0 -104C18 -68 64 -22 64 20A64 64 0 0 1 -64 20C-64 -22 -18 -68 0 -104Z', fa: [[0, -110], [80, -110], [80, 90], [0, 90]], fb: null, name: '雨滴', en: 'RAINDROP' },
+};
+for (const k in SH) SH[k].pts = resample(SH[k].d);
+const NOFB = [[0, -125], [0, -125], [0, -125], [0, -125]];   // 没有亮折面的形状：亮面缩成顶上一个点，变伞时从顶上长出来
+const LOOP = ['cup', 'cloud', 'umbrella', 'drop'];   // 第 i 步的形状；第 i 步的色面见 FIELD
+const FIELD = () => [C.fieldA, C.fieldB, C.fieldC, C.fieldC];
+// 预先把每一对相邻形状对齐好；pair('a','b') 返回 [a 的点, 对齐后的 b 的点]
+const PAIRS = {};
+function pair(a, b) { const k = a + '>' + b; if (!PAIRS[k]) PAIRS[k] = [SH[a].pts, align(SH[a].pts, SH[b].pts)]; return PAIRS[k]; }
+// 故意不对齐：把 b 的点序再错开 off 个点（对比镜里的「错误示范」）
+function pairBad(a, b, off) { const [P, Q] = pair(a, b); return [P, Q.map((_, i) => Q[(i + off) % N])]; }
+
+/* ━━ T5 折纸暗面：形状本身当 clipPath，暗面 / 亮面是两块跟着插值的四边形 ━━ */
+let uid = 0;
+function makeBlob(parent) {
+  const id = 'cp' + (uid++);
+  const outer = E('g', null, parent), g = E('g', null, outer);
+  const cp = E('clipPath', { id }, g), cpPath = E('path', null, cp);
+  const body = E('path', null, g);
+  const fa = E('polygon', { 'clip-path': `url(#${id})` }, g);
+  const fb = E('polygon', { 'clip-path': `url(#${id})` }, g);
+  // 换色不做 RGB 混合（红混蓝会出紫色，跑出色板）：新颜色像墨水一样从下往上灌满
+  const id2 = 'cw' + (uid++), cw = E('clipPath', { id: id2 }, g), cwRect = E('rect', { x: -400, width: 800, height: 700 }, cw);
+  const ov = E('g', { 'clip-path': `url(#${id2})` }, g), body2 = E('path', null, ov);
+  const fa2 = E('polygon', { 'clip-path': `url(#${id})` }, ov), fb2 = E('polygon', { 'clip-path': `url(#${id})` }, ov);
+  return {
+    outer, g,
+    // P：点阵；FA/FB：两块折面；fill：本色；fill2 + u：正在灌进来的新颜色和进度
+    set(P, FA, FB, fill, fill2, u = 0) {
+      const d = toD(P), pa = FA.map(p => p.join(',')).join(' '), pb = (FB || NOFB).map(p => p.join(',')).join(' ');
+      cpPath.setAttribute('d', d); A(body, { d, fill });
+      A(fa, { points: pa, fill: shadeOf(fill) }); A(fb, { points: pb, fill: lightOf(fill) });
+      const on = fill2 && u > 0;
+      ov.style.display = on ? '' : 'none'; if (!on) return;
+      A(cwRect, { y: 135 - 280 * ease.inOut(clamp(u)) });
+      A(body2, { d, fill: fill2 }); A(fa2, { points: pa, fill: shadeOf(fill2) }); A(fb2, { points: pb, fill: lightOf(fill2) });
+    },
+  };
+}
+// 在两个形状之间取第 t 帧（形状、两块折面一起插）
+function morphFrame(a, b, t, bad) {
+  const [P, Q] = bad ? pairBad(a, b, bad) : pair(a, b);
+  return [mixPts(P, Q, t), mixPts(SH[a].fa, SH[b].fa, t), mixPts(SH[a].fb || NOFB, SH[b].fb || NOFB, t)];
+}
+
+/* ━━ T6 挤压拉伸 + 速度模糊 ━━ */
+// 以 (x, y) 为支点：sy < 1 压扁、> 1 拉长，sx = 1 / sy 保面积
+const squash = (x, y, sy) => `translate(${x} ${y}) scale(${1 / sy} ${sy}) translate(${-x} ${-y})`;
+function speedBlur(el, filterEl, vx, vy) {
+  const b = Math.min(14, Math.hypot(vx, vy) / 160);
+  if (b < .6) { el.removeAttribute('filter'); return; }
+  filterEl.setAttribute('stdDeviation', `${(Math.abs(vx) / 160).toFixed(1) * 1} ${(Math.abs(vy) / 160).toFixed(1) * 1}`);
+  el.setAttribute('filter', `url(#${filterEl.parentNode.id})`);
+}
+
+/* ━━ T7 色面切换：模糊边的大圆从中心扩开 / 模糊边的色带推进来 ━━ */
+const sv = document.getElementById('sv');
+const defs = E('defs', null, sv);
+const softF = E('filter', { id: 'soft', filterUnits: 'userSpaceOnUse' }, defs); E('feGaussianBlur', { stdDeviation: 28 }, softF);
+const mbF = E('filter', { id: 'mb', x: '-50%', y: '-50%', width: '200%', height: '200%' }, defs); const mbB = E('feGaussianBlur', { stdDeviation: '0 0' }, mbF);
+const bgBase = E('rect', null, sv);
+const wipeL = E('rect', { filter: 'url(#soft)' }, sv), wipeR = E('rect', { filter: 'url(#soft)' }, sv);
+const wipeCircle = E('circle', { filter: 'url(#soft)' }, sv);
+function field(base, opts = {}) {
+  A(bgBase, { width: L.W, height: L.H, fill: base });
+  wipeCircle.style.display = opts.circle ? '' : 'none';
+  if (opts.circle) { const [cx, cy, u, col] = opts.circle; A(wipeCircle, { cx, cy, r: Math.hypot(L.W, L.H) * 1.1 * ease.inOut(u), fill: col }); }
+  wipeL.style.display = opts.split || opts.band ? '' : 'none'; wipeR.style.display = opts.split ? '' : 'none';
+  if (opts.band) { const [u, col] = opts.band; A(wipeL, { x: -200, y: -260, width: L.W + 400, height: 60 + (L.H + 300) * ease.inOut(u), fill: col }); }   // 色带从上往下推
+  if (opts.split) {
+    // 横屏左右分、竖屏上下分；u：推进量
+    const [u, cl, cr] = opts.split, e = ease.inOut(u);
+    if (!L.P) { A(wipeL, { x: -200, y: -200, width: 200 + L.W / 2 * e, height: L.H + 400, fill: cl }); A(wipeR, { x: L.W - L.W / 2 * e, y: -200, width: L.W / 2 + 200, height: L.H + 400, fill: cr }); }
+    else { A(wipeL, { x: -200, y: -200, width: L.W + 400, height: 200 + L.H * .47 * e, fill: cl }); A(wipeR, { x: -200, y: L.H - L.H * .53 * e, width: L.W + 400, height: L.H * .53 + 200, fill: cr }); }
+  }
+}
+const layer = E('g', null, sv);
+
+/* ━━ T8 纸纹颗粒：细噪点 + 放大糊开的纤维（multiply）+ 浅纸屑（screen），生成一次当背景图 ━━ */
+(function grain() {
+  const c = document.createElement('canvas'); c.width = c.height = 320; const x = c.getContext('2d');
+  const lo = document.createElement('canvas'); lo.width = lo.height = 40; const lx = lo.getContext('2d'), li = lx.createImageData(40, 40);
+  for (let i = 0; i < li.data.length; i += 4) { const v = 236 + Math.random() * 19; li.data[i] = li.data[i + 1] = li.data[i + 2] = v; li.data[i + 3] = 255; }
+  lx.putImageData(li, 0, 0); x.imageSmoothingEnabled = true; x.drawImage(lo, 0, 0, 320, 320);
+  const im = x.getImageData(0, 0, 320, 320);
+  for (let i = 0; i < im.data.length; i += 4) { const n = Math.random(), v = n > .988 ? -40 : (n - .5) * 28; im.data[i] += v; im.data[i + 1] += v; im.data[i + 2] += v * .9; }
+  x.putImageData(im, 0, 0);
+  document.getElementById('grain').style.backgroundImage = `url(${c.toDataURL()})`;
+  // 浅纸屑：深色面上 multiply 看不见颗粒，再撒一层稀疏的浅点和短纤维（screen）
+  const f = document.createElement('canvas'); f.width = f.height = 410; const fx = f.getContext('2d');
+  for (let i = 0; i < 520; i++) { const v = 120 + Math.random() * 90; fx.fillStyle = `rgba(${v},${v},${v * .95},${.25 + Math.random() * .4})`; fx.fillRect(Math.random() * 410, Math.random() * 410, .8 + Math.random(), .8 + Math.random()); }
+  fx.lineCap = 'round'; for (let i = 0; i < 60; i++) { const x0 = Math.random() * 410, y0 = Math.random() * 410, a = Math.random() * 6.3, l = 3 + Math.random() * 9; fx.strokeStyle = 'rgba(150,150,140,.35)'; fx.lineWidth = .7; fx.beginPath(); fx.moveTo(x0, y0); fx.quadraticCurveTo(x0 + Math.cos(a) * l * .5 + 2, y0 + Math.sin(a) * l * .5, x0 + Math.cos(a) * l, y0 + Math.sin(a) * l); fx.stroke(); }
+  document.getElementById('fleck').style.backgroundImage = `url(${f.toDataURL()})`;
+})();
+
+/* ━━ T9 超粗显示字：同色描边 + 方角接头，把系统黑体压成海报粗细 ━━ */
+function heavyText(parent, str, x, y, size, color, at = {}) {
+  return T(parent, str, x, y, size, Object.assign({ class: 'zh', fill: color, stroke: color, 'stroke-width': size * .045, 'stroke-linejoin': 'miter', 'paint-order': 'stroke', 'letter-spacing': '-.02em' }, at));
+}
+
+/* ── 舞台尺寸：横屏高 900 单位，竖屏宽 900 单位 ── */
+let L = { W: 1440, H: 900, P: false };
+const scene = [0, 1, 2, 3].map(() => E('g', null, layer));
+// 配件小工具：一组短线，从中心往外弹（水花 / 动势线）
+function burst(parent, n, color, w = 7) { return Array.from({ length: n }, () => E('line', { stroke: color, 'stroke-width': w, 'stroke-linecap': 'round' }, parent)); }
+function drawBurst(lines, cx, cy, r0, r1, u, ang0 = 0, spread = Math.PI * 2) {
+  const n = lines.length;
+  lines.forEach((l, i) => {
+    const a = ang0 + spread * (i + .5) / n, e = ease.out(clamp(u)), q = clamp(u * 1.4) * (1 - clamp((u - .7) / .3));
+    const ra = r0 + (r1 - r0) * e * .6, rb = r0 + (r1 - r0) * e;
+    A(l, { x1: cx + Math.cos(a) * ra, y1: cy + Math.sin(a) * ra, x2: cx + Math.cos(a) * rb, y2: cy + Math.sin(a) * rb, opacity: q });
+  });
+}
+// 配件：杯碟、三缕蒸汽、云边的星、雨丝、伞骨 —— 都用粉笔白的线，形状稳住以后才出来
+function makeKit(g) {
+  const k = {};
+  k.saucer = E('path', { fill: 'none', stroke: C.chalk, 'stroke-width': 6, 'stroke-linecap': 'round' }, g);
+  k.steam = [0, 1, 2].map(() => E('path', { fill: 'none', stroke: C.chalk, 'stroke-width': 5, 'stroke-linecap': 'round', 'stroke-dasharray': '60 400' }, g));
+  k.stars = Array.from({ length: 5 }, () => E('path', { fill: C.chalk }, g));
+  k.rain = Array.from({ length: 14 }, () => E('line', { stroke: C.chalk, 'stroke-width': 3.2, 'stroke-linecap': 'round' }, g));
+  return k;
+}
+function kitSaucer(k, cx, y, s, a) { A(k.saucer, { d: `M${cx - 120 * s} ${y}Q${cx} ${y + 26 * s} ${cx + 120 * s} ${y}`, opacity: a }); }
+function kitSteam(k, cx, top, s, t, a) {
+  k.steam.forEach((p, i) => { const x = cx + (i - 1) * 34 * s, h = (110 + i * 18) * s;
+    A(p, { d: `M${x} ${top}c${-18 * s} ${-h * .25} ${18 * s} ${-h * .5} 0 ${-h * .7}s${-16 * s} ${-h * .2} ${4 * s} ${-h * .3}`, 'stroke-dashoffset': -((t * 70 + i * 40) % 460) + 60, opacity: a * (i === 1 ? 1 : .75) }); });
+}
+function kitStars(k, cx, cy, s, a) {
+  const at = [[-170, -90, 1], [150, -120, .8], [210, 10, .6], [-220, 30, .55], [40, -170, .7]];
+  k.stars.forEach((p, i) => { const [x, y, r0] = at[i], r = 14 * s * r0 * ease.back(clamp(a * 1.6 - i * .12)), X = cx + x * s, Y = cy + y * s;
+    A(p, { d: `M${X} ${Y - r}Q${X} ${Y} ${X + r} ${Y}Q${X} ${Y} ${X} ${Y + r}Q${X} ${Y} ${X - r} ${Y}Q${X} ${Y} ${X} ${Y - r}Z`, opacity: r > 0 ? .9 : 0 }); });
+}
+function kitRain(k, cx, cy, s, t, a, w = 300, h = 360) {
+  k.rain.forEach((l, i) => { const ph = ((t * 1.3 + i * .37) % 1), x = cx + ((i * 73) % 100 / 100 - .5) * w * 2 * s, y = cy - h * s * .5 + ph * h * s;
+    A(l, { x1: x, y1: y, x2: x - 8 * s, y2: y + 28 * s, opacity: a * Math.sin(Math.PI * ph) * .8 }); });
+}
+function kitOff(k) { [k.saucer, ...k.steam, ...k.stars, ...k.rain].forEach(e => e.setAttribute('opacity', 0)); }
+// 步骤名：等宽编号 + 超粗中文 + 字距拉开的英文；换步时弹一下
+function makeTitle(g) {
+  const t = { g: E('g', null, g) };
+  t.no = T(t.g, '01 / 04', 4, L.P ? -190 : -150, L.P ? 30 : 18, { class: 'mono', fill: C.chalk, opacity: .65 });
+  t.zh = heavyText(t.g, '茶杯', 0, 0, L.P ? 190 : 150, C.chalk);
+  t.en = T(t.g, 'TEACUP', 6, L.P ? 70 : 56, L.P ? 28 : 18, { class: 'lat', fill: C.chalk, 'letter-spacing': '.36em', opacity: .7 });
+  t.bar = E('rect', { x: 6, y: L.P ? 96 : 78, width: 44, height: 5, fill: C.hero }, t.g);
+  t.last = -1; t.tc = 0;
+  return t;
+}
+function setTitle(t, i, now, x, y, a = 1) {
+  if (i !== t.last) { t.last = i; t.tc = now; const s = SH[LOOP[i]]; t.no.textContent = `0${i + 1} / 04`; t.zh.textContent = s.name; t.en.textContent = s.en; }
+  const u = clamp((now - t.tc) / .35), pop = t.tc > 0 ? ease.back(u) : 1;
+  A(t.g, { transform: `translate(${x} ${y + (1 - pop) * 40})`, opacity: a * (t.tc > 0 ? clamp(u * 2) : 1) });
+}
+// 右上角小圆环：循环第几步（step 0–4，小数 = 正在变）
+const loopArc = document.getElementById('loopArc'), loopN = document.getElementById('loopN');
+function setLoop(step) {
+  const f = clamp(step / 4, 0, .9999), a1 = -Math.PI / 2 + f * Math.PI * 2, r = 20;
+  loopArc.setAttribute('d', f < .002 ? '' : `M0 ${-r}A${r} ${r} 0 ${f > .5 ? 1 : 0} 1 ${(Math.cos(a1) * r).toFixed(2)} ${(Math.sin(a1) * r).toFixed(2)}`);
+  loopN.textContent = String((Math.floor(step + 1e-6) % 4) + 1);
+}
+const home = () => L.P ? { cx: L.W / 2, cy: L.H * .44, k: 2.25, tx: 70, ty: L.H * .2 } : { cx: L.W * .6, cy: 480, k: 1.75, tx: L.W * .08, ty: 470 };
+
+/* ── 镜 1：茶杯 → 蒸汽卷成云 → 云下撑开伞（色面墨绿 → 夜蓝 → 雨灰紫） ── */
+const S0 = (() => {
+  let o = {};
+  function build(g) {
+    g.innerHTML = ''; o.h = home();
+    o.kit = makeKit(g);
+    o.blob = makeBlob(g);
+    o.ribs = E('path', { fill: 'none', stroke: C.ink, 'stroke-width': 3, opacity: 0 }, o.blob.g);
+    o.motion = burst(g, 3, C.chalk, 6);
+    o.title = makeTitle(g);
+  }
+  function draw(t) {
+    const { cx, cy, k } = o.h;
+    let shape, sy = 1, y = 0, rot = 0, vy = 0, step = 0;
+    if (t < 1.3) { shape = morphFrame('cup', 'cloud', 0); sy = 1 + .02 * Math.sin(t * 7); }
+    else if (t < 1.55) { shape = morphFrame('cup', 'cloud', 0); sy = 1 - .22 * ease.out(seg(t, 1.3, 1.55)); }    // 预备：往下一蹲
+    else if (t < 3.7) {
+      const m = ease.inOut(seg(t, 1.6, 2.4)), up = seg(t, 1.55, 2.5); shape = morphFrame('cup', 'cloud', m); step = m;
+      y = 150 * ease.backK(1.4)(up) + 8 * Math.sin(Math.max(0, t - 2.5) * 2.4); vy = up > 0 && up < 1 ? 150 * 3 * (1 - up) : 0;
+      sy = t < 2.5 ? 1 + .2 * Math.sin(Math.PI * up) : 1 + .04 * Math.exp(-4 * (t - 2.5)) * Math.sin((t - 2.5) * 14);
+    } else {
+      const m = ease.inOut(seg(t, 3.8, 4.6)); shape = morphFrame('cloud', 'umbrella', m); step = 1 + m;
+      y = lerp(150, 50, ease.inOut(seg(t, 3.75, 4.6))); rot = 4 * Math.sin(Math.max(0, t - 4.6) * 2.2) * seg(t, 4.6, 5.2);
+      const pop = seg(t, 4.55, 4.8); sy = 1 - .12 * Math.sin(Math.PI * pop);
+    }
+    const [Pp, FA, FB] = shape; let maxY = -1e9; Pp.forEach(p => { if (p[1] > maxY) maxY = p[1]; });
+    const base = cy + 66 * k;   // 杯底所在的线：形状底边贴着它往上长
+    o.blob.set(Pp, FA, FB, C.hero);
+    A(o.blob.g, { transform: `translate(${cx} ${base - y * (L.P ? 1.3 : 1)}) scale(${k}) rotate(${rot}) translate(0 ${-maxY})` });
+    A(o.blob.outer, { transform: squash(cx, base - y, sy) });
+    speedBlur(o.blob.outer, mbB, 0, vy * 1.2);
+    // 配件
+    kitSaucer(o.kit, cx, base + 6, k, 1 - seg(t, 1.3, 1.6));
+    kitSteam(o.kit, cx, cy - 56 * k, k, t, (1 - seg(t, 1.2, 1.6)));
+    kitStars(o.kit, cx, cy - 150, k * .8, seg(t, 2.5, 3.1) * (1 - seg(t, 3.7, 4)));
+    kitRain(o.kit, cx, cy + 40, k, t, seg(t, 4.7, 5.2));
+    A(o.ribs, { d: 'M0 -102Q-30 -60 -56 0M0 -102Q30 -60 56 0M0 -102L0 0', opacity: seg(t, 4.6, 5) * .45, 'stroke-width': 3 });
+    drawBurst(o.motion, cx, base - 40 * k, 120 * k, 160 * k, seg(t, 1.45, 1.9), Math.PI * .15, Math.PI * .7);
+    setTitle(o.title, Math.round(step), t, o.h.tx, o.h.ty);
+    setLoop(step);
+  }
+  const end = () => { const mY = Math.max(...SH.umbrella.pts.map(p => p[1])); return { x: o.h.cx, y: o.h.cy + 66 * o.h.k - 50 * (L.P ? 1.3 : 1) - mY * o.h.k, k: o.h.k }; };
+  return { build, draw, end };
+})();
+
+/* ── 镜 2：伞和雨滴各取 120 点，点对点走过去（讲解镜） ── */
+const S1 = (() => {
+  let o = {};
+  function build(g) {
+    g.innerHTML = ''; const { W, H, P } = L;
+    o.cx = P ? W / 2 : W * .44; o.cy = P ? H * .42 : 430; o.k = P ? 2.05 : 1.75;
+    o.kit = makeKit(g);
+    o.lines = E('g', null, g);
+    o.ln = Array.from({ length: N / 6 }, () => E('line', { stroke: C.chalk, 'stroke-width': 1.6, opacity: .55 }, o.lines));
+    o.ghost = E('path', { fill: 'none', stroke: C.chalk, 'stroke-width': 2.4, 'stroke-dasharray': '7 9', opacity: .7 }, g);
+    o.blob = makeBlob(g);
+    o.dots = E('g', null, g);
+    o.dot = Array.from({ length: N }, (_, i) => E('circle', { r: i === 0 ? 9 : 4.4, fill: i === 0 ? C.ink : C.chalk, stroke: i === 0 ? C.chalk : C.ink, 'stroke-width': i === 0 ? 3 : 1.6 }, o.dots));
+    o.tdot = Array.from({ length: N / 6 }, () => E('circle', { r: 3.2, fill: C.chalk, opacity: .6 }, o.dots));
+    o.lead = E('g', null, g);
+    o.lLine = E('polyline', { fill: 'none', stroke: C.chalk, 'stroke-width': 2.4 }, o.lead);
+    o.lTag = E('g', null, o.lead);
+    E('rect', { x: 0, y: -30, width: P ? 268 : 210, height: P ? 70 : 54, fill: C.chalk }, o.lTag);
+    T(o.lTag, '起点 #000', 16, P ? 16 : 6, P ? 36 : 26, { class: 'zh', fill: C.ink });
+    T(o.lTag, P ? 'START' : 'START POINT', P ? 196 : 16, P ? 16 : 40, P ? 22 : 13, { class: 'lat', fill: C.chalk, 'letter-spacing': '.3em', opacity: P ? 0 : .8 });
+    o.read = E('g', { transform: P ? `translate(70 ${H * .1})` : `translate(${W * .7} 230)` }, g);
+    T(o.read, 'N =', 0, 0, P ? 34 : 24, { class: 'mono', fill: C.chalk, opacity: .65 });
+    o.num = T(o.read, '000', P ? 80 : 0, P ? 0 : 118, P ? 120 : 132, { class: 'mono', fill: C.chalk, 'font-weight': 700, 'letter-spacing': '-.03em' });
+    if (!P) {
+      T(o.read, '每条路径取等距点', 4, 168, 24, { class: 'zh', fill: C.chalk });
+      T(o.read, 'RESAMPLED · EVENLY SPACED', 4, 200, 13, { class: 'lat', fill: C.chalk, 'letter-spacing': '.3em', opacity: .65 });
+      E('line', { x1: 4, x2: 260, y1: 232, y2: 232, stroke: C.chalk, 'stroke-width': 2, opacity: .4 }, o.read);
+      T(o.read, '伞 → 雨滴', 4, 270, 24, { class: 'zh', fill: C.chalk });
+      o.pct = T(o.read, '000%', 4, 306, 22, { class: 'mono', fill: C.chalk, opacity: .7 });
+    }
+  }
+  function draw(t) {
+    const { cx, cy, k } = o;
+    const [P, Q] = pair('umbrella', 'drop');
+    const m = ease.inOut(seg(t, 2.0, 3.3));
+    const [Pp, FA, FB] = morphFrame('umbrella', 'drop', m);
+    const pop = t > 3.3 ? 1 + .1 * Math.exp(-6 * (t - 3.3)) * Math.sin((t - 3.3) * 18) : 1;
+    o.blob.set(Pp, FA, FB, C.hero);
+    const e0 = S0.end(), iu = ease.inOut(seg(t, 0, .7)), fall = ease.inOut(seg(t, 3.6, 5.2)) * 60;
+    const X0 = lerp(e0.x, cx, iu), Y0 = lerp(e0.y, cy, iu) + fall, K0 = lerp(e0.k, k, iu);
+    const tr = `translate(${X0} ${Y0}) scale(${K0 * pop})`;
+    A(o.blob.g, { transform: tr });
+    const X = p => X0 + p[0] * K0, Y = p => Y0 + p[1] * K0;
+    const nOn = Math.floor(N * seg(t, .35, 1.4));
+    o.dot.forEach((d, i) => A(d, { cx: X(Pp[i]), cy: Y(Pp[i]), opacity: i < nOn && t < 3.5 ? (t > 3.3 ? 1 - seg(t, 3.3, 3.5) : 1) : 0 }));
+    o.num.textContent = String(nOn).padStart(3, '0');
+    const gv = seg(t, 1.1, 1.5) * (1 - seg(t, 3.1, 3.4));
+    A(o.ghost, { d: toD(Q), transform: tr, opacity: .7 * gv });
+    const lv = seg(t, 1.4, 1.9) * (1 - seg(t, 3.0, 3.3));
+    o.ln.forEach((l, j) => { const i = j * 6, a = Pp[i], b = Q[i]; A(l, { x1: X(a), y1: Y(a), x2: X(a) + (X(b) - X(a)) * ease.out(lv), y2: Y(a) + (Y(b) - Y(a)) * ease.out(lv), opacity: .55 * (lv > 0 ? 1 : 0) }); });
+    o.tdot.forEach((d, j) => A(d, { cx: X(Q[j * 6]), cy: Y(Q[j * 6]), opacity: .6 * gv }));
+    kitOff(o.kit); kitRain(o.kit, cx, cy, k, t, .6 * (1 - seg(t, .3, .9)) + .9 * seg(t, 3.4, 3.9));
+    const a0 = [X(Pp[0]), Y(Pp[0])], lvv = seg(t, .5, .9);
+    const mid = L.P ? [a0[0] + 10, a0[1] - 380] : [a0[0] - 110, a0[1] - 110], end = L.P ? [mid[0] + 40, mid[1]] : [mid[0] - 60, mid[1]];
+    const tagW = L.P ? -40 : 210;
+    A(o.lLine, { points: [a0, mid, end].map(p => p.join(',')).join(' '), 'stroke-dasharray': 400, 'stroke-dashoffset': 400 * (1 - ease.out(lvv)) });
+    A(o.lTag, { transform: `translate(${end[0] - tagW} ${end[1]}) scale(${ease.back(seg(t, .75, 1.1))})`, opacity: lvv > .5 ? 1 : 0 });
+    A(o.lead, { opacity: 1 - seg(t, 3.3, 3.6) });
+    if (o.pct) o.pct.textContent = String(Math.round(m * 100)).padStart(3, '0') + '%  ·  第 i 点 → 第 i 点';
+    setLoop(2 + m);
+  }
+  const end = () => ({ x: o.cx, y: o.cy + 60, k: o.k });
+  return { build, draw, end };
+})();
+
+/* ── 镜 3：雨滴 → 茶杯，起点错开 vs 对齐（对比镜） ── */
+const S2 = (() => {
+  let o = {};
+  function build(g) {
+    g.innerHTML = ''; const { W, H, P } = L;
+    o.k = P ? 1.55 : 1.3;
+    o.pos = P ? [[W / 2, H * .27], [W / 2, H * .7]] : [[W * .27, 420], [W * .73, 420]];
+    o.side = [0, 1].map(s => {
+      const sg = E('g', null, g), [x, y] = o.pos[s];
+      const blob = makeBlob(sg);
+      const ghost = E('path', { fill: 'none', stroke: C.chalk, 'stroke-width': 3, 'stroke-dasharray': '7 7', opacity: 0 }, sg);
+      const lx = P ? 60 : x - 200, ly = P ? (s ? H * .5 + 40 : 140) : 150;
+      const lab = E('g', { transform: `translate(${lx} ${ly})` }, sg);
+      T(lab, s ? 'B' : 'A', 0, 0, P ? 30 : 18, { class: 'mono', fill: C.chalk, opacity: .6 });
+      T(lab, s ? '起点对齐' : '起点错开 40 点', P ? 40 : 30, 0, P ? 40 : 30, { class: 'zh', fill: C.chalk });
+      T(lab, s ? '✓ 一直是个形状' : '✕ 中间拧成一团', P ? 40 : 30, P ? 50 : 40, P ? 32 : 22, { class: 'zh', fill: s ? C.hero : C.chalk, opacity: s ? 1 : .7 });
+      const ry = P ? y + 190 * o.k * .9 : y + 200;
+      const rule = E('g', null, sg);
+      E('line', { x1: x - 150, x2: x + 150, y1: ry, y2: ry, stroke: C.chalk, 'stroke-width': 2, opacity: .45 }, rule);
+      [0, .5, 1].forEach(f => E('line', { x1: x - 150 + 300 * f, x2: x - 150 + 300 * f, y1: ry - 8, y2: ry + 8, stroke: C.chalk, 'stroke-width': 2, opacity: .45 }, rule));
+      const knob = E('circle', { cx: x, cy: ry, r: 7, fill: s ? C.hero : C.chalk }, rule);
+      const pct = T(rule, '50%', x + 166, ry + 7, P ? 28 : 16, { class: 'mono', fill: C.chalk, opacity: .7 });
+      return { sg, blob, ghost, knob, pct, x, y, ry };
+    });
+  }
+  function draw(t) {
+    const k = o.k;
+    const sp = ease.inOut(seg(t, .1, .7));
+    const f = t < 2.25 ? ease.inOut(seg(t, 1.0, 2.1)) : t < 3.45 ? 1 - ease.inOut(seg(t, 2.4, 3.3)) : .5 * ease.inOut(seg(t, 3.6, 4.1));
+    const e0 = S1.end();
+    o.side.forEach((s, i) => {
+      const [Pp, FA, FB] = i ? morphFrame('drop', 'cup', f) : morphFrame('drop', 'cup', f, 40);
+      s.blob.set(Pp, FA, FB, C.hero);
+      const sx = lerp(e0.x, s.x, sp), sy0 = lerp(e0.y, s.y, sp);
+      const st = 1 + .22 * Math.sin(Math.PI * seg(t, .1, .7));
+      A(s.blob.g, { transform: `translate(${sx} ${sy0}) scale(${k * (L.P ? 1 : st)} ${k * (L.P ? st : 1)})` });
+      const mid = morphFrame('drop', 'cup', .5, i ? 0 : 40)[0];
+      A(s.ghost, { d: toD(mid), transform: `translate(${s.x} ${s.y}) scale(${k})`, opacity: t > 1.55 && t < 3.6 ? .8 : 0 });
+      s.knob.setAttribute('cx', s.x - 150 + 300 * f);
+      s.pct.textContent = String(Math.round(f * 100)).padStart(3, '0') + '%';
+    });
+    setLoop(3 + f * .5);
+  }
+  return { build, draw };
+})();
+
+/* ── 镜 4：雨滴落回杯里，再跑一整圈，停在第一步（讲解镜：引线 + 读数），最后一帧就是开场第一帧 ── */
+const S3 = (() => {
+  let o = {};
+  const TILE = () => [C.fieldA, C.fieldB, C.fieldC, C.fieldC];
+  function build(g) {
+    g.innerHTML = ''; const { W, H, P } = L; o.h = home();
+    o.kit = makeKit(g);
+    o.rings = [0, 1].map(() => E('ellipse', { fill: 'none', stroke: C.chalk, 'stroke-width': 2.4 }, g));
+    o.blob = makeBlob(g);
+    o.splash = burst(g, 7, C.chalk, 6);
+    const tw = P ? 150 : 112, th = P ? 150 : 104, gap = P ? 40 : 46, n = 4;
+    const x0 = P ? (W - (n * tw + (n - 1) * gap)) / 2 : W * .08, y0 = P ? H * .7 : 690;
+    o.tilesG = E('g', null, g);
+    o.tiles = LOOP.map((s, i) => {
+      const tg = E('g', null, o.tilesG), x = x0 + i * (tw + gap);
+      E('rect', { x, y: y0, width: tw, height: th, rx: 10, fill: TILE()[i], stroke: C.chalk, 'stroke-opacity': .35, 'stroke-width': 1.5 }, tg);
+      const b = makeBlob(tg); b.set(SH[s].pts, SH[s].fa, SH[s].fb, C.hero);
+      A(b.g, { transform: `translate(${x + tw / 2} ${y0 + th / 2}) scale(${th / 330})` });
+      T(tg, String(i + 1).padStart(2, '0'), x, y0 + th + (P ? 40 : 28), P ? 28 : 14, { class: 'mono', fill: C.chalk, opacity: .6 });
+      T(tg, SH[s].name, x + (P ? 46 : 30), y0 + th + (P ? 40 : 28), P ? 30 : 18, { class: 'zh', fill: C.chalk });
+      if (i < 3) E('path', { d: `M${x + tw + 8} ${y0 + th / 2}h${gap - 16}m-10 -8l10 8l-10 8`, fill: 'none', stroke: C.chalk, 'stroke-width': 2.4, opacity: .7 }, tg);
+      return { g: tg, x, y: y0, w: tw, h: th };
+    });
+    const xl = o.tiles[3].x + tw / 2, xf = o.tiles[0].x + tw / 2, yb = y0 + th + (P ? 70 : 50);   // 回到第一步的那根弧线
+    o.back = E('path', { d: `M${xl} ${y0 + th + (P ? 50 : 38)}Q${(xl + xf) / 2} ${yb + 40} ${xf} ${y0 + th + (P ? 50 : 38)}m-12 4l12 -4l2 12`, fill: 'none', stroke: C.hero, 'stroke-width': 3, 'stroke-linecap': 'round', 'stroke-dasharray': 1400 }, o.tilesG);
+    o.mark = E('rect', { height: 4, fill: C.hero }, g);
+    // 引线标注 + 读数
+    o.lead = E('g', null, g);
+    o.lLine = E('polyline', { fill: 'none', stroke: C.chalk, 'stroke-width': 2.4 }, o.lead);
+    o.lTxt = T(o.lead, '回到第 1 步', 0, 0, P ? 40 : 30, { class: 'zh', fill: C.chalk });
+    o.lSub = T(o.lead, 'BACK TO 01 · 点数没变', 0, 0, P ? 20 : 13, { class: 'lat', fill: C.chalk, 'letter-spacing': '.3em', opacity: .7 });
+    o.read = E('g', null, g);
+    o.num = T(o.read, '120 → 120', 0, 0, P ? 64 : 54, { class: 'mono', fill: C.chalk, 'font-weight': 700, 'letter-spacing': '-.02em' });
+    T(o.read, '一圈 4 步 · 每步都是 120 个点', 2, P ? 44 : 36, P ? 26 : 20, { class: 'zh', fill: C.chalk, opacity: .85 });
+    o.title = makeTitle(g);
+  }
+  function draw(t) {
+    const { cx, cy, k } = o.h, base = cy + 66 * k;
+    let a = 'drop', b = 'cup', m = 0, y = 0, sy = 1, step = 3.5;
+    // 0–.75 雨滴落下（拉长）；.75 落进杯里压扁、变回茶杯
+    if (t < .75) { const u = seg(t, 0, .75); y = lerp(420, 0, ease.backK(0)(u * u)); sy = 1 + .3 * u; m = 0; }
+    else if (t < 1.4) { m = ease.inOut(seg(t, .75, 1.25)); sy = 1 - .3 * Math.sin(Math.PI * seg(t, .75, .95)); step = 3.5 + .5 * m; }
+    else if (t < 3.8) {   // 再跑一圈：每步 .6 秒
+      const q = (t - 1.4) / .6, s = Math.min(3, Math.floor(q)); a = LOOP[s]; b = LOOP[(s + 1) % 4]; m = ease.inOut(seg(q - s, .15, .85)); step = 4 + s + m;
+      sy = 1 + .1 * Math.sin(Math.PI * seg(q - s, .1, .9));
+    } else { a = 'drop'; b = 'cup'; m = 1; step = 8; sy = 1 + .02 * Math.sin(t * 7); }
+    const [Pp, FA, FB] = morphFrame(a, b, m); let maxY = -1e9; Pp.forEach(p => { if (p[1] > maxY) maxY = p[1]; });
+    o.blob.set(Pp, FA, FB, C.hero);
+    A(o.blob.g, { transform: `translate(${cx} ${base - y}) scale(${k}) translate(0 ${-maxY})` });
+    A(o.blob.outer, { transform: squash(cx, base - y, sy) });
+    speedBlur(o.blob.outer, mbB, 0, t < .75 ? 900 * seg(t, 0, .75) : 0);
+    drawBurst(o.splash, cx, base - 120 * k, 70 * k, 150 * k, seg(t, .75, 1.2), Math.PI * 1.1, Math.PI * .8);
+    o.rings.forEach((r, i) => { const w = seg(t, .8 + i * .15, 1.6 + i * .15); A(r, { cx, cy: base + 4, rx: 60 + 180 * ease.out(w), ry: 12 + 34 * ease.out(w), opacity: w > 0 ? .6 * (1 - w) : 0 }); });
+    // 配件：最后一段杯碟和蒸汽回来（和开场第一帧对上）
+    const tail = seg(t, 3.8, 4.3);
+    kitSaucer(o.kit, cx, base + 6, k, t < .9 ? 0 : t < 1.4 ? seg(t, .9, 1.2) : tail);
+    kitSteam(o.kit, cx, cy - 56 * k, k, t, tail); kitRain(o.kit, cx, cy, k, t, 1 - seg(t, .4, .9));
+    // 四格 + 回环箭头：开场时弹出，收尾前 .6 秒退场，好接回开场第一帧
+    const out = seg(t, 5.6, 6.1);
+    o.tiles.forEach((tl, i) => { const v = clamp((t - 1.2 - i * .07) / .45), e = v > 0 ? ease.backK(2)(v) : 0, on = (Math.floor(step + 1e-6) % 4) === i;
+      A(tl.g, { transform: `translate(${tl.x + tl.w / 2} ${tl.y + tl.h / 2 - (on ? 10 : 0)}) scale(${e * (on ? 1.06 : 1)}) translate(${-tl.x - tl.w / 2} ${-tl.y - tl.h / 2})` }); });
+    A(o.tilesG, { opacity: 1 - out });
+    A(o.back, { 'stroke-dashoffset': 1400 * (1 - ease.out(seg(t, 3.6, 4.2))) });
+    const ci = (Math.floor(step + 1e-6) % 4), tl = o.tiles[ci];
+    A(o.mark, { x: tl.x, y: tl.y - 16, width: t > 1.2 && t < 5.6 ? tl.w : 0 });
+    // 引线：杯口 → 折点 → 字
+    const lv = seg(t, 4.0, 4.5) * (1 - out), p0 = [cx + 70 * k, cy - 40 * k], p1 = L.P ? [p0[0] + 20, p0[1] - 190] : [p0[0] + 120, p0[1] - 150], p2 = L.P ? [L.W - 60, p1[1]] : [p1[0] + 70, p1[1]];
+    A(o.lLine, { points: [p0, p1, p2].map(p => p.join(',')).join(' '), 'stroke-dasharray': 600, 'stroke-dashoffset': 600 * (1 - ease.out(lv)) });
+    A(o.lTxt, { x: L.P ? p2[0] - 210 : p2[0] + 14, y: p2[1] + (L.P ? -50 : 10) }); A(o.lSub, { x: L.P ? p2[0] - 300 : p2[0] + 16, y: p2[1] + (L.P ? -16 : 36) });
+    A(o.lead, { opacity: lv });
+    A(o.read, { transform: L.P ? `translate(70 ${L.H * .62})` : `translate(${L.W * .64} 700)`, opacity: seg(t, 4.2, 4.6) * (1 - out) });
+    setTitle(o.title, (Math.floor(step + .5) % 4), t, o.h.tx, o.h.ty);
+    setLoop(step >= 8 ? 0 : step % 4);
+  }
+  return { build, draw };
+})();
+
+/* ━━ 镜头表 + 每镜底色 ━━ */
+const SC = [S0, S1, S2, S3];
+let cur = 0;
+const SHOTS = [
+  // 茶杯 · 云 · 伞：一块形状连着变，色面整块跟着换
+  { dur: 6.6,
+    bg(t) { const c = home(), y0 = c.cy - 60;
+      if (t < 1.6) field(C.fieldA); else if (t < 3.8) field(C.fieldA, { circle: [c.cx, y0, seg(t, 1.6, 2.3), C.fieldB] }); else field(C.fieldB, { band: [seg(t, 3.8, 4.5), C.fieldC] }); } },
+  // 取点 · POINTS：各取 120 个点。第 i 点只走向第 i 点
+  { dur: 5.4, bg() { field(C.fieldC); } },
+  // 对齐 · ALIGN：起点没对齐会拧。左：错开　右：对齐
+  { dur: 4.8, bg(t) { field(C.fieldC, { split: [seg(t, 0, .6), C.fieldC, C.fieldA] }); } },
+  // 回到第一步 · BACK TO 01：雨落回杯，再跑一圈，停在开场那一帧
+  { dur: 6.2,
+    bg(t) { const c = home();
+      if (t < .7) { field(C.fieldC); return; }
+      if (t < 1.4) { field(C.fieldC, { circle: [c.cx, c.cy, seg(t, .7, 1.3), C.fieldA] }); return; }
+      if (t < 3.8) { const q = (t - 1.4) / .6, s = Math.min(3, Math.floor(q)), F = FIELD(); field(F[s], { circle: [c.cx, c.cy, seg(q - s, .1, .7), F[(s + 1) % 4]] }); return; }
+      field(C.fieldA); } },
+];
+const rd = document.getElementById('rd');
+SHOTS.forEach((s, k) => s.draw = (t) => {
+  scene.forEach((g, j) => g.style.display = j === k ? '' : 'none');
+  s.bg(t); SC[k].draw(t);
+  const G = SHOTS.slice(0, k).reduce((a, x) => a + x.dur, 0) + t;
+  rd.textContent = `N = ${N} · 帧 ${String(Math.floor(G * 24)).padStart(3, '0')}`;
+});
+
+function relayout() {
+  const w = innerWidth, h = innerHeight, P = h > w * 1.02;
+  L = P ? { W: 900, H: 900 * h / w, P } : { W: 900 * w / h, H: 900, P };
+  sv.setAttribute('viewBox', `0 0 ${L.W} ${L.H}`);
+  A(softF, { x: -300, y: -300, width: L.W + 600, height: L.H + 600 });
+  SC.forEach((s, k) => s.build(scene[k]));
+}
+
+const P0 = makePlayer(SHOTS, {
+  onShot(i) { cur = i; },
+  onResize() { relayout(); },
+});
+</script>
+</body>
+</html>
